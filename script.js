@@ -130,17 +130,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     logoutBtn.onclick = () => logoutUser();
 
-    // Secure Deletion Handler Interface Trigger
+// Secure Deletion Handler Interface Trigger with String Confirmation
     if (deleteAccountBtn) {
         deleteAccountBtn.onclick = async () => {
             if (!userUID) return;
             
-            const confirmation = confirm("⚠️ CRITICAL WARNING: Are you completely sure you want to delete your profile? This will immediately purge your configurations, settings data, and credentials permanently.");
+            // First warning gate
+            const confirmation = confirm("⚠️ CRITICAL WARNING: Are you completely sure you want to delete your profile? This will permanently purge all your transaction balances, custom categories, and credentials.");
             if (!confirmation) return;
+
+            // Second warning gate: Text validation check
+            const textCheck = prompt("To confirm this dangerous destructive action, please type CONFIRM in the input box below:");
+            
+            if (textCheck !== "CONFIRM") {
+                alert("❌ Verification mismatch! Deletion process cancelled.");
+                return;
+            }
 
             try {
                 await deleteCurrentUserAccount(userUID);
-                alert("Account deleted successfully. Returning to login panel.");
+                alert("Account successfully deleted from the cloud matrix. Returning to layout panel.");
             } catch (e) {
                 if (e.code === "auth/requires-recent-login") {
                     alert("🔒 Security Action Blocked: This operation requires recent authentication. Please log out, sign back in immediately, and try again.");
