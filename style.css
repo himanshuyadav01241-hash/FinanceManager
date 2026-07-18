@@ -302,3 +302,152 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   .search-filters { grid-template-columns: 2fr 1fr; gap: 12px; }
   .card h2 { font-size: 24px; }
 }
+/* ==========================================
+   INSANE HR FinanceOS Cloud - CYBERPUNK RED AUTH
+========================================== */
+
+/* Full screen wrapper overlay centering the card with an intense dark red radial aura */
+.authScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: radial-gradient(circle at 50% 50%, #251214 0%, #0a0506 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Premium Obsidian Glassmorphism Card Container with a subtle red border */
+.authCard {
+    background: rgba(26, 18, 19, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 68, 68, 0.12);
+    padding: 40px 30px;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    text-align: center;
+    animation: authCardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) ease-out;
+}
+
+/* Animated structural fade entry */
+@keyframes authCardFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Floating Crimson Glowing Wallet Icon */
+.authCard > i.fa-wallet {
+    font-size: 3.5rem;
+    background: linear-gradient(135deg, #ff4e50 0%, #f9d423 100%); /* Warm high-octane red to gold transition */
+    background: linear-gradient(135deg, #ff3333 0%, #a30000 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+    display: inline-block;
+    filter: drop-shadow(0 8px 16px rgba(255, 51, 51, 0.4));
+    animation: floatWallet 3s ease-in-out infinite;
+}
+
+@keyframes floatWallet {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+/* Typography Matrix */
+.authCard h1 {
+    color: #ffffff;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0;
+    text-shadow: 0 0 10px rgba(255, 51, 51, 0.2);
+}
+
+.authCard p {
+    color: #a68a8c;
+    font-size: 0.95rem;
+    margin-top: 4px;
+    margin-bottom: 35px;
+    font-weight: 400;
+}
+
+/* Cyberpunk Crimson Form Inputs Fields */
+.authCard input {
+    width: 100%;
+    padding: 14px 18px;
+    background: rgba(13, 8, 9, 0.7);
+    border: 1px solid rgba(255, 68, 68, 0.15);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-family: inherit;
+    margin-bottom: 16px;
+    transition: all 0.25s ease;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.authCard input:focus {
+    border-color: #ff3333;
+    background: rgba(13, 8, 9, 0.9);
+    box-shadow: 0 0 0 4px rgba(255, 51, 51, 0.2);
+}
+
+.authCard input::placeholder {
+    color: #664e50;
+}
+
+/* Action Control Buttons Elements Layout */
+.authCard button {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 12px;
+    border: none;
+    box-sizing: border-box;
+}
+
+/* Main Login Button - High Energy Crimson Gradient */
+#loginBtn {
+    background: linear-gradient(135deg, #ff3333 0%, #bd0000 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.4);
+}
+
+#loginBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 51, 51, 0.6);
+    filter: brightness(1.15);
+}
+
+#loginBtn:active {
+    transform: translateY(0);
+}
+
+/* Ghost Create Account Button with subtle red edge */
+#signupBtn {
+    background: transparent;
+    color: #a68a8c;
+    border: 1px solid rgba(255, 68, 68, 0.2);
+    margin-bottom: 0;
+}
+
+#signupBtn:hover {
+    background: rgba(255, 51, 51, 0.06);
+    color: #ffffff;
+    border-color: rgba(255, 51, 51, 0.4);
+}
