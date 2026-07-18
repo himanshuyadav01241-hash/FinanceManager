@@ -60,6 +60,18 @@ document.addEventListener("DOMContentLoaded", () => {
     ========================================== */
     monitorAuthState(async (user) => {
         if (user) {
+            // Check if the user has verified their email address
+            if (!user.emailVerified) {
+                alert("🔒 Access Denied: Please verify your email first! A verification link has been sent to your inbox.");
+                await logoutUser(); // Clear session immediately if unverified
+                userUID = null;
+                appScreen.style.display = "none";
+                authScreen.style.display = "flex";
+                clearFormStateFields();
+                return;
+            }
+
+            // Unlock dashboard if email check passes
             userUID = user.uid;
             authScreen.style.display = "none";
             appScreen.style.display = "block";
@@ -92,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         try { 
             await registerUser(email, password); 
-            alert("Account registered successfully!");
+            alert("Verification Email Sent! Please check your inbox and confirm the link before logging in.");
         } catch (e) { 
             alert("Registration Error: " + e.message); 
         }
