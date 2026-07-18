@@ -23,14 +23,15 @@ import {
     orderBy 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Your Firebase Configuration (Keep your keys here)
+// ✅ LIVE PRODUCTION CONFIGURATION RE-ENGAGED
 const firebaseConfig = {
-    apiKey: "AIzaSy...", 
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyCCnwz-4HDj0baMMfhJ0oHWXfuhrFTvIr0",
+    authDomain: "financeos-6eaf2.firebaseapp.com",
+    projectId: "financeos-6eaf2",
+    storageBucket: "financeos-6eaf2.firebasestorage.app",
+    messagingSenderId: "503013740949",
+    appId: "1:503013740949:web:a18ef8f8433711a672e69c",
+    measurementId: "G-F769EYMHLJ"
 };
 
 // Initialize Core Services
@@ -59,7 +60,7 @@ export function monitorAuthState(callback) {
     onAuthStateChanged(auth, callback);
 }
 
-// THIS IS THE EXACT EXPORT SCRIPT.JS IS LOOKING FOR:
+// Account Deletion Pipeline Export
 export async function deleteCurrentUserAccount(uid) {
     const user = auth.currentUser;
     if (!user) throw new Error("No active user authenticated.");
