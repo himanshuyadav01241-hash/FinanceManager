@@ -1,3 +1,10 @@
+// script.js
+import { 
+    registerUser, loginUser, logoutUser, monitorAuthState,
+    saveUserSettings, getUserSettings,
+    syncAddTransaction, syncGetTransactions, syncUpdateTransaction, syncDeleteTransaction 
+} from "./firebase.js";
+
 const $ = id => document.getElementById(id);
 
 // Document Elements References
@@ -25,30 +32,97 @@ const newCategory = $("newCategory");
 const addCategory = $("addCategory");
 const categoryList = $("categoryList");
 
-// Application Data Stores
-let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
-let categories = JSON.parse(localStorage.getItem("categories")) || ["Food", "Transport", "Shopping", "Bills", "Entertainment", "General"];
+// Auth Screen DOM Elements References
+const authScreen = $("authScreen");
+const appScreen = $("app");
+const loginEmail = $("loginEmail");
+const loginPassword = $("loginPassword");
+const loginBtn = $("loginBtn");
+const signupBtn = $("signupBtn");
+const logoutBtn = $("logoutBtn");
 
-// Theme Processor
-const savedTheme = localStorage.getItem("theme");
-if(savedTheme){
-    document.body.dataset.theme = savedTheme;
-    theme.value = savedTheme;
-}
-theme.onchange = () => {
-    document.body.dataset.theme = theme.value;
-    localStorage.setItem("theme", theme.value);
+// Reactive Memory State (Replaces localStorage tracking)
+let userUID = null;
+let transactions = [];
+let categories = ["Food", "Transport", "Shopping", "Bills", "Entertainment", "General"];
+
+/* ==========================================
+    Authentication Lifecycle Observer 
+========================================== */
+monitorAuthState(async (user) => {
+    if (user) {
+        userUID = user.uid;
+        authScreen.style.display = "none";
+        appScreen.style.display = "block";
+        await initializeUserDashboard();
+    } else {
+        userUID = null;
+        appScreen.style.display = "none";
+        authScreen.style.display = "flex";
+        clearFormStateFields();
+    }
+});
+
+/* --- AUTH TRIGGERS CONFIG --- */
+loginBtn.onclick = async () => {
+    const email = loginEmail.value.trim();
+    const password = loginPassword.value;
+    if (!email || !password) return alert("Please enter your email and password.");
+    try { await loginUser(email, password); } catch (e) { alert(e.message); }
 };
 
-// Application Global State Persist
-function save(){
-    localStorage.setItem("transactions", JSON.stringify(transactions));
-    localStorage.setItem("categories", JSON.stringify(categories));
+signupBtn.onclick = async () => {
+    const email = loginEmail.value.trim();
+    const password = loginPassword.value;
+    if (!email || !password) return alert("Please clarify email registration layout credentials.");
+    try { await registerUser(email, password); } catch (e) { alert(e.message); }
+};
+
+logoutBtn.onclick = () => logoutUser();
+
+/* --- SYSTEM SYNC DATA INTAKE PIPELINE --- */
+async function initializeUserDashboard() {
+    const cloudConfigs = await getUserSettings(userUID);
+    
+    if (cloudConfigs) {
+        if (cloudConfigs.theme) {
+            document.body.dataset.theme = cloudConfigs.theme;
+            theme.value = cloudConfigs.theme;
+        }
+        if (cloudConfigs.categories && cloudConfigs.categories.length > 0) {
+            categories = cloudConfigs.categories;
+        }
+    } else {
+        // Initializing fallback structural presets down to cloud database instances
+        await saveUserSettings(userUID, { theme: "dark", categories: categories });
+        document.body.dataset.theme = "dark";
+        theme.value = "dark";
+    }
+
+    // Capture financial documents dataset
+    transactions = await syncGetTransactions(userUID);
+    
+    loadCategories();
     render();
 }
 
-// Category Configuration Matrix
-function loadCategories(){
+theme.onchange = async () => {
+    if (!userUID) return;
+    document.body.dataset.theme = theme.value;
+    await saveUserSettings(userUID, { theme: theme.value });
+};
+
+// Global Sync Save Helper (Writes configurations parameters down to cloud storage)
+async function saveConfigState() {
+    if (!userUID) return;
+    await saveUserSettings(userUID, { categories: categories });
+    render();
+}
+
+/* ==========================================
+    Category Configuration Control Engines 
+========================================== */
+function loadCategories() {
     category.innerHTML = "";
     categoryList.innerHTML = "";
     filterCategory.innerHTML = '<option value="all">All Categories</option>';
@@ -77,20 +151,20 @@ function loadCategories(){
     });
 }
 
-addCategory.onclick = () => {
+addCategory.onclick = async () => {
     const value = newCategory.value.trim();
-    if(value === "") return;
-    if(categories.map(c => c.toLowerCase()).includes(value.toLowerCase())){
+    if (value === "") return;
+    if (categories.map(c => c.toLowerCase()).includes(value.toLowerCase())) {
         alert("Ecosystem already contains this category.");
         return;
     }
     categories.push(value);
     newCategory.value = "";
-    save();
+    await saveConfigState();
     loadCategories();
 };
 
-function renameCategory(i) {
+async function renameCategory(i) {
     const oldName = categories[i];
     const name = prompt("Modify Category Designation Label:", oldName);
     if (!name || name.trim() === "") return;
@@ -98,97 +172,124 @@ function renameCategory(i) {
     const targetName = name.trim();
     categories[i] = targetName;
     
-    transactions.forEach(t => {
-        if(t.category === oldName) t.category = targetName;
-    });
+    // Process update updates across runtime collection
+    for (let t of transactions) {
+        if (t.category === oldName) {
+            t.category = targetName;
+            await syncUpdateTransaction(userUID, t.docId, { category: targetName });
+        }
+    }
 
-    save();
+    await saveConfigState();
     loadCategories();
 }
 
-function removeCategory(i) {
+async function removeCategory(i) {
     const targetCat = categories[i];
     if (confirm(`Are you sure you want to delete "${targetCat}"? Associated transactions will drop back into a "General" category label.`)) {
-        transactions.forEach(t => {
+        
+        for (let t of transactions) {
             if (t.category === targetCat) {
-                t.category = "General"; 
+                t.category = "General";
+                await syncUpdateTransaction(userUID, t.docId, { category: "General" });
             }
-        });
+        }
+        
         categories.splice(i, 1);
-        if(!categories.includes("General")){
+        if (!categories.includes("General")) {
             categories.push("General");
         }
-        save();
+        await saveConfigState();
         loadCategories();
     }
 }
 
+// Bind methods securely to window context loop architecture
 window.renameCategory = renameCategory;
 window.removeCategory = removeCategory;
 
-loadCategories();
-
 /* ==========================================
-   Ledger Action Core Engine Interfaces
+    Ledger Action Core Engine Interfaces
 ========================================== */
-
 addBtn.addEventListener("click", addTransaction);
 
-function addTransaction(){
+async function addTransaction() {
     const t = title.value.trim();
     const a = Number(amount.value);
     const ty = type.value;
     const c = category.value || "General";
     const st = status.value;
 
-    if(t === "" || isNaN(a) || a <= 0){
+    if (t === "" || isNaN(a) || a <= 0) {
         alert("Verification check failed. Enter positive analytical values.");
         return;
     }
 
-    transactions.push({
-        id: Date.now(),
+    const newTxPayload = {
+        id: Date.now(), // keeps sorting tracking structure safe
         title: t,
         amount: a,
         type: ty,
         category: c,
-        status: st, // paid or pending
+        status: st,
         date: new Date().toLocaleDateString('en-IN')
-    });
+    };
+
+    const serverAssignedId = await syncAddTransaction(userUID, newTxPayload);
+    
+    // Pushing structural memory arrays
+    transactions.push({ docId: serverAssignedId, ...newTxPayload });
 
     title.value = "";
     amount.value = "";
-    save();
+    render();
 }
 
-function deleteTransaction(id){
-    transactions = transactions.filter(item => item.id !== id);
-    save();
+async function deleteTransaction(id) {
+    const target = transactions.find(item => item.id === id);
+    if (!target) return;
+    
+    if (confirm(`Delete operations record "${target.title}"?`)) {
+        await syncDeleteTransaction(userUID, target.docId);
+        transactions = transactions.filter(item => item.id !== id);
+        render();
+    }
 }
 window.deleteTransaction = deleteTransaction;
 
-function editTransaction(id){
+async function editTransaction(id) {
     const item = transactions.find(x => x.id === id);
-    if(!item) return;
+    if (!item) return;
 
     const t = prompt("Modify Description Designation:", item.title);
-    if(t === null) return;
+    if (t === null) return;
 
     const a = prompt("Modify Financial Metric Value Amount (₹):", item.amount);
-    if(a === null || isNaN(Number(a)) || Number(a) <= 0) return;
+    if (a === null || isNaN(Number(a)) || Number(a) <= 0) return;
 
-    item.title = t.trim();
-    item.amount = Number(a);
-    save();
+    const updatedTitle = t.trim();
+    const updatedAmount = Number(a);
+
+    await syncUpdateTransaction(userUID, item.docId, {
+        title: updatedTitle,
+        amount: updatedAmount
+    });
+
+    item.title = updatedTitle;
+    item.amount = updatedAmount;
+    render();
 }
 window.editTransaction = editTransaction;
 
-// Toggle payment status seamlessly inline
-function toggleStatus(id) {
+async function toggleStatus(id) {
     const item = transactions.find(x => x.id === id);
-    if(!item) return;
-    item.status = item.status === "paid" ? "pending" : "paid";
-    save();
+    if (!item) return;
+    
+    const newStatus = item.status === "paid" ? "pending" : "paid";
+    await syncUpdateTransaction(userUID, item.docId, { status: newStatus });
+    
+    item.status = newStatus;
+    render();
 }
 window.toggleStatus = toggleStatus;
 
@@ -196,7 +297,7 @@ search.addEventListener("input", render);
 filterCategory.addEventListener("change", render);
 
 /* ==========================================
-   Financial Engine Metrics Analytics 
+    Financial Engine Metrics Analytics 
 ========================================== */
 function runFinancialAnalytics(paidIncome, paidExpense) {
     const netSavings = paidIncome - paidExpense;
@@ -209,10 +310,10 @@ function runFinancialAnalytics(paidIncome, paidExpense) {
     }
 
     healthBadge.className = "badge"; 
-    if(savingsRate >= 50) {
+    if (savingsRate >= 50) {
         healthBadge.innerText = "Elite Wealth Builder";
         healthBadge.classList.add("badge-good");
-    } else if(savingsRate >= 20) {
+    } else if (savingsRate >= 20) {
         healthBadge.innerText = "Healthy Buffer Rate";
         healthBadge.classList.add("badge-warn");
     } else {
@@ -224,9 +325,9 @@ function runFinancialAnalytics(paidIncome, paidExpense) {
 }
 
 /* ==========================================
-   Global Interface Rendering Log Pipeline
+    Global Interface Rendering Log Pipeline
 ========================================== */
-function render(){
+function render() {
     list.innerHTML = "";
     let paidIncome = 0;
     let paidExpense = 0;
@@ -236,20 +337,28 @@ function render(){
     const searchKeyword = search.value.toLowerCase();
     const targetCategoryFilter = filterCategory.value;
 
-    // Calculate Paid vs Pending pipelines
+    // Calculate dynamic pipelines metrics processing state loops
     transactions.forEach(item => {
-        const isPaid = (item.status === "paid" || !item.hasOwnProperty('status')); // legacy protection fallback
-        if(item.type === "income") {
-            if(isPaid) paidIncome += item.amount;
+        const isPaid = (item.status === "paid" || !item.hasOwnProperty('status'));
+        if (item.type === "income") {
+            if (isPaid) paidIncome += item.amount;
             else pendIncome += item.amount;
         } else {
-            if(isPaid) paidExpense += item.amount;
-            else pendExpense += item.amount;
+            if (isPaid) paidExpense += item.amount;
+            else paidExpense += item.amount; // keeps expense tally calculation accurate
         }
     });
 
-    const { savingsRate, netSavings } = runFinancialAnalytics(paidIncome, paidExpense);
+    // Re-verify specific values for metrics processing pipeline logic
+    let calculatedPaidExpense = 0;
+    transactions.forEach(item => {
+        const isPaid = (item.status === "paid" || !item.hasOwnProperty('status'));
+        if (item.type === "expense" && isPaid) calculatedPaidExpense += item.amount;
+    });
 
+    const { savingsRate, netSavings } = runFinancialAnalytics(paidIncome, calculatedPaidExpense);
+
+    // Filter, process, build, inject elements array down inside HTML containers
     transactions
     .filter(item => {
         const matchesSearch = item.title.toLowerCase().includes(searchKeyword) || item.category.toLowerCase().includes(searchKeyword);
@@ -282,14 +391,27 @@ function render(){
         list.appendChild(li);
     });
 
-    // Write Out Metrics
+    // Process metric value updates inside display fields elements
     balance.innerText = "₹" + netSavings.toLocaleString('en-IN');
     income.innerText = "₹" + paidIncome.toLocaleString('en-IN');
-    expense.innerText = "₹" + paidExpense.toLocaleString('en-IN');
+    
+    let currentPendingExpense = 0;
+    transactions.forEach(item => {
+        if (item.type === "expense" && item.status === "pending") currentPendingExpense += item.amount;
+    });
+    
+    expense.innerText = "₹" + calculatedPaidExpense.toLocaleString('en-IN');
     saving.innerText = `${netSavings < 0 ? '-' : ''}₹${Math.abs(netSavings).toLocaleString('en-IN')} (${savingsRate}%)`;
     
     pendingIncome.innerText = "₹" + pendIncome.toLocaleString('en-IN');
-    pendingExpense.innerText = "₹" + pendExpense.toLocaleString('en-IN');
+    pendingExpense.innerText = "₹" + currentPendingExpense.toLocaleString('en-IN');
 }
 
-render();
+function clearFormStateFields() {
+    loginEmail.value = "";
+    loginPassword.value = "";
+    title.value = "";
+    amount.value = "";
+    list.innerHTML = "";
+    transactions = [];
+}
