@@ -19,6 +19,20 @@
 
 <body data-theme="dark">
 
+    <!-- RUNTIME MODULE ERROR OVERLAY (Replaces Boring Default Alert Box) -->
+    <div id="diagnosticErrorOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
+        <div style="background: #1e1e1e; color: #ffffff; border: 2px solid #d9534f; border-radius: 12px; width: 100%; max-width: 480px; box-shadow: 0 12px 40px rgba(0,0,0,0.7); padding: 28px; box-sizing: border-box; text-align: center;">
+            <div style="font-size: 3rem; margin-bottom: 16px; color: #d9534f;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 style="margin: 0 0 12px 0; font-size: 1.4rem; font-weight: 700; color: #d9534f; letter-spacing: -0.5px;">Module Initialization Fault</h3>
+            <p style="margin: 0 0 20px 0; font-size: 0.95rem; line-height: 1.6; opacity: 0.85; text-align: left; background: rgba(0,0,0,0.3); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); font-family: monospace; word-break: break-all;" id="diagnosticErrorDetails"></p>
+            <button onclick="window.location.reload()" style="padding: 12px 24px; font-size: 0.95rem; font-weight: 600; border-radius: 8px; border: none; background: #d9534f; color: white; cursor: pointer; transition: opacity 0.2s; width: 100%;">
+                <i class="fa-solid fa-rotate-right"></i> Hot-Reload Interface Engine
+            </button>
+        </div>
+    </div>
+
     <!-- LOGIN SCREEN -->
     <div id="authScreen" class="authScreen">
         <div class="authCard">
@@ -177,36 +191,38 @@
 
     </div>
 
-    <!-- PREMIUM HIGH-FIDELITY INTERACTIVE POPUP ENGINE -->
-    <div id="customModalOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 11, 14, 0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;">
-        <div style="background: #18191e; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6); padding: 28px; transform: scale(0.92); opacity: 0; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box; text-align: center;">
-            
-            <div id="modalIconContainer" style="font-size: 2.8rem; margin-bottom: 16px; color: #4285F4; display: inline-flex; align-items: center; justify-content: center; width: 70px; height: 70px; background: rgba(255,255,255,0.03); border-radius: 50%; border: 1px solid rgba(255,255,255,0.05);">
-                <i class="fa-solid fa-circle-question"></i>
+    <!-- MODERN INTERACTIVE DIALOG MODAL SYSTEM -->
+    <div id="customModalOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
+        <div style="background: var(--card-bg, #1e1e1e); color: var(--text-color, #ffffff); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); padding: 24px; transform: scale(0.9); transition: transform 0.2s ease; box-sizing: border-box; text-align: center;">
+            <div id="modalIconContainer" style="font-size: 2.5rem; margin-bottom: 12px; color: #d9534f;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
+            <h3 id="modalTitle" style="margin: 0 0 10px 0; font-size: 1.25rem; font-weight: 600;">Confirm Action</h3>
+            <p id="modalDescription" style="margin: 0 0 24px 0; font-size: 0.9rem; line-height: 1.5; opacity: 0.8; word-wrap: break-word;"></p>
             
-            <h3 id="modalTitle" style="margin: 0 0 10px 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.3px; font-family: 'Poppins', sans-serif;">Confirm Action</h3>
-            <p id="modalDescription" style="margin: 0 0 24px 0; font-size: 0.92rem; line-height: 1.6; opacity: 0.75; font-family: 'Poppins', sans-serif; padding: 0 8px;"></p>
+            <!-- Dual-Purpose Primary Input Field for verification or modifications -->
+            <input id="modalConfirmationInput" type="text" placeholder="" style="display: none; width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: inherit; font-size: 0.95rem; outline: none; box-sizing: border-box; text-align: center; transition: border-color 0.2s;">
             
-            <!-- Contextual Data Entry Elements (Used for Renames & Validations) -->
-            <div id="modalInputContainer" style="display: none; margin-bottom: 24px; width: 100%;">
-                <input id="modalTextInput" type="text" placeholder="" style="width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: #ffffff; font-size: 0.95rem; font-family: inherit; outline: none; box-sizing: border-box; text-align: center; transition: border-color 0.2s;">
-                <div id="modalInputValidationError" style="color: #d9534f; font-size: 0.8rem; text-align: center; margin-top: 6px; display: none;">Input verification mismatch</div>
-            </div>
+            <!-- Secondary Input Field specifically for editing numeric transaction amounts -->
+            <input id="modalSecondaryInput" type="number" placeholder="Enter amount..." style="display: none; width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: inherit; font-size: 0.95rem; outline: none; box-sizing: border-box; text-align: center; transition: border-color 0.2s;">
             
-            <!-- Controls Group Grid -->
-            <div style="display: flex; gap: 12px; justify-content: center;">
-                <button id="modalCancelBtn" style="flex: 1; padding: 12px 18px; font-size: 0.9rem; font-weight: 600; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #ffffff; cursor: pointer; transition: background 0.2s, border-color 0.2s; font-family: inherit;">Cancel</button>
-                <button id="modalConfirmBtn" style="flex: 1; padding: 12px 18px; font-size: 0.9rem; font-weight: 600; border-radius: 8px; border: none; background: #4285F4; color: #ffffff; cursor: pointer; transition: filter 0.2s; font-family: inherit;">Confirm</button>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="modalCancelBtn" style="flex: 1; padding: 10px 16px; font-size: 0.9rem; font-weight: 500; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: inherit; cursor: pointer; transition: background 0.2s;">Cancel</button>
+                <button id="modalConfirmBtn" style="flex: 1; padding: 10px 16px; font-size: 0.9rem; font-weight: 500; border-radius: 6px; border: none; background: #d9534f; color: white; cursor: pointer; transition: opacity 0.2s;">Confirm</button>
             </div>
         </div>
     </div>
 
-    <!-- DIAGNOSTIC OVERRIDE BARRIER -->
+    <!-- PREUI RUNTIME STAGED BOOTSTRAPPING -->
     <script>
         console.log("💥 SYSTEM CHECK 1: HTML execution engine is alive.");
         window.onerror = function(message, source, lineno, colno, error) {
-            alert("🔴 MODULE INITIALIZATION FAULT:\n" + message + "\nLine: " + lineno + "\nFile: " + source);
+            const overlay = document.getElementById("diagnosticErrorOverlay");
+            const details = document.getElementById("diagnosticErrorDetails");
+            if(overlay && details) {
+                details.innerText = "Message: " + message + "\nLine: " + lineno + "\nFile: " + source;
+                overlay.style.display = "flex";
+            }
             return false;
         };
     </script>
