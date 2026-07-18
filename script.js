@@ -7,78 +7,123 @@ import {
 
 const $ = id => document.getElementById(id);
 
-// Document Elements References
-const title = $("title");
-const amount = $("amount");
-const type = $("type");
-const category = $("category");
-const status = $("status");
-const addBtn = $("addBtn");
-const list = $("transactionList");
-const search = $("search");
-const filterCategory = $("filterCategory");
-
-const balance = $("balance");
-const income = $("income");
-const expense = $("expense");
-const saving = $("saving");
-const healthBadge = $("healthBadge");
-
-const pendingIncome = $("pendingIncome");
-const pendingExpense = $("pendingExpense");
-
-const theme = $("theme");
-const newCategory = $("newCategory");
-const addCategory = $("addCategory");
-const categoryList = $("categoryList");
-
-// Auth Screen DOM Elements References
-const authScreen = $("authScreen");
-const appScreen = $("app");
-const loginEmail = $("loginEmail");
-const loginPassword = $("loginPassword");
-const loginBtn = $("loginBtn");
-const signupBtn = $("signupBtn");
-const logoutBtn = $("logoutBtn");
-
-// Reactive Memory State (Replaces localStorage tracking)
+// Runtime Memory State
 let userUID = null;
 let transactions = [];
 let categories = ["Food", "Transport", "Shopping", "Bills", "Entertainment", "General"];
 
+// Declare global element variables to be populated when DOM is ready
+let title, amount, type, category, status, addBtn, list, search, filterCategory;
+let balance, income, expense, saving, healthBadge, pendingIncome, pendingExpense;
+let theme, newCategory, addCategory, categoryList;
+let authScreen, appScreen, loginEmail, loginPassword, loginBtn, signupBtn, logoutBtn;
+
 /* ==========================================
-    Authentication Lifecycle Observer 
+    Initialization & DOM Binding Setup 
 ========================================== */
-monitorAuthState(async (user) => {
-    if (user) {
-        userUID = user.uid;
-        authScreen.style.display = "none";
-        appScreen.style.display = "block";
-        await initializeUserDashboard();
-    } else {
-        userUID = null;
-        appScreen.style.display = "none";
-        authScreen.style.display = "flex";
-        clearFormStateFields();
-    }
+document.addEventListener("DOMContentLoaded", () => {
+    // Safely capture DOM elements now that they exist in the document tree
+    title = $("title");
+    amount = $("amount");
+    type = $("type");
+    category = $("category");
+    status = $("status");
+    addBtn = $("addBtn");
+    list = $("transactionList");
+    search = $("search");
+    filterCategory = $("filterCategory");
+
+    balance = $("balance");
+    income = $("income");
+    expense = $("expense");
+    saving = $("saving");
+    healthBadge = $("healthBadge");
+
+    pendingIncome = $("pendingIncome");
+    pendingExpense = $("pendingExpense");
+
+    theme = $("theme");
+    newCategory = $("newCategory");
+    addCategory = $("addCategory");
+    categoryList = $("categoryList");
+
+    authScreen = $("authScreen");
+    appScreen = $("app");
+    loginEmail = $("loginEmail");
+    loginPassword = $("loginPassword");
+    loginBtn = $("loginBtn");
+    signupBtn = $("signupBtn");
+    logoutBtn = $("logoutBtn");
+
+    /* ==========================================
+        Authentication Lifecycle Observer 
+    ========================================== */
+    monitorAuthState(async (user) => {
+        if (user) {
+            userUID = user.uid;
+            authScreen.style.display = "none";
+            appScreen.style.display = "block";
+            await initializeUserDashboard();
+        } else {
+            userUID = null;
+            appScreen.style.display = "none";
+            authScreen.style.display = "flex";
+            clearFormStateFields();
+        }
+    });
+
+    /* --- AUTH TRIGGERS CONFIG --- */
+    loginBtn.onclick = async () => {
+        const email = loginEmail.value.trim();
+        const password = loginPassword.value;
+        if (!email || !password) return alert("Please enter your email and password.");
+        try { 
+            await loginUser(email, password); 
+        } catch (e) { 
+            alert("Login Error: " + e.message); 
+        }
+    };
+
+    signupBtn.onclick = async () => {
+        const email = loginEmail.value.trim();
+        const password = loginPassword.value;
+        if (!email || !password) return alert("Please specify an email and password.");
+        if (password.length < 6) return alert("Firebase Security Rule: Passwords must be at least 6 characters.");
+        
+        try { 
+            await registerUser(email, password); 
+            alert("Account registered successfully!");
+        } catch (e) { 
+            alert("Registration Error: " + e.message); 
+        }
+    };
+
+    logoutBtn.onclick = () => logoutUser();
+
+    /* --- INPUT EVENT HANDLERS --- */
+    addBtn.addEventListener("click", addTransaction);
+    search.addEventListener("input", render);
+    filterCategory.addEventListener("change", render);
+
+    theme.onchange = async () => {
+        if (!userUID) return;
+        document.body.dataset.theme = theme.value;
+        await saveUserSettings(userUID, { theme: theme.value });
+    };
+
+    addCategory.onclick = async () => {
+        const value = newCategory.value.trim();
+        if (value === "") return;
+        if (categories.map(c => c.toLowerCase()).includes(value.toLowerCase())) {
+            alert("Ecosystem already contains this category.");
+            return;
+        }
+        categories.push(value);
+        newCategory.value = "";
+        await saveConfigState();
+        loadCategories();
+    };
 });
-
-/* --- AUTH TRIGGERS CONFIG --- */
-loginBtn.onclick = async () => {
-    const email = loginEmail.value.trim();
-    const password = loginPassword.value;
-    if (!email || !password) return alert("Please enter your email and password.");
-    try { await loginUser(email, password); } catch (e) { alert(e.message); }
-};
-
-signupBtn.onclick = async () => {
-    const email = loginEmail.value.trim();
-    const password = loginPassword.value;
-    if (!email || !password) return alert("Please clarify email registration layout credentials.");
-    try { await registerUser(email, password); } catch (e) { alert(e.message); }
-};
-
-logoutBtn.onclick = () => logoutUser();
 
 /* --- SYSTEM SYNC DATA INTAKE PIPELINE --- */
 async function initializeUserDashboard() {
@@ -93,26 +138,16 @@ async function initializeUserDashboard() {
             categories = cloudConfigs.categories;
         }
     } else {
-        // Initializing fallback structural presets down to cloud database instances
         await saveUserSettings(userUID, { theme: "dark", categories: categories });
         document.body.dataset.theme = "dark";
         theme.value = "dark";
     }
 
-    // Capture financial documents dataset
     transactions = await syncGetTransactions(userUID);
-    
     loadCategories();
     render();
 }
 
-theme.onchange = async () => {
-    if (!userUID) return;
-    document.body.dataset.theme = theme.value;
-    await saveUserSettings(userUID, { theme: theme.value });
-};
-
-// Global Sync Save Helper (Writes configurations parameters down to cloud storage)
 async function saveConfigState() {
     if (!userUID) return;
     await saveUserSettings(userUID, { categories: categories });
@@ -151,19 +186,6 @@ function loadCategories() {
     });
 }
 
-addCategory.onclick = async () => {
-    const value = newCategory.value.trim();
-    if (value === "") return;
-    if (categories.map(c => c.toLowerCase()).includes(value.toLowerCase())) {
-        alert("Ecosystem already contains this category.");
-        return;
-    }
-    categories.push(value);
-    newCategory.value = "";
-    await saveConfigState();
-    loadCategories();
-};
-
 async function renameCategory(i) {
     const oldName = categories[i];
     const name = prompt("Modify Category Designation Label:", oldName);
@@ -172,7 +194,6 @@ async function renameCategory(i) {
     const targetName = name.trim();
     categories[i] = targetName;
     
-    // Process update updates across runtime collection
     for (let t of transactions) {
         if (t.category === oldName) {
             t.category = targetName;
@@ -187,7 +208,6 @@ async function renameCategory(i) {
 async function removeCategory(i) {
     const targetCat = categories[i];
     if (confirm(`Are you sure you want to delete "${targetCat}"? Associated transactions will drop back into a "General" category label.`)) {
-        
         for (let t of transactions) {
             if (t.category === targetCat) {
                 t.category = "General";
@@ -204,15 +224,12 @@ async function removeCategory(i) {
     }
 }
 
-// Bind methods securely to window context loop architecture
 window.renameCategory = renameCategory;
 window.removeCategory = removeCategory;
 
 /* ==========================================
     Ledger Action Core Engine Interfaces
 ========================================== */
-addBtn.addEventListener("click", addTransaction);
-
 async function addTransaction() {
     const t = title.value.trim();
     const a = Number(amount.value);
@@ -226,7 +243,7 @@ async function addTransaction() {
     }
 
     const newTxPayload = {
-        id: Date.now(), // keeps sorting tracking structure safe
+        id: Date.now(),
         title: t,
         amount: a,
         type: ty,
@@ -236,8 +253,6 @@ async function addTransaction() {
     };
 
     const serverAssignedId = await syncAddTransaction(userUID, newTxPayload);
-    
-    // Pushing structural memory arrays
     transactions.push({ docId: serverAssignedId, ...newTxPayload });
 
     title.value = "";
@@ -293,9 +308,6 @@ async function toggleStatus(id) {
 }
 window.toggleStatus = toggleStatus;
 
-search.addEventListener("input", render);
-filterCategory.addEventListener("change", render);
-
 /* ==========================================
     Financial Engine Metrics Analytics 
 ========================================== */
@@ -332,12 +344,7 @@ function render() {
     let paidIncome = 0;
     let paidExpense = 0;
     let pendIncome = 0;
-    let pendExpense = 0;
 
-    const searchKeyword = search.value.toLowerCase();
-    const targetCategoryFilter = filterCategory.value;
-
-    // Calculate dynamic pipelines metrics processing state loops
     transactions.forEach(item => {
         const isPaid = (item.status === "paid" || !item.hasOwnProperty('status'));
         if (item.type === "income") {
@@ -345,20 +352,14 @@ function render() {
             else pendIncome += item.amount;
         } else {
             if (isPaid) paidExpense += item.amount;
-            else paidExpense += item.amount; // keeps expense tally calculation accurate
         }
     });
 
-    // Re-verify specific values for metrics processing pipeline logic
-    let calculatedPaidExpense = 0;
-    transactions.forEach(item => {
-        const isPaid = (item.status === "paid" || !item.hasOwnProperty('status'));
-        if (item.type === "expense" && isPaid) calculatedPaidExpense += item.amount;
-    });
+    const searchKeyword = search.value.toLowerCase();
+    const targetCategoryFilter = filterCategory.value;
 
-    const { savingsRate, netSavings } = runFinancialAnalytics(paidIncome, calculatedPaidExpense);
+    const { savingsRate, netSavings } = runFinancialAnalytics(paidIncome, paidExpense);
 
-    // Filter, process, build, inject elements array down inside HTML containers
     transactions
     .filter(item => {
         const matchesSearch = item.title.toLowerCase().includes(searchKeyword) || item.category.toLowerCase().includes(searchKeyword);
@@ -391,7 +392,6 @@ function render() {
         list.appendChild(li);
     });
 
-    // Process metric value updates inside display fields elements
     balance.innerText = "₹" + netSavings.toLocaleString('en-IN');
     income.innerText = "₹" + paidIncome.toLocaleString('en-IN');
     
@@ -400,7 +400,7 @@ function render() {
         if (item.type === "expense" && item.status === "pending") currentPendingExpense += item.amount;
     });
     
-    expense.innerText = "₹" + calculatedPaidExpense.toLocaleString('en-IN');
+    expense.innerText = "₹" + paidExpense.toLocaleString('en-IN');
     saving.innerText = `${netSavings < 0 ? '-' : ''}₹${Math.abs(netSavings).toLocaleString('en-IN')} (${savingsRate}%)`;
     
     pendingIncome.innerText = "₹" + pendIncome.toLocaleString('en-IN');
@@ -408,10 +408,10 @@ function render() {
 }
 
 function clearFormStateFields() {
-    loginEmail.value = "";
-    loginPassword.value = "";
-    title.value = "";
-    amount.value = "";
-    list.innerHTML = "";
+    if (loginEmail) loginEmail.value = "";
+    if (loginPassword) loginPassword.value = "";
+    if (title) title.value = "";
+    if (amount) amount.value = "";
+    if (list) list.innerHTML = "";
     transactions = [];
 }
