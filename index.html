@@ -45,50 +45,34 @@
 
     <div class="container" id="app" style="display:none;">
 
-        <header style="display: flex; flex-direction: column; gap: 15px; padding: 15px 10px;">
+        <header style="display: flex; flex-direction: column; gap: 16px; padding: 20px 16px; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1));">
 
             <div class="logo" style="display: flex; align-items: center; gap: 12px;">
-
-                <i class="fa-solid fa-wallet"></i>
-
+                <i class="fa-solid fa-wallet" style="font-size: 1.6rem; color: #4285F4;"></i>
                 <div>
-
-                    <h1 style="margin: 0; font-size: 1.4rem;">INSANE HR</h1>
-
-                    <span style="font-size: 0.85rem; opacity: 0.8;">FinanceOS Cloud</span>
-
+                    <h1 style="margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.5px;">INSANE HR</h1>
+                    <span style="font-size: 0.8rem; opacity: 0.6; display: block; margin-top: 20px;">FinanceOS Cloud</span>
                 </div>
-
             </div>
 
-            <!-- Mobile-Optimized Action Control Bar -->
-            <div class="themeBox" style="display: flex; flex-wrap: wrap; width: 100%; gap: 8px; justify-content: space-between; align-items: center;">
-
-                <select id="theme" style="flex: 1 1 calc(50% - 4px); min-width: 100px; padding: 10px; box-sizing: border-box;">
-
+            <!-- Sleek, Balanced Mobile Control Panel -->
+            <div class="themeBox" style="display: flex; gap: 8px; width: 100%; box-sizing: border-box;">
+                
+                <select id="theme" style="flex: 2; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: inherit; height: 42px; outline: none;">
                     <option value="dark">🌙 Dark</option>
-
                     <option value="light">☀️ Light</option>
-
                     <option value="red">❤️ Red</option>
-
                     <option value="blue">💙 Blue</option>
-
                     <option value="purple">💜 Purple</option>
-
                 </select>
 
-                <button id="logoutBtn" style="flex: 1 1 calc(25% - 4px); min-width: 75px; padding: 10px; white-space: nowrap;">
-
+                <button id="logoutBtn" style="flex: 1; padding: 0 12px; font-size: 0.85rem; font-weight: 500; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: inherit; height: 42px; cursor: pointer; white-space: nowrap; transition: background 0.2s;">
                     Logout
-
                 </button>
 
-                <!-- Secure Deletion Trigger Hooked into matching script.js ID entry -->
-                <button id="deleteAccountBtn" style="background-color: #d9534f; color: white; flex: 1 1 calc(25% - 4px); min-width: 75px; padding: 10px; white-space: nowrap;">
-
+                <!-- Refined Delete Trigger (Evenly scaled border-only execution) -->
+                <button id="deleteAccountBtn" style="flex: 1; padding: 0 12px; font-size: 0.85rem; font-weight: 500; border-radius: 8px; border: 1px solid #d9534f; background: transparent; color: #d9534f; height: 42px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
                     Delete
-
                 </button>
 
             </div>
