@@ -2,8 +2,9 @@
 import { 
     monitorAuthState, logoutUser, deleteCurrentUserAccount,
     saveUserSettings, getUserSettings,
-    syncAddTransaction, syncGetTransactions, syncUpdateTransaction, syncDeleteTransaction,
-    loginWithGoogle // ✅ Kept Google Auth Import pipeline
+    syncAddTransaction, syncUpdateTransaction, syncDeleteTransaction,
+    loginWithGoogle,
+    syncTransactionsRealtime // 👈 Changed import to real-time engine
 } from "./firebase.js";
 
 const $ = id => document.getElementById(id);
@@ -12,18 +13,18 @@ const $ = id => document.getElementById(id);
 let userUID = null;
 let transactions = [];
 let categories = ["Food", "Transport", "Shopping", "Bills", "Entertainment", "General"];
+let unsubscribeTxListener = null; // 👈 Keeps track of the active data stream listener
 
 // Declare global element variables to be populated when DOM is ready
 let title, amount, type, category, status, addBtn, list, search, filterCategory;
 let balance, income, expense, saving, healthBadge, pendingIncome, pendingExpense;
 let theme, newCategory, addCategory, categoryList;
-let authScreen, appScreen, googleBtn, logoutBtn, deleteAccountBtn; // Removed email variables
+let authScreen, appScreen, googleBtn, logoutBtn, deleteAccountBtn;
 
 /* ==========================================
     Initialization & DOM Binding Setup 
 ========================================== */
 document.addEventListener("DOMContentLoaded", () => {
-    // Safely capture DOM elements now that they exist in the document tree
     title = $("title");
     amount = $("amount");
     type = $("type");
@@ -50,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     authScreen = $("authScreen");
     appScreen = $("app");
-    googleBtn = $("googleBtn"); // ✅ Single entry point for auth
+    googleBtn = $("googleBtn"); 
     logoutBtn = $("logoutBtn");
     deleteAccountBtn = $("deleteAccountBtn"); 
 
@@ -64,6 +65,11 @@ document.addEventListener("DOMContentLoaded", () => {
             appScreen.style.display = "block";
             await initializeUserDashboard();
         } else {
+            // ✅ Clean up memory stream listener upon logout context
+            if (unsubscribeTxListener) {
+                unsubscribeTxListener();
+                unsubscribeTxListener = null;
+            }
             userUID = null;
             appScreen.style.display = "none";
             authScreen.style.display = "flex";
@@ -72,12 +78,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /* --- AUTH TRIGGERS CONFIG --- */
-    // ✅ Wired Google authentication login path
     if (googleBtn) {
         googleBtn.onclick = async () => {
             try {
                 await loginWithGoogle();
-                // MonitorAuthState will handle dashboard injection seamlessly
             } catch (e) {
                 alert("Google Authentication Error: " + e.message);
             }
@@ -86,16 +90,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     logoutBtn.onclick = () => logoutUser();
 
-    // Secure Deletion Handler Interface Trigger with String Confirmation
     if (deleteAccountBtn) {
         deleteAccountBtn.onclick = async () => {
             if (!userUID) return;
             
-            // First warning gate
             const confirmation = confirm("⚠️ CRITICAL WARNING: Are you completely sure you want to delete your profile? This will permanently purge all your transaction balances, custom categories, and credentials.");
             if (!confirmation) return;
 
-            // Second warning gate: Text validation check
             const textCheck = prompt("To confirm this dangerous destructive action, please type CONFIRM in the input box below:");
             
             if (textCheck !== "CONFIRM") {
@@ -159,9 +160,15 @@ async function initializeUserDashboard() {
         theme.value = "dark";
     }
 
-    transactions = await syncGetTransactions(userUID);
     loadCategories();
-    render();
+
+    // ✅ Switch to real-time live data streaming pipeline
+    if (unsubscribeTxListener) unsubscribeTxListener(); // kill any stale connections
+    
+    unsubscribeTxListener = syncTransactionsRealtime(userUID, (updatedTransactionsList) => {
+        transactions = updatedTransactionsList;
+        render(); // 👈 Automatically updates the UI interface instantly on any DB change!
+    });
 }
 
 async function saveConfigState() {
@@ -268,12 +275,12 @@ async function addTransaction() {
         date: new Date().toLocaleDateString('en-IN')
     };
 
-    const serverAssignedId = await syncAddTransaction(userUID, newTxPayload);
-    transactions.push({ docId: serverAssignedId, ...newTxPayload });
+    // ✅ Cleaned up code: We no longer need to push manually into memory list array here.
+    // The real-time listener will instantly capture the server document write and run render() for us!
+    await syncAddTransaction(userUID, newTxPayload);
 
     title.value = "";
     amount.value = "";
-    render();
 }
 
 async function deleteTransaction(id) {
@@ -282,8 +289,7 @@ async function deleteTransaction(id) {
     
     if (confirm(`Delete operations record "${target.title}"?`)) {
         await syncDeleteTransaction(userUID, target.docId);
-        transactions = transactions.filter(item => item.id !== id);
-        render();
+        // Handled automatically via database stream
     }
 }
 window.deleteTransaction = deleteTransaction;
@@ -305,10 +311,6 @@ async function editTransaction(id) {
         title: updatedTitle,
         amount: updatedAmount
     });
-
-    item.title = updatedTitle;
-    item.amount = updatedAmount;
-    render();
 }
 window.editTransaction = editTransaction;
 
@@ -318,9 +320,6 @@ async function toggleStatus(id) {
     
     const newStatus = item.status === "paid" ? "pending" : "paid";
     await syncUpdateTransaction(userUID, item.docId, { status: newStatus });
-    
-    item.status = newStatus;
-    render();
 }
 window.toggleStatus = toggleStatus;
 
