@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Finance Ledger</title>
-    <!-- FontAwesome Icons -->
+    <title>Finance Tracker</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js Engine -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -45,7 +44,6 @@
             justify-content: center;
         }
 
-        /* Container Layout Strategy (Mobile First, Dual View PC) */
         .container {
             width: 100%;
             max-width: 1200px;
@@ -68,7 +66,6 @@
             font-weight: 600;
         }
 
-        /* Screen Configurations */
         #authScreen {
             display: flex;
             flex-direction: column;
@@ -89,7 +86,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Dashboard Grid Alignment */
+        /* Responsive Grid Strategy (Aligns neatly on mobile and desktop PC) */
         .dashboard-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -113,7 +110,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
-        /* Metrics Widget Styling */
+        /* Standard Original Metrics Layout */
         .metrics-bar {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -140,7 +137,6 @@
         .badge-warn { background-color: rgba(240, 173, 78, 0.2); color: var(--warning-color); }
         .badge-danger { background-color: rgba(217, 83, 79, 0.2); color: var(--danger-color); }
 
-        /* Form Controls Formatting */
         .form-group {
             display: flex;
             flex-direction: column;
@@ -168,7 +164,6 @@
         .btn-primary { background-color: var(--primary-color); color: white; border: none; }
         .btn-danger { background-color: var(--danger-color); color: white; border: none; }
 
-        /* Ledger Table List Items */
         .filter-ribbon {
             display: grid;
             grid-template-columns: 1fr;
@@ -212,7 +207,7 @@
         }
         .categoryCard small { display: block; opacity: 0.6; font-size: 11px; }
 
-        /* Dynamic Custom Dialog UI Overlay Engine */
+        /* Custom Modal Framework styling */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -248,156 +243,147 @@
             margin-top: 15px;
         }
 
-        /* Utility Layout Helper Classes */
         .flex-actions { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
         .flex-actions button { flex: 1; min-width: 120px; }
+        
+        .chart-wrapper {
+            max-width: 320px;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- Auth Screen Interface Setup -->
+        <!-- Login Form -->
         <div id="authScreen">
-            <h2 style="margin-bottom:20px;"><i class="fa-solid fa-wallet" style="color:var(--primary-color);"></i> Cloud Ledger Terminal</h2>
+            <h2 style="margin-bottom:20px;"><i class="fa-solid fa-wallet" style="color:var(--primary-color);"></i> Finance Tracker</h2>
             <button id="googleBtn" class="btn-google">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" width="18">
-                Sign in with Google Reference
+                Sign in with Google
             </button>
         </div>
 
-        <!-- Master Workstation Application Engine Screen Viewport -->
+        <!-- Main Workspace Application Screen -->
         <div id="app" style="display: none;">
             <header>
-                <h2><i class="fa-solid fa-chart-pie" style="color:var(--primary-color)"></i> Dashboard</h2>
+                <h2><i class="fa-solid fa-house" style="color:var(--primary-color)"></i> Dashboard</h2>
                 <div class="controls">
                     <select id="theme">
-                        <option value="light">☀️ Light Layout</option>
-                        <option value="dark">🌙 Dark Ecosystem</option>
+                        <option value="light">☀️ Light Theme</option>
+                        <option value="dark">🌙 Dark Theme</option>
                     </select>
                     <button id="logoutBtn" style="background:transparent; border-color:var(--danger-color); color:var(--danger-color);"><i class="fa-solid fa-door-open"></i></button>
                 </div>
             </header>
 
-            <!-- Global Top Metrics Banner Matrix -->
+            <!-- Original Matrix Cards Block -->
             <div class="panel full-width" style="margin-bottom: 20px;">
                 <div class="metrics-bar">
                     <div class="metric-card">
-                        <h4>Net Savings Balance</h4>
+                        <h4>Balance</h4>
                         <p id="balance">₹0</p>
-                        <div id="healthBadge" class="badge">Analysing Data...</div>
+                        <div id="healthBadge" class="badge">Analysing...</div>
                     </div>
                     <div class="metric-card">
-                        <h4>Cleared Income</h4>
+                        <h4>Income</h4>
                         <p id="income" class="incomeText">₹0</p>
                         <small style="opacity:0.6;">Pending: <span id="pendingIncome">₹0</span></small>
                     </div>
                     <div class="metric-card">
-                        <h4>Cleared Expenses</h4>
+                        <h4>Expense</h4>
                         <p id="expense" class="expenseText">₹0</p>
                         <small style="opacity:0.6;">Pending: <span id="pendingExpense">₹0</span></small>
                     </div>
                     <div class="metric-card">
-                        <h4>Savings Efficiency Rate</h4>
+                        <h4>Savings Rate</h4>
                         <p id="saving">0%</p>
                     </div>
                 </div>
             </div>
 
             <div class="dashboard-grid">
-                <!-- Left Hand Workspace: Transaction Ingestion Form & Categories -->
+                <!-- Left Column: Simple Ingestion Forms -->
                 <div class="panel">
-                    <h3><i class="fa-solid fa-circle-plus" style="color:var(--success-color);"></i> Log Transaction</h3>
+                    <h3>Add Transaction</h3>
                     <div style="margin-top: 15px;">
                         <div class="form-group">
-                            <input type="text" id="title" placeholder="Description entry title">
+                            <input type="text" id="title" placeholder="Transaction Title">
                         </div>
                         <div class="form-group">
-                            <input type="number" id="amount" placeholder="Amount value (₹)">
+                            <input type="number" id="amount" placeholder="Amount (₹)">
                         </div>
                         <div class="form-group">
                             <select id="type">
-                                <option value="expense">📉 Expense Outflow</option>
-                                <option value="income">📈 Income Inflow</option>
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <select id="category">
-                                <!-- Populated dynamically by script engine system updates -->
-                            </select>
+                            <select id="category"></select>
                         </div>
                         <div class="form-group">
                             <select id="status">
-                                <option value="paid">✅ Settled (Paid)</option>
-                                <option value="pending">⏳ Pending Clearance</option>
+                                <option value="paid">Paid / Settled</option>
+                                <option value="pending">Pending</option>
                             </select>
                         </div>
                         <div class="form-group inline-checkbox">
                             <input type="checkbox" id="isRecurring">
-                            <label for="isRecurring">🔄 Automate Monthly Cycle Renewal (Subscription)</label>
+                            <label for="isRecurring">Repeat Automatically Every Month</label>
                         </div>
-                        <button id="addBtn" class="btn-primary" style="width:100%; padding:12px;">Inject Record Ledger Entry</button>
+                        <button id="addBtn" class="btn-primary" style="width:100%; padding:12px;">Add Transaction</button>
                     </div>
 
                     <hr style="margin:25px 0; border:none; border-top:1px solid var(--border-color);">
                     
-                    <h3><i class="fa-solid fa-tags" style="color:var(--warning-color);"></i> Manage Categories</h3>
+                    <h3>Categories</h3>
                     <div style="margin-top:15px; display:flex; gap:10px; margin-bottom:15px;">
-                        <input type="text" id="newCategory" placeholder="New structural category name">
+                        <input type="text" id="newCategory" placeholder="Category Name">
                         <button id="addCategory" class="btn-primary"><i class="fa-solid fa-plus"></i></button>
                     </div>
-                    <div id="categoryList" style="max-height: 200px; overflow-y: auto;">
-                        <!-- Category structural cards render dynamic templates here -->
+                    <div id="categoryList" style="max-height: 200px; overflow-y: auto;"></div>
+                </div>
+
+                <!-- Right Column: Graphs Panel Layout -->
+                <div class="panel" style="display: flex; flex-direction: column; justify-content: center;">
+                    <h3 style="margin-bottom: 20px; text-align: center;"><i class="fa-solid fa-chart-pie" style="color:var(--primary-color);"></i> Expense Breakdown</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="analyticsChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Right Hand Workspace: Visualization Engines & Data Tracking Matrix Charts -->
-                <div class="panel" style="display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <h3><i class="fa-solid fa-chart-bar" style="color:var(--primary-color);"></i> Visual Analytics Outflows</h3>
-                        <div style="margin-top: 20px; position: relative; width: 100%;">
-                            <canvas id="analyticsChart"></canvas>
-                        </div>
-                    </div>
-                    <div style="margin-top:20px; background:rgba(128,128,128,0.03); padding:15px; border-radius:8px; border:1px dashed var(--border-color);">
-                        <h4 style="font-size:13px; margin-bottom:5px;"><i class="fa-solid fa-circle-info"></i> Budget Threshold Mechanics</h4>
-                        <p style="font-size:12px; opacity:0.7;">Set limit budgets per item under individual target setups using the category ⚙️ layout settings parameters.</p>
-                    </div>
-                </div>
-
-                <!-- Bottom Full Screen Viewport Area: Live Interactive Ledger Filter Grid Table List Layout -->
+                <!-- Bottom Viewport Panel: Ledger Entries and Filters -->
                 <div class="panel full-width">
-                    <h3><i class="fa-solid fa-list-check" style="color:var(--primary-color);"></i> Search Ledgers Ledger Database Registry</h3>
+                    <h3>Transactions History</h3>
                     
-                    <!-- Advanced Interactive Filtering System Ribbon Configuration -->
                     <div class="filter-ribbon" style="margin-top: 15px;">
-                        <input type="text" id="search" placeholder="Search keywords...">
+                        <input type="text" id="search" placeholder="Search...">
                         <select id="filterCategory">
-                            <option value="all">All Categories Matrix</option>
+                            <option value="all">All Categories</option>
                         </select>
-                        <input type="date" id="startDate" placeholder="dd-mm-yyyy" title="Start Filter Date Timeline Cutoff">
-                        <input type="date" id="endDate" placeholder="dd-mm-yyyy" title="End Filter Date Timeline Cutoff">
+                        <input type="date" id="startDate" title="Start Date">
+                        <input type="date" id="endDate" title="End Date">
                     </div>
 
-                    <ul id="transactionList" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
-                        <!-- Live streaming documents compile template injection updates here -->
-                    </ul>
+                    <ul id="transactionList" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;"></ul>
 
                     <div class="flex-actions">
-                        <button id="exportBtn" style="background-color:#107c41; color:white; border:none;"><i class="fa-solid fa-file-excel"></i> Export Active Workspace to CSV</button>
-                        <button id="purgeCategoryBtn" class="btn-danger"><i class="fa-solid fa-dumpster-fire"></i> Purge Visible Filtered View records</button>
-                        <button id="deleteAccountBtn" style="background:transparent; border:1px solid var(--danger-color); color:var(--danger-color); font-size:12px; max-width:200px;">Permanently Delete Profile</button>
+                        <button id="exportBtn" style="background-color:#107c41; color:white; border:none;"><i class="fa-solid fa-file-excel"></i> Export CSV</button>
+                        <button id="purgeCategoryBtn" class="btn-danger"><i class="fa-solid fa-trash-can"></i> Delete Filtered View Items</button>
+                        <button id="deleteAccountBtn" style="background:transparent; border:1px solid var(--danger-color); color:var(--danger-color); font-size:12px; max-width:200px;">Delete My Account</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Centralized Multi-Purpose Dialog Window Overlay Framework Modal Engine -->
+    <!-- Alert and Confirmation Dialog Box Engine Elements -->
     <div id="customModalOverlay" class="modal-overlay">
         <div class="modal-box">
             <div id="modalIconContainer" class="modal-icon"></div>
-            <h3 id="modalTitle">Modal Title Header</h3>
-            <p id="modalDescription">System message layout instructions overview details context.</p>
+            <h3 id="modalTitle">Title</h3>
+            <p id="modalDescription">Description context.</p>
             
             <input type="text" id="modalConfirmationInput" style="display: none;">
             <input type="number" id="modalSecondaryInput" style="display: none;">
@@ -405,12 +391,11 @@
             
             <div class="modal-actions">
                 <button id="modalCancelBtn" style="background:transparent; border:1px solid var(--input-border);">Cancel</button>
-                <button id="modalConfirmBtn" class="btn-primary">Execute Action</button>
+                <button id="modalConfirmBtn" class="btn-primary">Confirm</button>
             </div>
         </div>
     </div>
 
-    <!-- Core Main Orchestrator Execution Script Module Logic Layer Link -->
     <script type="module" src="script.js"></script>
 </body>
 </html>
