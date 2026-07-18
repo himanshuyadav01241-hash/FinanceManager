@@ -7,7 +7,9 @@ import {
     signOut, 
     onAuthStateChanged,
     sendEmailVerification,
-    deleteUser
+    deleteUser,
+    GoogleAuthProvider,   // 👈 Loaded Google Core Auth
+    signInWithPopup       // 👈 Loaded Popup Pipeline
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { 
     getFirestore, 
@@ -39,9 +41,18 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Initialize Provider Engine
+const googleProvider = new GoogleAuthProvider(); 
+
 /* ==========================================
     Authentication Services
 ========================================== */
+
+// ✅ Google Quick Auth Integration Flow
+export async function loginWithGoogle() {
+    return signInWithPopup(auth, googleProvider);
+}
+
 export async function registerUser(email, password) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await sendEmailVerification(userCredential.user);
