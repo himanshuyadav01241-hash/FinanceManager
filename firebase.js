@@ -8,8 +8,8 @@ import {
     onAuthStateChanged,
     sendEmailVerification,
     deleteUser,
-    GoogleAuthProvider,   // 👈 Loaded Google Core Auth
-    signInWithPopup       // 👈 Loaded Popup Pipeline
+    GoogleAuthProvider,   
+    signInWithPopup       
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { 
     getFirestore, 
@@ -22,7 +22,8 @@ import {
     updateDoc, 
     deleteDoc, 
     query, 
-    orderBy 
+    orderBy,
+    onSnapshot // 🚀 Real-time stream integration active
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // ✅ LIVE PRODUCTION CONFIGURATION RE-ENGAGED
@@ -71,7 +72,7 @@ export function monitorAuthState(callback) {
     onAuthStateChanged(auth, callback);
 }
 
-// Account Deletion Pipeline Export (Updated to clean subcollections first)
+// Account Deletion Pipeline Export (Cleans up subcollections first)
 export async function deleteCurrentUserAccount(uid) {
     const user = auth.currentUser;
     if (!user) throw new Error("No active user authenticated.");
@@ -112,6 +113,24 @@ export async function getUserSettings(uid) {
 /* ==========================================
     Transactions Collection CRUD Sync Pipeline
 ========================================== */
+
+// 🚀 REAL-TIME DATA ENGINE (Bypasses manual refreshes entirely)
+export function syncTransactionsRealtime(uid, callback) {
+    const txRef = collection(db, "users", uid, "transactions");
+    const q = query(txRef, orderBy("id", "asc"));
+    
+    // Returns listeners handle context back down for unsubscribe triggers
+    return onSnapshot(q, (snapshot) => {
+        let list = [];
+        snapshot.forEach(doc => {
+            list.push({ docId: doc.id, ...doc.data() });
+        });
+        callback(list);
+    }, (error) => {
+        console.error("Real-time cloud stream error:", error);
+    });
+}
+
 export async function syncAddTransaction(uid, transaction) {
     const txRef = collection(db, "users", uid, "transactions");
     const docRef = await addDoc(txRef, transaction);
