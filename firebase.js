@@ -22,17 +22,18 @@ import {
     orderBy 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 2. Your Web App's Firebase Configuration (Replace with your exact keys)
+// 2. Live Production Firebase Configuration Space
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY_HERE",
-    authDomain: "YOUR_AUTH_DOMAIN_HERE",
-    projectId: "YOUR_PROJECT_ID_HERE",
-    storageBucket: "YOUR_STORAGE_BUCKET_HERE",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID_HERE",
-    appId: "YOUR_APP_ID_HERE"
+    apiKey: "AIzaSyCCnwz-4HDj0baMMfhJ0oHWXfuhrFTvIr0",
+    authDomain: "financeos-6eaf2.firebaseapp.com",
+    projectId: "financeos-6eaf2",
+    storageBucket: "financeos-6eaf2.firebasestorage.app",
+    messagingSenderId: "503013740949",
+    appId: "1:503013740949:web:a18ef8f8433711a672e69c",
+    measurementId: "G-F769EYMHLJ"
 };
 
-// 3. Initialize Firebase Services modules cleanly
+// 3. Initialize Firebase Engine Frameworks
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
