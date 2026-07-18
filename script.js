@@ -19,7 +19,7 @@ let unsubscribeTxListener = null;
 let title, amount, type, category, status, addBtn, list, search, filterCategory;
 let balance, income, expense, saving, healthBadge, pendingIncome, pendingExpense;
 let theme, newCategory, addCategory, categoryList;
-let authScreen, appScreen, googleBtn, logoutBtn, deleteAccountBtn;
+let authScreen, appScreen, googleBtn, logoutBtn, deleteAccountBtn, exportBtn;
 
 /* ==========================================
     Initialization & DOM Binding Setup 
@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
     googleBtn = $("googleBtn"); 
     logoutBtn = $("logoutBtn");
     deleteAccountBtn = $("deleteAccountBtn"); 
+    exportBtn = $("exportBtn"); // Bind the download trigger button
 
     /* ==========================================
         Authentication Lifecycle Observer 
@@ -120,7 +121,8 @@ document.addEventListener("DOMContentLoaded", () => {
     /* --- INPUT EVENT HANDLERS --- */
     addBtn.addEventListener("click", addTransaction);
     search.addEventListener("input", render);
-    filterCategory.addEventListener("change", render);
+    filterCategory.addEventListener("change", render); // Triggers re-render instantly on filter toggle
+    if (exportBtn) exportBtn.addEventListener("click", downloadExcelSpreadsheet);
 
     theme.onchange = async () => {
         if (!userUID) return;
@@ -197,6 +199,9 @@ async function saveConfigState() {
     Category Configuration Control Engines 
 ========================================== */
 function loadCategories() {
+    // Preserve the current filter view choice during updates if possible
+    const currentFilterValue = filterCategory ? filterCategory.value : "all";
+
     category.innerHTML = "";
     categoryList.innerHTML = "";
     filterCategory.innerHTML = '<option value="all">All Categories</option>';
@@ -223,6 +228,11 @@ function loadCategories() {
         `;
         categoryList.appendChild(card);
     });
+
+    // Re-assign previous selection if it still exists in the list
+    if (categories.includes(currentFilterValue)) {
+        filterCategory.value = currentFilterValue;
+    }
 }
 
 async function renameCategory(i) {
@@ -335,6 +345,62 @@ async function toggleStatus(id) {
     await syncUpdateTransaction(userUID, item.docId, { status: newStatus });
 }
 window.toggleStatus = toggleStatus;
+
+/* ==========================================
+    Data Export Pipeline (Excel/CSV Engine)
+========================================== */
+function downloadExcelSpreadsheet() {
+    if (transactions.length === 0) {
+        alert("There is no ledger data available to download.");
+        return;
+    }
+
+    const targetCategoryFilter = filterCategory.value;
+    const searchKeyword = search.value.toLowerCase();
+
+    // Filter down to match the user's current targeted viewport view context
+    const targetedRows = transactions.filter(item => {
+        const matchesSearch = item.title.toLowerCase().includes(searchKeyword) || item.category.toLowerCase().includes(searchKeyword);
+        const matchesCategoryDropdown = (targetCategoryFilter === "all" || item.category === targetCategoryFilter);
+        return matchesSearch && matchesCategoryDropdown;
+    });
+
+    if (targetedRows.length === 0) {
+        alert("The current filtered view contains no dataset entries to export.");
+        return;
+    }
+
+    // Build standard CSV structural array strings
+    const headers = ["Date", "Description", "Category", "Type", "Amount (INR)", "Status"];
+    const csvContent = [
+        headers.join(","), // Title Header
+        ...targetedRows.map(t => {
+            // Escape values containing quotes or commas safely
+            const safeTitle = `"${t.title.replace(/"/g, '""')}"`;
+            const safeCategory = `"${t.category.replace(/"/g, '""')}"`;
+            const currentStatus = (t.status === "paid" || !t.hasOwnProperty('status')) ? "Paid" : "Pending";
+            
+            return [t.date, safeTitle, safeCategory, t.type.toUpperCase(), t.amount, currentStatus].join(",");
+        })
+    ].join("\n");
+
+    // Convert string to clean UTF-8 structural data payload blob
+    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    
+    // Auto click phantom hyperlink anchor to trigger download response safely across devices
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    
+    const fileTimestamp = new Date().toISOString().split('T')[0];
+    const viewContextName = targetCategoryFilter === "all" ? "All_Categories" : targetCategoryFilter.replace(/\s+/g, '_');
+    link.setAttribute("download", `Ledger_Report_${viewContextName}_${fileTimestamp}.csv`);
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
 
 /* ==========================================
     Financial Engine Metrics Analytics 
