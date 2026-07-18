@@ -1,234 +1,416 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Ledger</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --panel-bg: #fff;
+            --border-color: #e0e0e0;
+            --primary-color: #4285F4;
+            --danger-color: #d9534f;
+            --success-color: #5cb85c;
+            --warning-color: #f0ad4e;
+            --input-border: #ccc;
+        }
 
-    <title>INSANE HR FinanceOS Cloud</title>
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --panel-bg: #1e1e1e;
+            --border-color: #333;
+            --input-border: #444;
+        }
 
-    <link rel="stylesheet" href="style.css">
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background 0.3s, color 0.3s;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
 
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-</head>
+        /* Container Layout Strategy (Mobile First, Dual View PC) */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
 
-<body data-theme="dark">
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
 
-    <!-- RUNTIME MODULE ERROR OVERLAY (Replaces Boring Default Alert Box) -->
-    <div id="diagnosticErrorOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
-        <div style="background: #1e1e1e; color: #ffffff; border: 2px solid #d9534f; border-radius: 12px; width: 100%; max-width: 480px; box-shadow: 0 12px 40px rgba(0,0,0,0.7); padding: 28px; box-sizing: border-box; text-align: center;">
-            <div style="font-size: 3rem; margin-bottom: 16px; color: #d9534f;">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-            </div>
-            <h3 style="margin: 0 0 12px 0; font-size: 1.4rem; font-weight: 700; color: #d9534f; letter-spacing: -0.5px;">Module Initialization Fault</h3>
-            <p style="margin: 0 0 20px 0; font-size: 0.95rem; line-height: 1.6; opacity: 0.85; text-align: left; background: rgba(0,0,0,0.3); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); font-family: monospace; word-break: break-all;" id="diagnosticErrorDetails"></p>
-            <button onclick="window.location.reload()" style="padding: 12px 24px; font-size: 0.95rem; font-weight: 600; border-radius: 8px; border: none; background: #d9534f; color: white; cursor: pointer; transition: opacity 0.2s; width: 100%;">
-                <i class="fa-solid fa-rotate-right"></i> Hot-Reload Interface Engine
-            </button>
-        </div>
-    </div>
+        .controls select, button {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--input-border);
+            cursor: pointer;
+            font-weight: 600;
+        }
 
-    <!-- LOGIN SCREEN -->
-    <div id="authScreen" class="authScreen">
-        <div class="authCard">
-            <i class="fa-solid fa-wallet"></i>
-            <h1>INSANE HR</h1>
-            <p>FinanceOS Cloud Edition</p>
+        /* Screen Configurations */
+        #authScreen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+        }
 
-            <!-- Only Google Sign-In Active -->
-            <button id="googleBtn" style="background-color: #4285F4; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 20px; width: 100%;">
-                <i class="fa-brands fa-google"></i> Continue with Google
-            </button>
-        </div>
-    </div>
+        .btn-google {
+            background-color: #fff;
+            color: #757575;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
 
-    <!-- MAIN APP -->
-    <div class="container" id="app" style="display:none;">
+        /* Dashboard Grid Alignment */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
 
-        <header style="display: flex; flex-direction: column; gap: 16px; padding: 20px 16px; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1));">
-            <div class="logo" style="display: flex; align-items: center; gap: 12px;">
-                <i class="fa-solid fa-wallet" style="font-size: 1.6rem; color: #4285F4;"></i>
-                <div>
-                    <h1 style="margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.5px;">INSANE HR</h1>
-                    <span style="font-size: 0.8rem; opacity: 0.6; display: block; margin-top: 4px;">FinanceOS Cloud</span>
-                </div>
-            </div>
-
-            <!-- Sleek, Balanced Control Panel -->
-            <div class="themeBox" style="display: flex; gap: 8px; width: 100%; box-sizing: border-box;">
-                <select id="theme" style="flex: 2; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: inherit; height: 42px; outline: none;">
-                    <option value="dark">🌙 Dark</option>
-                    <option value="light">☀️ Light</option>
-                    <option value="red">❤️ Red</option>
-                    <option value="blue">💙 Blue</option>
-                    <option value="purple">💜 Purple</option>
-                </select>
-
-                <button id="logoutBtn" style="flex: 1; padding: 0 12px; font-size: 0.85rem; font-weight: 500; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: inherit; height: 42px; cursor: pointer; white-space: nowrap; transition: background 0.2s;">
-                    Logout
-                </button>
-
-                <button id="deleteAccountBtn" style="flex: 1; padding: 0 12px; font-size: 0.85rem; font-weight: 500; border-radius: 8px; border: 1px solid #d9534f; background: transparent; color: #d9534f; height: 42px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
-                    Delete
-                </button>
-            </div>
-        </header>
-
-        <!-- DASHBOARD -->
-        <section class="cards">
-            <div class="card">
-                <h3>Net Balance</h3>
-                <h2 id="balance">₹0</h2>
-            </div>
-
-            <div class="card income">
-                <h3>Total Income</h3>
-                <h2 id="income">₹0</h2>
-            </div>
-
-            <div class="card expense">
-                <h3>Total Expense</h3>
-                <h2 id="expense">₹0</h2>
-            </div>
-
-            <div class="card saving">
-                <h3>Savings</h3>
-                <h2 id="saving">₹0 (0%)</h2>
-                <div id="healthBadge" class="badge">Awaiting Data</div>
-            </div>
-
-            <div class="card pending-summary-card">
-                <h3>Pending</h3>
-                <div class="pending-split-metrics">
-                    <span class="incomeText">
-                        In: <strong id="pendingIncome">₹0</strong>
-                    </span>
-                    <span class="expenseText">
-                        Out: <strong id="pendingExpense">₹0</strong>
-                    </span>
-                </div>
-            </div>
-        </section>
-
-        <!-- ENTRY FORMS -->
-        <div class="finance-workspace">
-            <section class="form">
-                <h2>Add Transaction</h2>
-                <input type="text" id="title" placeholder="Transaction Name">
-                <input type="number" id="amount" placeholder="Amount">
-
-                <select id="type">
-                    <option value="income">💰 Income</option>
-                    <option value="expense">💸 Expense</option>
-                </select>
-
-                <select id="category"></select>
-
-                <select id="status">
-                    <option value="paid">✅ Paid</option>
-                    <option value="pending">⏳ Pending</option>
-                </select>
-
-                <button id="addBtn">
-                    <i class="fa-solid fa-circle-plus"></i> Add Transaction
-                </button>
-            </section>
-
-            <section class="form">
-                <h2>Categories</h2>
-                <div class="categoryManager">
-                    <input id="newCategory" placeholder="New Category">
-                    <button id="addCategory">+</button>
-                </div>
-                <div id="categoryList"></div>
-            </section>
-        </div>
-
-        <!-- SEARCH, FILTERS & ACTION REGION -->
-        <section class="search-filters" style="display: flex; flex-wrap: wrap; gap: 12px; padding: 16px; width: 100%; box-sizing: border-box;">
-            
-            <!-- Search Control Box -->
-            <div class="search-box" style="flex: 1 1 200px; display: flex; align-items: center; position: relative;">
-                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; opacity: 0.5;"></i>
-                <input id="search" placeholder="Search" style="width: 100%; padding: 12px 12px 12px 36px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: inherit; outline: none;">
-            </div>
-
-            <!-- Viewport Category Filtering Box -->
-            <div class="filter-box" style="flex: 1 1 150px; display: flex; align-items: center; position: relative;">
-                <i class="fa-solid fa-filter" style="position: absolute; left: 12px; opacity: 0.5; z-index: 2;"></i>
-                <select id="filterCategory" style="width: 100%; padding: 12px 12px 12px 36px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: inherit; outline: none; appearance: none; -webkit-appearance: none; cursor: pointer;">
-                    <option value="all">All Categories</option>
-                </select>
-            </div>
-
-            <!-- Action Controls Grouping Row -->
-            <div style="flex: 2 1 300px; display: flex; gap: 8px;">
-                <button id="exportBtn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 12px; font-size: 0.85rem; font-weight: 500; border-radius: 8px; border: 1px solid #4285F4; background: rgba(66, 133, 244, 0.1); color: #4285F4; cursor: pointer; white-space: nowrap; transition: all 0.2s; outline: none;">
-                    <i class="fa-solid fa-file-excel"></i> Excel Download
-                </button>
-
-                <button id="purgeCategoryBtn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 12px; font-size: 0.85rem; font-weight: 500; border-radius: 8px; border: 1px solid #d9534f; background: rgba(217, 83, 79, 0.1); color: #d9534f; cursor: pointer; white-space: nowrap; transition: all 0.2s; outline: none;">
-                    <i class="fa-solid fa-trash-can"></i> Purge View
-                </button>
-            </div>
-            
-        </section>
-
-        <!-- TRANSACTION HISTORY -->
-        <section class="ledger">
-            <h2>Transactions History</h2>
-            <ul id="transactionList"></ul>
-        </section>
-
-        <footer>
-            Made with ❤️ by <strong>INSANE HR</strong>
-        </footer>
-
-    </div>
-
-    <!-- MODERN INTERACTIVE DIALOG MODAL SYSTEM -->
-    <div id="customModalOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
-        <div style="background: var(--card-bg, #1e1e1e); color: var(--text-color, #ffffff); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); padding: 24px; transform: scale(0.9); transition: transform 0.2s ease; box-sizing: border-box; text-align: center;">
-            <div id="modalIconContainer" style="font-size: 2.5rem; margin-bottom: 12px; color: #d9534f;">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-            </div>
-            <h3 id="modalTitle" style="margin: 0 0 10px 0; font-size: 1.25rem; font-weight: 600;">Confirm Action</h3>
-            <p id="modalDescription" style="margin: 0 0 24px 0; font-size: 0.9rem; line-height: 1.5; opacity: 0.8; word-wrap: break-word;"></p>
-            
-            <!-- Dual-Purpose Primary Input Field for verification or modifications -->
-            <input id="modalConfirmationInput" type="text" placeholder="" style="display: none; width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: inherit; font-size: 0.95rem; outline: none; box-sizing: border-box; text-align: center; transition: border-color 0.2s;">
-            
-            <!-- Secondary Input Field specifically for editing numeric transaction amounts -->
-            <input id="modalSecondaryInput" type="number" placeholder="Enter amount..." style="display: none; width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: inherit; font-size: 0.95rem; outline: none; box-sizing: border-box; text-align: center; transition: border-color 0.2s;">
-            
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button id="modalCancelBtn" style="flex: 1; padding: 10px 16px; font-size: 0.9rem; font-weight: 500; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: inherit; cursor: pointer; transition: background 0.2s;">Cancel</button>
-                <button id="modalConfirmBtn" style="flex: 1; padding: 10px 16px; font-size: 0.9rem; font-weight: 500; border-radius: 6px; border: none; background: #d9534f; color: white; cursor: pointer; transition: opacity 0.2s;">Confirm</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- PREUI RUNTIME STAGED BOOTSTRAPPING -->
-    <script>
-        console.log("💥 SYSTEM CHECK 1: HTML execution engine is alive.");
-        window.onerror = function(message, source, lineno, colno, error) {
-            const overlay = document.getElementById("diagnosticErrorOverlay");
-            const details = document.getElementById("diagnosticErrorDetails");
-            if(overlay && details) {
-                details.innerText = "Message: " + message + "\nLine: " + lineno + "\nFile: " + source;
-                overlay.style.display = "flex";
+        @media (min-width: 900px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
             }
-            return false;
-        };
-    </script>
+            .full-width {
+                grid-column: span 2;
+            }
+        }
 
-    <!-- Finance Logic Engine -->
+        .panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        /* Metrics Widget Styling */
+        .metrics-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: rgba(128, 128, 128, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .metric-card h4 { font-size: 12px; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; }
+        .metric-card p { font-size: 18px; font-weight: bold; }
+
+        .incomeText { color: var(--success-color); }
+        .expenseText { color: var(--danger-color); }
+        
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 5px; }
+        .badge-good { background-color: rgba(92, 184, 92, 0.2); color: var(--success-color); }
+        .badge-warn { background-color: rgba(240, 173, 78, 0.2); color: var(--warning-color); }
+        .badge-danger { background-color: rgba(217, 83, 79, 0.2); color: var(--danger-color); }
+
+        /* Form Controls Formatting */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--input-border);
+            background-color: transparent;
+            color: inherit;
+        }
+
+        .inline-checkbox {
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .inline-checkbox input { width: auto; }
+
+        .btn-primary { background-color: var(--primary-color); color: white; border: none; }
+        .btn-danger { background-color: var(--danger-color); color: white; border: none; }
+
+        /* Ledger Table List Items */
+        .filter-ribbon {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .filter-ribbon { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        ul { list-style: none; }
+        
+        .transaction {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            gap: 10px;
+        }
+
+        .leftSide p { font-size: 12px; opacity: 0.7; }
+        .rightSide { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+        .rightSide .amount { font-weight: bold; }
+        
+        .status-badge { font-size: 11px; cursor: pointer; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;}
+        .status-paid { background: rgba(92, 184, 92, 0.15); color: var(--success-color); }
+        .status-pending { background: rgba(240, 173, 78, 0.15); color: var(--warning-color); }
+
+        .actionBtn { background: transparent; border: none; padding: 2px 5px; font-size: 14px; }
+
+        .categoryCard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(128,128,128,0.05);
+            margin-bottom: 6px;
+            border-radius: 6px;
+        }
+        .categoryCard small { display: block; opacity: 0.6; font-size: 11px; }
+
+        /* Dynamic Custom Dialog UI Overlay Engine */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-box {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.15s ease-out;
+        }
+
+        .modal-icon { font-size: 40px; margin-bottom: 15px; }
+        .modal-box h3 { margin-bottom: 10px; }
+        .modal-box p { font-size: 14px; opacity: 0.8; margin-bottom: 20px; }
+        .modal-box input { margin-bottom: 12px; }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* Utility Layout Helper Classes */
+        .flex-actions { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        .flex-actions button { flex: 1; min-width: 120px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Auth Screen Interface Setup -->
+        <div id="authScreen">
+            <h2 style="margin-bottom:20px;"><i class="fa-solid fa-wallet" style="color:var(--primary-color);"></i> Cloud Ledger Terminal</h2>
+            <button id="googleBtn" class="btn-google">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" width="18">
+                Sign in with Google Reference
+            </button>
+        </div>
+
+        <!-- Master Workstation Application Engine Screen Viewport -->
+        <div id="app" style="display: none;">
+            <header>
+                <h2><i class="fa-solid fa-chart-pie" style="color:var(--primary-color)"></i> Dashboard</h2>
+                <div class="controls">
+                    <select id="theme">
+                        <option value="light">☀️ Light Layout</option>
+                        <option value="dark">🌙 Dark Ecosystem</option>
+                    </select>
+                    <button id="logoutBtn" style="background:transparent; border-color:var(--danger-color); color:var(--danger-color);"><i class="fa-solid fa-door-open"></i></button>
+                </div>
+            </header>
+
+            <!-- Global Top Metrics Banner Matrix -->
+            <div class="panel full-width" style="margin-bottom: 20px;">
+                <div class="metrics-bar">
+                    <div class="metric-card">
+                        <h4>Net Savings Balance</h4>
+                        <p id="balance">₹0</p>
+                        <div id="healthBadge" class="badge">Analysing Data...</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Cleared Income</h4>
+                        <p id="income" class="incomeText">₹0</p>
+                        <small style="opacity:0.6;">Pending: <span id="pendingIncome">₹0</span></small>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Cleared Expenses</h4>
+                        <p id="expense" class="expenseText">₹0</p>
+                        <small style="opacity:0.6;">Pending: <span id="pendingExpense">₹0</span></small>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Savings Efficiency Rate</h4>
+                        <p id="saving">0%</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- Left Hand Workspace: Transaction Ingestion Form & Categories -->
+                <div class="panel">
+                    <h3><i class="fa-solid fa-circle-plus" style="color:var(--success-color);"></i> Log Transaction</h3>
+                    <div style="margin-top: 15px;">
+                        <div class="form-group">
+                            <input type="text" id="title" placeholder="Description entry title">
+                        </div>
+                        <div class="form-group">
+                            <input type="number" id="amount" placeholder="Amount value (₹)">
+                        </div>
+                        <div class="form-group">
+                            <select id="type">
+                                <option value="expense">📉 Expense Outflow</option>
+                                <option value="income">📈 Income Inflow</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <select id="category">
+                                <!-- Populated dynamically by script engine system updates -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <select id="status">
+                                <option value="paid">✅ Settled (Paid)</option>
+                                <option value="pending">⏳ Pending Clearance</option>
+                            </select>
+                        </div>
+                        <div class="form-group inline-checkbox">
+                            <input type="checkbox" id="isRecurring">
+                            <label for="isRecurring">🔄 Automate Monthly Cycle Renewal (Subscription)</label>
+                        </div>
+                        <button id="addBtn" class="btn-primary" style="width:100%; padding:12px;">Inject Record Ledger Entry</button>
+                    </div>
+
+                    <hr style="margin:25px 0; border:none; border-top:1px solid var(--border-color);">
+                    
+                    <h3><i class="fa-solid fa-tags" style="color:var(--warning-color);"></i> Manage Categories</h3>
+                    <div style="margin-top:15px; display:flex; gap:10px; margin-bottom:15px;">
+                        <input type="text" id="newCategory" placeholder="New structural category name">
+                        <button id="addCategory" class="btn-primary"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div id="categoryList" style="max-height: 200px; overflow-y: auto;">
+                        <!-- Category structural cards render dynamic templates here -->
+                    </div>
+                </div>
+
+                <!-- Right Hand Workspace: Visualization Engines & Data Tracking Matrix Charts -->
+                <div class="panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h3><i class="fa-solid fa-chart-bar" style="color:var(--primary-color);"></i> Visual Analytics Outflows</h3>
+                        <div style="margin-top: 20px; position: relative; width: 100%;">
+                            <canvas id="analyticsChart"></canvas>
+                        </div>
+                    </div>
+                    <div style="margin-top:20px; background:rgba(128,128,128,0.03); padding:15px; border-radius:8px; border:1px dashed var(--border-color);">
+                        <h4 style="font-size:13px; margin-bottom:5px;"><i class="fa-solid fa-circle-info"></i> Budget Threshold Mechanics</h4>
+                        <p style="font-size:12px; opacity:0.7;">Set limit budgets per item under individual target setups using the category ⚙️ layout settings parameters.</p>
+                    </div>
+                </div>
+
+                <!-- Bottom Full Screen Viewport Area: Live Interactive Ledger Filter Grid Table List Layout -->
+                <div class="panel full-width">
+                    <h3><i class="fa-solid fa-list-check" style="color:var(--primary-color);"></i> Search Ledgers Ledger Database Registry</h3>
+                    
+                    <!-- Advanced Interactive Filtering System Ribbon Configuration -->
+                    <div class="filter-ribbon" style="margin-top: 15px;">
+                        <input type="text" id="search" placeholder="Search keywords...">
+                        <select id="filterCategory">
+                            <option value="all">All Categories Matrix</option>
+                        </select>
+                        <input type="date" id="startDate" placeholder="dd-mm-yyyy" title="Start Filter Date Timeline Cutoff">
+                        <input type="date" id="endDate" placeholder="dd-mm-yyyy" title="End Filter Date Timeline Cutoff">
+                    </div>
+
+                    <ul id="transactionList" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                        <!-- Live streaming documents compile template injection updates here -->
+                    </ul>
+
+                    <div class="flex-actions">
+                        <button id="exportBtn" style="background-color:#107c41; color:white; border:none;"><i class="fa-solid fa-file-excel"></i> Export Active Workspace to CSV</button>
+                        <button id="purgeCategoryBtn" class="btn-danger"><i class="fa-solid fa-dumpster-fire"></i> Purge Visible Filtered View records</button>
+                        <button id="deleteAccountBtn" style="background:transparent; border:1px solid var(--danger-color); color:var(--danger-color); font-size:12px; max-width:200px;">Permanently Delete Profile</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Centralized Multi-Purpose Dialog Window Overlay Framework Modal Engine -->
+    <div id="customModalOverlay" class="modal-overlay">
+        <div class="modal-box">
+            <div id="modalIconContainer" class="modal-icon"></div>
+            <h3 id="modalTitle">Modal Title Header</h3>
+            <p id="modalDescription">System message layout instructions overview details context.</p>
+            
+            <input type="text" id="modalConfirmationInput" style="display: none;">
+            <input type="number" id="modalSecondaryInput" style="display: none;">
+            <input type="number" id="modalBudgetInput" style="display: none;">
+            
+            <div class="modal-actions">
+                <button id="modalCancelBtn" style="background:transparent; border:1px solid var(--input-border);">Cancel</button>
+                <button id="modalConfirmBtn" class="btn-primary">Execute Action</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Main Orchestrator Execution Script Module Logic Layer Link -->
     <script type="module" src="script.js"></script>
-
 </body>
 </html>
