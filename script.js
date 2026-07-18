@@ -15,16 +15,18 @@ let transactions = [];
 let categories = ["Food", "Transport", "Shopping", "Bills", "Entertainment", "General"];
 let unsubscribeTxListener = null; 
 
-// Declare global element variables to be populated when DOM is ready
+// UI Bindings
 let title, amount, type, category, status, addBtn, list, search, filterCategory;
 let balance, income, expense, saving, healthBadge, pendingIncome, pendingExpense;
 let theme, newCategory, addCategory, categoryList;
-let authScreen, appScreen, googleBtn, logoutBtn, deleteAccountBtn, exportBtn;
+let authScreen, appScreen, googleBtn, logoutBtn, deleteAccountBtn, exportBtn, purgeCategoryBtn;
 
-/* ==========================================
-    Initialization & DOM Binding Setup 
-========================================== */
+// Custom Modal Engine Bindings
+let modalOverlay, modalTitle, modalDescription, modalConfirmBtn, modalCancelBtn, modalInput, modalIcon;
+let activeModalAction = null; 
+
 document.addEventListener("DOMContentLoaded", () => {
+    // Basic elements
     title = $("title");
     amount = $("amount");
     type = $("type");
@@ -34,27 +36,33 @@ document.addEventListener("DOMContentLoaded", () => {
     list = $("transactionList");
     search = $("search");
     filterCategory = $("filterCategory");
-
     balance = $("balance");
     income = $("income");
     expense = $("expense");
     saving = $("saving");
     healthBadge = $("healthBadge");
-
     pendingIncome = $("pendingIncome");
     pendingExpense = $("pendingExpense");
-
     theme = $("theme");
     newCategory = $("newCategory");
     addCategory = $("addCategory");
     categoryList = $("categoryList");
-
     authScreen = $("authScreen");
     appScreen = $("app");
     googleBtn = $("googleBtn"); 
     logoutBtn = $("logoutBtn");
     deleteAccountBtn = $("deleteAccountBtn"); 
-    exportBtn = $("exportBtn"); // Bind the download trigger button
+    exportBtn = $("exportBtn");
+    purgeCategoryBtn = $("purgeCategoryBtn");
+
+    // Modal elements
+    modalOverlay = $("customModalOverlay");
+    modalTitle = $("modalTitle");
+    modalDescription = $("modalDescription");
+    modalConfirmBtn = $("modalConfirmBtn");
+    modalCancelBtn = $("modalCancelBtn");
+    modalInput = $("modalConfirmationInput");
+    modalIcon = $("modalIconContainer");
 
     /* ==========================================
         Authentication Lifecycle Observer 
@@ -66,7 +74,6 @@ document.addEventListener("DOMContentLoaded", () => {
             appScreen.style.display = "block";
             await initializeUserDashboard();
         } else {
-            // Clean up memory stream listener upon logout context
             if (unsubscribeTxListener) {
                 unsubscribeTxListener();
                 unsubscribeTxListener = null;
@@ -78,51 +85,45 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /* --- AUTH TRIGGERS CONFIG --- */
     if (googleBtn) {
         googleBtn.onclick = async () => {
-            try {
-                await loginWithGoogle();
-            } catch (e) {
-                alert("Google Authentication Error: " + e.message);
-            }
+            try { await loginWithGoogle(); } catch (e) { showCustomAlert("Error", "Google Auth Error: " + e.message, true); }
         };
     }
 
     logoutBtn.onclick = () => logoutUser();
 
     if (deleteAccountBtn) {
-        deleteAccountBtn.onclick = async () => {
+        deleteAccountBtn.onclick = () => {
             if (!userUID) return;
             
-            const confirmation = confirm("⚠️ CRITICAL WARNING: Are you completely sure you want to delete your profile? This will permanently purge all your transaction balances, custom categories, and credentials.");
-            if (!confirmation) return;
-
-            const textCheck = prompt("To confirm this dangerous destructive action, please type CONFIRM in the input box below:");
-            
-            if (textCheck !== "CONFIRM") {
-                alert("❌ Verification mismatch! Deletion process cancelled.");
-                return;
-            }
-
-            try {
-                await deleteCurrentUserAccount(userUID);
-                alert("Account successfully deleted from the cloud matrix. Returning to layout panel.");
-            } catch (e) {
-                if (e.code === "auth/requires-recent-login") {
-                    alert("🔒 Security Action Blocked: This operation requires recent authentication. Please log out, sign back in immediately, and try again.");
-                } else {
-                    alert("Deletion Error: " + e.message);
+            showCustomConfirm(
+                "Critical Purge Account",
+                "Are you entirely sure you want to delete your profile? This permanently clears your custom categories and credentials.",
+                true,
+                "CONFIRM",
+                async () => {
+                    try {
+                        await deleteCurrentUserAccount(userUID);
+                        showCustomAlert("Success", "Account removed from the cloud framework.", false);
+                    } catch (e) {
+                        if (e.code === "auth/requires-recent-login") {
+                            showCustomAlert("Security Barrier", "Please log out, log back in immediately, and try again.", true);
+                        } else {
+                            showCustomAlert("Error", e.message, true);
+                        }
+                    }
                 }
-            }
+            );
         };
     }
 
     /* --- INPUT EVENT HANDLERS --- */
     addBtn.addEventListener("click", addTransaction);
     search.addEventListener("input", render);
-    filterCategory.addEventListener("change", render); // Triggers re-render instantly on filter toggle
+    filterCategory.addEventListener("change", render);
     if (exportBtn) exportBtn.addEventListener("click", downloadExcelSpreadsheet);
+    if (purgeCategoryBtn) purgeCategoryBtn.addEventListener("click", purgeActiveCategoryTransactions);
 
     theme.onchange = async () => {
         if (!userUID) return;
@@ -134,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const value = newCategory.value.trim();
         if (value === "") return;
         if (categories.map(c => c.toLowerCase()).includes(value.toLowerCase())) {
-            alert("Ecosystem already contains this category.");
+            showCustomAlert("Validation Warning", "Ecosystem already contains this category.", true);
             return;
         }
         categories.push(value);
@@ -142,12 +143,65 @@ document.addEventListener("DOMContentLoaded", () => {
         await saveConfigState();
         loadCategories();
     };
+
+    // Close Modal Events
+    modalCancelBtn.onclick = closeModal;
 });
+
+/* ==========================================
+    CUSTOM DIALOG SYSTEM (MODAL ENGINE)
+========================================== */
+function showCustomAlert(titleText, descText, isNegative = false) {
+    modalTitle.innerText = titleText;
+    modalDescription.innerText = descText;
+    modalIcon.innerHTML = isNegative ? '<i class="fa-solid fa-circle-xmark"></i>' : '<i class="fa-solid fa-circle-check"></i>';
+    modalIcon.style.color = isNegative ? "#d9534f" : "#5cb85c";
+    modalConfirmBtn.style.background = isNegative ? "#d9534f" : "#4285F4";
+    modalInput.style.display = "none";
+    modalCancelBtn.style.display = "none"; // Hide cancel for simple information notifications
+    
+    modalOverlay.style.display = "flex";
+    setTimeout(() => { modalOverlay.children[0].style.transform = "scale(1)"; }, 10);
+
+    modalConfirmBtn.onclick = closeModal;
+}
+
+function showCustomConfirm(titleText, descText, requiresVerificationText = false, matchingText = "", onConfirmCallback = null) {
+    modalTitle.innerText = titleText;
+    modalDescription.innerText = descText;
+    modalIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+    modalIcon.style.color = "#d9534f";
+    modalConfirmBtn.style.background = "#d9534f";
+    modalCancelBtn.style.display = "inline-block";
+
+    if (requiresVerificationText) {
+        modalInput.value = "";
+        modalInput.style.display = "block";
+    } else {
+        modalInput.style.display = "none";
+    }
+
+    modalOverlay.style.display = "flex";
+    setTimeout(() => { modalOverlay.children[0].style.transform = "scale(1)"; }, 10);
+
+    modalConfirmBtn.onclick = () => {
+        if (requiresVerificationText && modalInput.value.trim() !== matchingText) {
+            modalInput.style.borderColor = "#d9534f";
+            return;
+        }
+        closeModal();
+        if (onConfirmCallback) onConfirmCallback();
+    };
+}
+
+function closeModal() {
+    modalOverlay.children[0].style.transform = "scale(0.9)";
+    setTimeout(() => { modalOverlay.style.display = "none"; }, 150);
+}
 
 /* --- SYSTEM SYNC DATA INTAKE PIPELINE --- */
 async function initializeUserDashboard() {
     const cloudConfigs = await getUserSettings(userUID);
-    
     if (cloudConfigs) {
         if (cloudConfigs.theme) {
             document.body.dataset.theme = cloudConfigs.theme;
@@ -164,28 +218,17 @@ async function initializeUserDashboard() {
 
     loadCategories();
 
-    // Reusable core engine to handle active stream binding safely
     function startLiveStream() {
-        if (unsubscribeTxListener) {
-            unsubscribeTxListener(); 
-        }
-        
+        if (unsubscribeTxListener) unsubscribeTxListener(); 
         unsubscribeTxListener = syncTransactionsRealtime(userUID, (updatedTransactionsList) => {
             transactions = updatedTransactionsList;
             render(); 
         });
-        console.log("⚡ Live data stream connected successfully.");
     }
-
-    // Initial deployment invocation
     startLiveStream();
 
-    // 📱 MOBILE RECOVERY INTERCEPTOR: Revives dead background sockets instantly on focus wake
     document.onvisibilitychange = () => {
-        if (document.visibilityState === "visible" && userUID) {
-            console.log("📱 App context restored. Re-synchronizing stream pipelines...");
-            startLiveStream();
-        }
+        if (document.visibilityState === "visible" && userUID) startLiveStream();
     };
 }
 
@@ -199,22 +242,18 @@ async function saveConfigState() {
     Category Configuration Control Engines 
 ========================================== */
 function loadCategories() {
-    // Preserve the current filter view choice during updates if possible
     const currentFilterValue = filterCategory ? filterCategory.value : "all";
-
     category.innerHTML = "";
     categoryList.innerHTML = "";
     filterCategory.innerHTML = '<option value="all">All Categories</option>';
 
     categories.forEach((cat, index) => {
         const option = document.createElement("option");
-        option.textContent = cat;
-        option.value = cat;
+        option.textContent = cat; option.value = cat;
         category.appendChild(option);
 
         const filterOption = document.createElement("option");
-        filterOption.textContent = cat;
-        filterOption.value = cat;
+        filterOption.textContent = cat; filterOption.value = cat;
         filterCategory.appendChild(filterOption);
 
         const card = document.createElement("div");
@@ -229,10 +268,7 @@ function loadCategories() {
         categoryList.appendChild(card);
     });
 
-    // Re-assign previous selection if it still exists in the list
-    if (categories.includes(currentFilterValue)) {
-        filterCategory.value = currentFilterValue;
-    }
+    if (categories.includes(currentFilterValue)) filterCategory.value = currentFilterValue;
 }
 
 async function renameCategory(i) {
@@ -245,34 +281,27 @@ async function renameCategory(i) {
     
     for (let t of transactions) {
         if (t.category === oldName) {
-            t.category = targetName;
             await syncUpdateTransaction(userUID, t.docId, { category: targetName });
         }
     }
-
     await saveConfigState();
     loadCategories();
 }
 
 async function removeCategory(i) {
     const targetCat = categories[i];
-    if (confirm(`Are you sure you want to delete "${targetCat}"? Associated transactions will drop back into a "General" category label.`)) {
+    showCustomConfirm("Delete Category", `Are you sure you want to remove the category "${targetCat}"? Associated transactions will reset to "General".`, false, "", async () => {
         for (let t of transactions) {
             if (t.category === targetCat) {
-                t.category = "General";
                 await syncUpdateTransaction(userUID, t.docId, { category: "General" });
             }
         }
-        
         categories.splice(i, 1);
-        if (!categories.includes("General")) {
-            categories.push("General");
-        }
+        if (!categories.includes("General")) categories.push("General");
         await saveConfigState();
         loadCategories();
-    }
+    });
 }
-
 window.renameCategory = renameCategory;
 window.removeCategory = removeCategory;
 
@@ -287,7 +316,7 @@ async function addTransaction() {
     const st = status.value;
 
     if (t === "" || isNaN(a) || a <= 0) {
-        alert("Verification check failed. Enter positive analytical values.");
+        showCustomAlert("Validation Error", "Enter valid transaction details and positive amounts.", true);
         return;
     }
 
@@ -302,18 +331,16 @@ async function addTransaction() {
     };
 
     await syncAddTransaction(userUID, newTxPayload);
-
-    title.value = "";
-    amount.value = "";
+    title.value = ""; amount.value = "";
 }
 
-async function deleteTransaction(id) {
+function deleteTransaction(id) {
     const target = transactions.find(item => item.id === id);
     if (!target) return;
     
-    if (confirm(`Delete operations record "${target.title}"?`)) {
+    showCustomConfirm("Delete Record", `Delete operations record for "${target.title}"?`, false, "", async () => {
         await syncDeleteTransaction(userUID, target.docId);
-    }
+    });
 }
 window.deleteTransaction = deleteTransaction;
 
@@ -327,12 +354,9 @@ async function editTransaction(id) {
     const a = prompt("Modify Financial Metric Value Amount (₹):", item.amount);
     if (a === null || isNaN(Number(a)) || Number(a) <= 0) return;
 
-    const updatedTitle = t.trim();
-    const updatedAmount = Number(a);
-
     await syncUpdateTransaction(userUID, item.docId, {
-        title: updatedTitle,
-        amount: updatedAmount
+        title: t.trim(),
+        amount: Number(a)
     });
 }
 window.editTransaction = editTransaction;
@@ -340,25 +364,59 @@ window.editTransaction = editTransaction;
 async function toggleStatus(id) {
     const item = transactions.find(x => x.id === id);
     if (!item) return;
-    
     const newStatus = item.status === "paid" ? "pending" : "paid";
     await syncUpdateTransaction(userUID, item.docId, { status: newStatus });
 }
 window.toggleStatus = toggleStatus;
 
 /* ==========================================
+    NEW FEATURE: PURGE ACTIVE CATEGORY VIEW
+========================================== */
+function purgeActiveCategoryTransactions() {
+    const activeCategory = filterCategory.value;
+    const searchKeyword = search.value.toLowerCase();
+
+    // Identify exactly what matches the screen filters
+    const matchedItems = transactions.filter(item => {
+        const matchesSearch = item.title.toLowerCase().includes(searchKeyword) || item.category.toLowerCase().includes(searchKeyword);
+        const matchesCategory = (activeCategory === "all" || item.category === activeCategory);
+        return matchesSearch && matchesCategory;
+    });
+
+    if (matchedItems.length === 0) {
+        showCustomAlert("Empty Viewport", "There are no transaction records currently visible matching this criteria to clear.", true);
+        return;
+    }
+
+    const targetsDescription = activeCategory === "all" ? "ALL transactions" : `all entries listed under "${activeCategory}"`;
+
+    showCustomConfirm(
+        "🚨 Mass Deletion Action",
+        `You are about to permanently erase ${matchedItems.length} records matching ${targetsDescription}. Type DELETE to execute.`,
+        true,
+        "DELETE",
+        async () => {
+            // Process the sync array execution deletions
+            for (let item of matchedItems) {
+                await syncDeleteTransaction(userUID, item.docId);
+            }
+            showCustomAlert("Purge Successful", `Successfully cleaned ${matchedItems.length} records.`, false);
+        }
+    );
+}
+
+/* ==========================================
     Data Export Pipeline (Excel/CSV Engine)
 ========================================== */
 function downloadExcelSpreadsheet() {
     if (transactions.length === 0) {
-        alert("There is no ledger data available to download.");
+        showCustomAlert("Error", "There is no ledger data available to download.", true);
         return;
     }
 
     const targetCategoryFilter = filterCategory.value;
     const searchKeyword = search.value.toLowerCase();
 
-    // Filter down to match the user's current targeted viewport view context
     const targetedRows = transactions.filter(item => {
         const matchesSearch = item.title.toLowerCase().includes(searchKeyword) || item.category.toLowerCase().includes(searchKeyword);
         const matchesCategoryDropdown = (targetCategoryFilter === "all" || item.category === targetCategoryFilter);
@@ -366,29 +424,23 @@ function downloadExcelSpreadsheet() {
     });
 
     if (targetedRows.length === 0) {
-        alert("The current filtered view contains no dataset entries to export.");
+        showCustomAlert("Error", "The current filtered view contains no dataset entries to export.", true);
         return;
     }
 
-    // Build standard CSV structural array strings
     const headers = ["Date", "Description", "Category", "Type", "Amount (INR)", "Status"];
     const csvContent = [
-        headers.join(","), // Title Header
+        headers.join(","),
         ...targetedRows.map(t => {
-            // Escape values containing quotes or commas safely
             const safeTitle = `"${t.title.replace(/"/g, '""')}"`;
             const safeCategory = `"${t.category.replace(/"/g, '""')}"`;
             const currentStatus = (t.status === "paid" || !t.hasOwnProperty('status')) ? "Paid" : "Pending";
-            
             return [t.date, safeTitle, safeCategory, t.type.toUpperCase(), t.amount, currentStatus].join(",");
         })
     ].join("\n");
 
-    // Convert string to clean UTF-8 structural data payload blob
     const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    
-    // Auto click phantom hyperlink anchor to trigger download response safely across devices
     const link = document.createElement("a");
     link.setAttribute("href", url);
     
@@ -408,24 +460,13 @@ function downloadExcelSpreadsheet() {
 function runFinancialAnalytics(paidIncome, paidExpense) {
     const netSavings = paidIncome - paidExpense;
     let savingsRate = 0;
-    
-    if (paidIncome > 0) {
-        savingsRate = Math.round((netSavings / paidIncome) * 100);
-    } else if (paidIncome === 0 && paidExpense > 0) {
-        savingsRate = -100; 
-    }
+    if (paidIncome > 0) savingsRate = Math.round((netSavings / paidIncome) * 100);
+    else if (paidIncome === 0 && paidExpense > 0) savingsRate = -100;
 
     healthBadge.className = "badge"; 
-    if (savingsRate >= 50) {
-        healthBadge.innerText = "Elite Wealth Builder";
-        healthBadge.classList.add("badge-good");
-    } else if (savingsRate >= 20) {
-        healthBadge.innerText = "Healthy Buffer Rate";
-        healthBadge.classList.add("badge-warn");
-    } else {
-        healthBadge.innerText = "Low Reserves";
-        healthBadge.classList.add("badge-danger");
-    }
+    if (savingsRate >= 50) { healthBadge.innerText = "Elite Wealth Builder"; healthBadge.classList.add("badge-good"); }
+    else if (savingsRate >= 20) { healthBadge.innerText = "Healthy Buffer Rate"; healthBadge.classList.add("badge-warn"); }
+    else { healthBadge.innerText = "Low Reserves"; healthBadge.classList.add("badge-danger"); }
 
     return { savingsRate, netSavings };
 }
@@ -435,15 +476,12 @@ function runFinancialAnalytics(paidIncome, paidExpense) {
 ========================================== */
 function render() {
     list.innerHTML = "";
-    let paidIncome = 0;
-    let paidExpense = 0;
-    let pendIncome = 0;
+    let paidIncome = 0; let paidExpense = 0; let pendIncome = 0;
 
     transactions.forEach(item => {
         const isPaid = (item.status === "paid" || !item.hasOwnProperty('status'));
         if (item.type === "income") {
-            if (isPaid) paidIncome += item.amount;
-            else pendIncome += item.amount;
+            if (isPaid) paidIncome += item.amount; else pendIncome += item.amount;
         } else {
             if (isPaid) paidExpense += item.amount;
         }
@@ -451,7 +489,6 @@ function render() {
 
     const searchKeyword = search.value.toLowerCase();
     const targetCategoryFilter = filterCategory.value;
-
     const { savingsRate, netSavings } = runFinancialAnalytics(paidIncome, paidExpense);
 
     transactions
@@ -496,7 +533,6 @@ function render() {
     
     expense.innerText = "₹" + paidExpense.toLocaleString('en-IN');
     saving.innerText = `${netSavings < 0 ? '-' : ''}₹${Math.abs(netSavings).toLocaleString('en-IN')} (${savingsRate}%)`;
-    
     pendingIncome.innerText = "₹" + pendIncome.toLocaleString('en-IN');
     pendingExpense.innerText = "₹" + currentPendingExpense.toLocaleString('en-IN');
 }
