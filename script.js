@@ -23,7 +23,6 @@ let authScreen, appScreen, googleBtn, logoutBtn, deleteAccountBtn, exportBtn, pu
 
 // Custom Modal Engine Bindings
 let modalOverlay, modalTitle, modalDescription, modalConfirmBtn, modalCancelBtn, modalInput, modalIcon;
-let activeModalAction = null; 
 
 document.addEventListener("DOMContentLoaded", () => {
     // Basic elements
@@ -158,7 +157,7 @@ function showCustomAlert(titleText, descText, isNegative = false) {
     modalIcon.style.color = isNegative ? "#d9534f" : "#5cb85c";
     modalConfirmBtn.style.background = isNegative ? "#d9534f" : "#4285F4";
     modalInput.style.display = "none";
-    modalCancelBtn.style.display = "none"; // Hide cancel for simple information notifications
+    modalCancelBtn.style.display = "none"; 
     
     modalOverlay.style.display = "flex";
     setTimeout(() => { modalOverlay.children[0].style.transform = "scale(1)"; }, 10);
@@ -176,6 +175,7 @@ function showCustomConfirm(titleText, descText, requiresVerificationText = false
 
     if (requiresVerificationText) {
         modalInput.value = "";
+        modalInput.style.borderColor = "rgba(255,255,255,0.2)";
         modalInput.style.display = "block";
     } else {
         modalInput.style.display = "none";
@@ -261,8 +261,8 @@ function loadCategories() {
         card.innerHTML = `
             <span>${cat}</span>
             <div>
-                <button onclick="renameCategory(${index})">✏️</button>
-                <button onclick="removeCategory(${index})">🗑️</button>
+                <button onclick="window.renameCategory(${index})">✏️</button>
+                <button onclick="window.removeCategory(${index})">🗑️</button>
             </div>
         `;
         categoryList.appendChild(card);
@@ -271,7 +271,7 @@ function loadCategories() {
     if (categories.includes(currentFilterValue)) filterCategory.value = currentFilterValue;
 }
 
-async function renameCategory(i) {
+window.renameCategory = async function(i) {
     const oldName = categories[i];
     const name = prompt("Modify Category Designation Label:", oldName);
     if (!name || name.trim() === "") return;
@@ -286,24 +286,29 @@ async function renameCategory(i) {
     }
     await saveConfigState();
     loadCategories();
-}
+};
 
-async function removeCategory(i) {
+window.removeCategory = async function(i) {
     const targetCat = categories[i];
-    showCustomConfirm("Delete Category", `Are you sure you want to remove the category "${targetCat}"? Associated transactions will reset to "General".`, false, "", async () => {
-        for (let t of transactions) {
-            if (t.category === targetCat) {
-                await syncUpdateTransaction(userUID, t.docId, { category: "General" });
+    
+    showCustomConfirm(
+        "Delete Category", 
+        `Are you sure you want to remove the category "${targetCat}"? Associated transactions will reset to "General".`, 
+        false, 
+        "", 
+        async () => {
+            for (let t of transactions) {
+                if (t.category === targetCat) {
+                    await syncUpdateTransaction(userUID, t.docId, { category: "General" });
+                }
             }
+            categories.splice(i, 1);
+            if (!categories.includes("General")) categories.push("General");
+            await saveConfigState();
+            loadCategories();
         }
-        categories.splice(i, 1);
-        if (!categories.includes("General")) categories.push("General");
-        await saveConfigState();
-        loadCategories();
-    });
-}
-window.renameCategory = renameCategory;
-window.removeCategory = removeCategory;
+    );
+};
 
 /* ==========================================
     Ledger Action Core Engine Interfaces
@@ -334,17 +339,16 @@ async function addTransaction() {
     title.value = ""; amount.value = "";
 }
 
-function deleteTransaction(id) {
+window.deleteTransaction = function(id) {
     const target = transactions.find(item => item.id === id);
     if (!target) return;
     
     showCustomConfirm("Delete Record", `Delete operations record for "${target.title}"?`, false, "", async () => {
         await syncDeleteTransaction(userUID, target.docId);
     });
-}
-window.deleteTransaction = deleteTransaction;
+};
 
-async function editTransaction(id) {
+window.editTransaction = async function(id) {
     const item = transactions.find(x => x.id === id);
     if (!item) return;
 
@@ -358,16 +362,14 @@ async function editTransaction(id) {
         title: t.trim(),
         amount: Number(a)
     });
-}
-window.editTransaction = editTransaction;
+};
 
-async function toggleStatus(id) {
+window.toggleStatus = async function(id) {
     const item = transactions.find(x => x.id === id);
     if (!item) return;
     const newStatus = item.status === "paid" ? "pending" : "paid";
     await syncUpdateTransaction(userUID, item.docId, { status: newStatus });
-}
-window.toggleStatus = toggleStatus;
+};
 
 /* ==========================================
     NEW FEATURE: PURGE ACTIVE CATEGORY VIEW
@@ -376,7 +378,6 @@ function purgeActiveCategoryTransactions() {
     const activeCategory = filterCategory.value;
     const searchKeyword = search.value.toLowerCase();
 
-    // Identify exactly what matches the screen filters
     const matchedItems = transactions.filter(item => {
         const matchesSearch = item.title.toLowerCase().includes(searchKeyword) || item.category.toLowerCase().includes(searchKeyword);
         const matchesCategory = (activeCategory === "all" || item.category === activeCategory);
@@ -396,7 +397,6 @@ function purgeActiveCategoryTransactions() {
         true,
         "DELETE",
         async () => {
-            // Process the sync array execution deletions
             for (let item of matchedItems) {
                 await syncDeleteTransaction(userUID, item.docId);
             }
@@ -506,7 +506,7 @@ function render() {
             <div class="leftSide">
                 <h3>${item.title}</h3>
                 <p><strong>${item.category}</strong> • ${item.date}</p>
-                <span class="status-badge ${isPaid ? 'status-paid' : 'status-pending'}" onclick="toggleStatus(${item.id})">
+                <span class="status-badge ${isPaid ? 'status-paid' : 'status-pending'}" onclick="window.toggleStatus(${item.id})">
                     ${isPaid ? '✅ Paid' : '⏳ Pending'}
                 </span>
             </div>
@@ -515,8 +515,8 @@ function render() {
                     ${item.type === "income" ? "+" : "-"} ₹${item.amount}
                 </span>
                 <div>
-                    <button class="actionBtn" onclick="editTransaction(${item.id})">✏️</button>
-                    <button class="actionBtn" onclick="deleteTransaction(${item.id})">🗑️</button>
+                    <button class="actionBtn" onclick="window.editTransaction(${item.id})">✏️</button>
+                    <button class="actionBtn" onclick="window.deleteTransaction(${item.id})">🗑️</button>
                 </div>
             </div>
         `;
