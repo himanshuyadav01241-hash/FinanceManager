@@ -1,6 +1,6 @@
 // script.js
 import { 
-    registerUser, loginUser, logoutUser, monitorAuthState,
+    registerUser, loginUser, logoutUser, monitorAuthState, deleteCurrentUserAccount,
     saveUserSettings, getUserSettings,
     syncAddTransaction, syncGetTransactions, syncUpdateTransaction, syncDeleteTransaction 
 } from "./firebase.js";
@@ -16,7 +16,7 @@ let categories = ["Food", "Transport", "Shopping", "Bills", "Entertainment", "Ge
 let title, amount, type, category, status, addBtn, list, search, filterCategory;
 let balance, income, expense, saving, healthBadge, pendingIncome, pendingExpense;
 let theme, newCategory, addCategory, categoryList;
-let authScreen, appScreen, loginEmail, loginPassword, loginBtn, signupBtn, logoutBtn;
+let authScreen, appScreen, loginEmail, loginPassword, loginBtn, signupBtn, logoutBtn, deleteAccountBtn;
 
 /* ==========================================
     Initialization & DOM Binding Setup 
@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loginBtn = $("loginBtn");
     signupBtn = $("signupBtn");
     logoutBtn = $("logoutBtn");
+    deleteAccountBtn = $("deleteAccountBtn"); // Target the new HTML deletion element
 
     /* ==========================================
         Authentication Lifecycle Observer 
@@ -111,6 +112,27 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     logoutBtn.onclick = () => logoutUser();
+
+    // Secure Deletion Handler Interface Trigger
+    if (deleteAccountBtn) {
+        deleteAccountBtn.onclick = async () => {
+            if (!userUID) return;
+            
+            const confirmation = confirm("⚠️ CRITICAL WARNING: Are you completely sure you want to delete your profile? This will immediately purge your configurations, settings data, and credentials permanently.");
+            if (!confirmation) return;
+
+            try {
+                await deleteCurrentUserAccount(userUID);
+                alert("Account deleted successfully. Returning to login panel.");
+            } catch (e) {
+                if (e.code === "auth/requires-recent-login") {
+                    alert("🔒 Security Action Blocked: This operation requires recent authentication. Please log out, sign back in immediately, and try again.");
+                } else {
+                    alert("Deletion Error: " + e.message);
+                }
+            }
+        };
+    }
 
     /* --- INPUT EVENT HANDLERS --- */
     addBtn.addEventListener("click", addTransaction);
