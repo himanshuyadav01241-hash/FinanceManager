@@ -15,49 +15,38 @@
 
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-
 </head>
 
 <body data-theme="dark">
 
     <!-- LOGIN SCREEN -->
-
     <div id="authScreen" class="authScreen">
-
         <div class="authCard">
-
             <i class="fa-solid fa-wallet"></i>
-
             <h1>INSANE HR</h1>
-
             <p>FinanceOS Cloud Edition</p>
 
             <!-- Only Google Sign-In Active -->
             <button id="googleBtn" style="background-color: #4285F4; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 20px; width: 100%;">
                 <i class="fa-brands fa-google"></i> Continue with Google
             </button>
-
         </div>
-
     </div>
 
     <!-- MAIN APP -->
-
     <div class="container" id="app" style="display:none;">
 
         <header style="display: flex; flex-direction: column; gap: 16px; padding: 20px 16px; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1));">
-
             <div class="logo" style="display: flex; align-items: center; gap: 12px;">
                 <i class="fa-solid fa-wallet" style="font-size: 1.6rem; color: #4285F4;"></i>
                 <div>
                     <h1 style="margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.5px;">INSANE HR</h1>
-                    <span style="font-size: 0.8rem; opacity: 0.6; display: block; margin-top: 20px;">FinanceOS Cloud</span>
+                    <span style="font-size: 0.8rem; opacity: 0.6; display: block; margin-top: 4px;">FinanceOS Cloud</span>
                 </div>
             </div>
 
-            <!-- Sleek, Balanced Mobile Control Panel -->
+            <!-- Sleek, Balanced Control Panel -->
             <div class="themeBox" style="display: flex; gap: 8px; width: 100%; box-sizing: border-box;">
-                
                 <select id="theme" style="flex: 2; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: inherit; height: 42px; outline: none;">
                     <option value="dark">🌙 Dark</option>
                     <option value="light">☀️ Light</option>
@@ -70,218 +59,119 @@
                     Logout
                 </button>
 
-                <!-- Refined Delete Trigger (Evenly scaled border-only execution) -->
                 <button id="deleteAccountBtn" style="flex: 1; padding: 0 12px; font-size: 0.85rem; font-weight: 500; border-radius: 8px; border: 1px solid #d9534f; background: transparent; color: #d9534f; height: 42px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
                     Delete
                 </button>
-
             </div>
-
         </header>
 
         <!-- DASHBOARD -->
-
         <section class="cards">
-
             <div class="card">
-
                 <h3>Net Balance</h3>
-
                 <h2 id="balance">₹0</h2>
-
             </div>
 
             <div class="card income">
-
                 <h3>Total Income</h3>
-
                 <h2 id="income">₹0</h2>
-
             </div>
 
             <div class="card expense">
-
                 <h3>Total Expense</h3>
-
                 <h2 id="expense">₹0</h2>
-
             </div>
 
             <div class="card saving">
-
                 <h3>Savings</h3>
-
                 <h2 id="saving">₹0 (0%)</h2>
-
-                <div id="healthBadge" class="badge">
-
-                    Awaiting Data
-
-                </div>
-
+                <div id="healthBadge" class="badge">Awaiting Data</div>
             </div>
 
             <div class="card pending-summary-card">
-
                 <h3>Pending</h3>
-
                 <div class="pending-split-metrics">
-
                     <span class="incomeText">
-
-                        In:
-                        <strong id="pendingIncome">₹0</strong>
-
+                        In: <strong id="pendingIncome">₹0</strong>
                     </span>
-
                     <span class="expenseText">
-
-                        Out:
-                        <strong id="pendingExpense">₹0</strong>
-
+                        Out: <strong id="pendingExpense">₹0</strong>
                     </span>
-
                 </div>
-
             </div>
-
         </section>
 
         <!-- ENTRY FORMS -->
-
         <div class="finance-workspace">
-
             <section class="form">
-
                 <h2>Add Transaction</h2>
-
-                <input
-                    type="text"
-                    id="title"
-                    placeholder="Transaction Name">
-
-                <input
-                    type="number"
-                    id="amount"
-                    placeholder="Amount">
+                <input type="text" id="title" placeholder="Transaction Name">
+                <input type="number" id="amount" placeholder="Amount">
 
                 <select id="type">
-
-                    <option value="income">
-
-                        💰 Income
-
-                    </option>
-
-                    <option value="expense">
-
-                        💸 Expense
-
-                    </option>
-
+                    <option value="income">💰 Income</option>
+                    <option value="expense">💸 Expense</option>
                 </select>
 
                 <select id="category"></select>
 
                 <select id="status">
-
-                    <option value="paid">
-
-                        ✅ Paid
-
-                    </option>
-
-                    <option value="pending">
-
-                        ⏳ Pending
-
-                    </option>
-
+                    <option value="paid">✅ Paid</option>
+                    <option value="pending">⏳ Pending</option>
                 </select>
 
                 <button id="addBtn">
-
-                    <i class="fa-solid fa-circle-plus"></i>
-
-                    Add Transaction
-
+                    <i class="fa-solid fa-circle-plus"></i> Add Transaction
                 </button>
-
             </section>
 
             <section class="form">
-
                 <h2>Categories</h2>
-
                 <div class="categoryManager">
-
-                    <input
-                        id="newCategory"
-                        placeholder="New Category">
-
-                    <button id="addCategory">
-
-                        +
-
-                    </button>
-
+                    <input id="newCategory" placeholder="New Category">
+                    <button id="addCategory">+</button>
                 </div>
-
                 <div id="categoryList"></div>
-
             </section>
-
         </div>
 
-        <section class="search-filters">
-
-            <div class="search-box">
-
-                <i class="fa-solid fa-magnifying-glass"></i>
-
-                <input
-                    id="search"
-                    placeholder="Search">
-
+        <!-- SEARCH, FILTERS & DOWNLOAD REGION -->
+        <section class="search-filters" style="display: flex; flex-wrap: wrap; gap: 12px; padding: 16px; width: 100%; box-sizing: border-box;">
+            
+            <!-- Search Control Box -->
+            <div class="search-box" style="flex: 1 1 200px; display: flex; align-items: center; position: relative;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; opacity: 0.5;"></i>
+                <input id="search" placeholder="Search" style="width: 100%; padding: 12px 12px 12px 36px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: inherit; outline: none;">
             </div>
 
-            <div class="filter-box">
-
-                <i class="fa-solid fa-filter"></i>
-
-                <select id="filterCategory">
-
-                    <option value="all">
-
-                        All Categories
-
-                    </option>
-
+            <!-- Viewport Category Filtering Box -->
+            <div class="filter-box" style="flex: 1 1 150px; display: flex; align-items: center; position: relative;">
+                <i class="fa-solid fa-filter" style="position: absolute; left: 12px; opacity: 0.5; z-index: 2;"></i>
+                <select id="filterCategory" style="width: 100%; padding: 12px 12px 12px 36px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: inherit; outline: none; appearance: none; -webkit-appearance: none; cursor: pointer;">
+                    <option value="all">All Categories</option>
                 </select>
-
             </div>
 
+            <!-- Unified Excel Spreadsheet Download Trigger -->
+            <button id="exportBtn" style="flex: 1 1 180px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; font-size: 0.9rem; font-weight: 500; border-radius: 8px; border: 1px solid #4285F4; background: rgba(66, 133, 244, 0.1); color: #4285F4; cursor: pointer; white-space: nowrap; transition: all 0.2s; outline: none;">
+                <i class="fa-solid fa-file-excel"></i> Download Excel
+            </button>
+            
         </section>
 
         <!-- TRANSACTION HISTORY -->
-
         <section class="ledger">
-
             <h2>Transactions History</h2>
-
             <ul id="transactionList"></ul>
-
         </section>
 
         <footer>
-
             Made with ❤️ by <strong>INSANE HR</strong>
-
         </footer>
 
     </div>
 
-   <!-- DIAGNOSTIC OVERRIDE BARRIER -->
+    <!-- DIAGNOSTIC OVERRIDE BARRIER -->
     <script>
         console.log("💥 SYSTEM CHECK 1: HTML execution engine is alive.");
         window.onerror = function(message, source, lineno, colno, error) {
