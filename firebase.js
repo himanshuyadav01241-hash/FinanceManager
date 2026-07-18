@@ -1,12 +1,13 @@
 // firebase.js
-// 1. Import the specific SDK functions from the official Firebase CDN
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { 
     getAuth, 
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword, 
     signOut, 
-    onAuthStateChanged 
+    onAuthStateChanged,
+    sendEmailVerification,
+    deleteUser
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { 
     getFirestore, 
@@ -22,18 +23,17 @@ import {
     orderBy 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 2. Live Production Firebase Configuration Space
+// Your Firebase Configuration (Keep your keys here)
 const firebaseConfig = {
-    apiKey: "AIzaSyCCnwz-4HDj0baMMfhJ0oHWXfuhrFTvIr0",
-    authDomain: "financeos-6eaf2.firebaseapp.com",
-    projectId: "financeos-6eaf2",
-    storageBucket: "financeos-6eaf2.firebasestorage.app",
-    messagingSenderId: "503013740949",
-    appId: "1:503013740949:web:a18ef8f8433711a672e69c",
-    measurementId: "G-F769EYMHLJ"
+    apiKey: "AIzaSy...", 
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
-// 3. Initialize Firebase Engine Frameworks
+// Initialize Core Services
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -42,7 +42,9 @@ const db = getFirestore(app);
     Authentication Services
 ========================================== */
 export async function registerUser(email, password) {
-    return createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    await sendEmailVerification(userCredential.user);
+    return userCredential;
 }
 
 export async function loginUser(email, password) {
@@ -57,12 +59,25 @@ export function monitorAuthState(callback) {
     onAuthStateChanged(auth, callback);
 }
 
-/* ==========================================
-    User Settings / Theme Configs Store
-========================================== */
-export async function saveUserSettings(uid, settings) {
+// THIS IS THE EXACT EXPORT SCRIPT.JS IS LOOKING FOR:
+export async function deleteCurrentUserAccount(uid) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("No active user authenticated.");
+
+    // 1. Remove user settings record from Firestore database
     const userRef = doc(db, "users", uid);
-    return setDoc(userRef, settings, { merge: true });
+    await deleteDoc(userRef);
+
+    // 2. Erase user from Firebase Authentication
+    await deleteUser(user);
+}
+
+/* ==========================================
+    Database Settings Synchronization
+========================================== */
+export async function saveUserSettings(uid, settingsData) {
+    const userRef = doc(db, "users", uid);
+    await setDoc(userRef, settingsData, { merge: true });
 }
 
 export async function getUserSettings(uid) {
@@ -72,21 +87,21 @@ export async function getUserSettings(uid) {
 }
 
 /* ==========================================
-    Transactions Ledger CRUD Store Pipeline
+    Transactions Collection CRUD Sync Pipeline
 ========================================== */
-export async function syncAddTransaction(uid, transactionData) {
-    const txCollectionRef = collection(db, "users", uid, "transactions");
-    const docRef = await addDoc(txCollectionRef, transactionData);
+export async function syncAddTransaction(uid, transaction) {
+    const txRef = collection(db, "users", uid, "transactions");
+    const docRef = await addDoc(txRef, transaction);
     return docRef.id;
 }
 
 export async function syncGetTransactions(uid) {
-    const txCollectionRef = collection(db, "users", uid, "transactions");
-    const q = query(txCollectionRef, orderBy("id", "asc"));
+    const txRef = collection(db, "users", uid, "transactions");
+    const q = query(txRef, orderBy("id", "asc"));
     const querySnapshot = await getDocs(q);
     
-    const list = [];
-    querySnapshot.forEach((doc) => {
+    let list = [];
+    querySnapshot.forEach(doc => {
         list.push({ docId: doc.id, ...doc.data() });
     });
     return list;
@@ -94,10 +109,10 @@ export async function syncGetTransactions(uid) {
 
 export async function syncUpdateTransaction(uid, docId, updatedFields) {
     const txDocRef = doc(db, "users", uid, "transactions", docId);
-    return updateDoc(txDocRef, updatedFields);
+    await updateDoc(txDocRef, updatedFields);
 }
 
 export async function syncDeleteTransaction(uid, docId) {
     const txDocRef = doc(db, "users", uid, "transactions", docId);
-    return deleteDoc(txDocRef);
+    await deleteDoc(txDocRef);
 }
