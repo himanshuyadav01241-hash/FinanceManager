@@ -302,9 +302,17 @@
 
     </div>
 
-    <!-- Initialization and Exports Module -->
-    <script type="module" src="firebase.js"></script>
-    
-</body>
+   <!-- DIAGNOSTIC OVERRIDE BARRIER -->
+    <script>
+        console.log("💥 SYSTEM CHECK 1: HTML execution engine is alive.");
+        window.onerror = function(message, source, lineno, colno, error) {
+            alert("🔴 MODULE INITIALIZATION FAULT:\n" + message + "\nLine: " + lineno + "\nFile: " + source);
+            return false;
+        };
+    </script>
 
+    <!-- Finance Logic Engine -->
+    <script type="module" src="script.js"></script>
+
+</body>
 </html>
