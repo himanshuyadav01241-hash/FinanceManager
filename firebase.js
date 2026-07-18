@@ -60,16 +60,27 @@ export function monitorAuthState(callback) {
     onAuthStateChanged(auth, callback);
 }
 
-// Account Deletion Pipeline Export
+// Account Deletion Pipeline Export (Updated to clean subcollections first)
 export async function deleteCurrentUserAccount(uid) {
     const user = auth.currentUser;
     if (!user) throw new Error("No active user authenticated.");
 
-    // 1. Remove user settings record from Firestore database
+    // 1. Fetch and clean up all transactions in the subcollection first
+    const txRef = collection(db, "users", uid, "transactions");
+    const txSnapshot = await getDocs(txRef);
+    
+    // Delete every single transaction document sequentially
+    const deletePromises = [];
+    txSnapshot.forEach((docSnap) => {
+        deletePromises.push(deleteDoc(docSnap.ref));
+    });
+    await Promise.all(deletePromises);
+
+    // 2. Remove the main user settings profile record from Firestore
     const userRef = doc(db, "users", uid);
     await deleteDoc(userRef);
 
-    // 2. Erase user from Firebase Authentication
+    // 3. Finally, erase the user from Firebase Authentication
     await deleteUser(user);
 }
 
