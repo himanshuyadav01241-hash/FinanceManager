@@ -22,7 +22,7 @@ let theme, newCategory, addCategory, categoryList;
 let authScreen, appScreen, googleBtn, logoutBtn, deleteAccountBtn, exportBtn, purgeCategoryBtn;
 
 // Custom Modal Engine Bindings
-let modalOverlay, modalTitle, modalDescription, modalConfirmBtn, modalCancelBtn, modalInput, modalIcon;
+let modalOverlay, modalTitle, modalDescription, modalConfirmBtn, modalCancelBtn, modalInput, modalIcon, modalInputSec;
 
 document.addEventListener("DOMContentLoaded", () => {
     // Basic elements
@@ -61,6 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
     modalConfirmBtn = $("modalConfirmBtn");
     modalCancelBtn = $("modalCancelBtn");
     modalInput = $("modalConfirmationInput");
+    modalInputSec = $("modalSecondaryInput");
     modalIcon = $("modalIconContainer");
 
     /* ==========================================
@@ -156,7 +157,9 @@ function showCustomAlert(titleText, descText, isNegative = false) {
     modalIcon.innerHTML = isNegative ? '<i class="fa-solid fa-circle-xmark"></i>' : '<i class="fa-solid fa-circle-check"></i>';
     modalIcon.style.color = isNegative ? "#d9534f" : "#5cb85c";
     modalConfirmBtn.style.background = isNegative ? "#d9534f" : "#4285F4";
+    modalConfirmBtn.innerText = "OK";
     modalInput.style.display = "none";
+    modalInputSec.style.display = "none";
     modalCancelBtn.style.display = "none"; 
     
     modalOverlay.style.display = "flex";
@@ -171,10 +174,13 @@ function showCustomConfirm(titleText, descText, requiresVerificationText = false
     modalIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
     modalIcon.style.color = "#d9534f";
     modalConfirmBtn.style.background = "#d9534f";
+    modalConfirmBtn.innerText = "Confirm";
     modalCancelBtn.style.display = "inline-block";
+    modalInputSec.style.display = "none";
 
     if (requiresVerificationText) {
         modalInput.value = "";
+        modalInput.placeholder = `Type "${matchingText}" to confirm`;
         modalInput.style.borderColor = "rgba(255,255,255,0.2)";
         modalInput.style.display = "block";
     } else {
@@ -191,6 +197,73 @@ function showCustomConfirm(titleText, descText, requiresVerificationText = false
         }
         closeModal();
         if (onConfirmCallback) onConfirmCallback();
+    };
+}
+
+// Custom Input Prompt Layout (For single string inputs like Category Renaming)
+function showCustomPrompt(titleText, descText, initialInputValue, placeholderText, onSaveCallback) {
+    modalTitle.innerText = titleText;
+    modalDescription.innerText = descText;
+    modalIcon.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+    modalIcon.style.color = "#4285F4";
+    modalConfirmBtn.style.background = "#4285F4";
+    modalConfirmBtn.innerText = "Save Changes";
+    modalCancelBtn.style.display = "inline-block";
+    modalInputSec.style.display = "none";
+    
+    modalInput.value = initialInputValue;
+    modalInput.placeholder = placeholderText;
+    modalInput.style.borderColor = "rgba(255,255,255,0.15)";
+    modalInput.style.display = "block";
+
+    modalOverlay.style.display = "flex";
+    setTimeout(() => { modalOverlay.children[0].style.transform = "scale(1)"; }, 10);
+
+    modalConfirmBtn.onclick = () => {
+        const val = modalInput.value.trim();
+        if (val === "") {
+            modalInput.style.borderColor = "#d9534f";
+            return;
+        }
+        closeModal();
+        if (onSaveCallback) onSaveCallback(val);
+    };
+}
+
+// Dual Interactive Input Field Layout (Specifically designed for updating ledger items)
+function showCustomTransactionEditor(currentTitle, currentAmount, onSaveCallback) {
+    modalTitle.innerText = "Edit Transaction Details";
+    modalDescription.innerText = "Update entry details below:";
+    modalIcon.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+    modalIcon.style.color = "#4285F4";
+    modalConfirmBtn.style.background = "#4285F4";
+    modalConfirmBtn.innerText = "Update";
+    modalCancelBtn.style.display = "inline-block";
+
+    modalInput.value = currentTitle;
+    modalInput.placeholder = "Transaction Name";
+    modalInput.style.borderColor = "rgba(255,255,255,0.15)";
+    modalInput.style.display = "block";
+
+    modalInputSec.value = currentAmount;
+    modalInputSec.placeholder = "Amount (₹)";
+    modalInputSec.style.borderColor = "rgba(255,255,255,0.15)";
+    modalInputSec.style.display = "block";
+
+    modalOverlay.style.display = "flex";
+    setTimeout(() => { modalOverlay.children[0].style.transform = "scale(1)"; }, 10);
+
+    modalConfirmBtn.onclick = () => {
+        const titleVal = modalInput.value.trim();
+        const amountVal = Number(modalInputSec.value);
+
+        if (titleVal === "" || isNaN(amountVal) || amountVal <= 0) {
+            if (titleVal === "") modalInput.style.borderColor = "#d9534f";
+            if (isNaN(amountVal) || amountVal <= 0) modalInputSec.style.borderColor = "#d9534f";
+            return;
+        }
+        closeModal();
+        if (onSaveCallback) onSaveCallback(titleVal, amountVal);
     };
 }
 
@@ -271,21 +344,26 @@ function loadCategories() {
     if (categories.includes(currentFilterValue)) filterCategory.value = currentFilterValue;
 }
 
-window.renameCategory = async function(i) {
+window.renameCategory = function(i) {
     const oldName = categories[i];
-    const name = prompt("Modify Category Designation Label:", oldName);
-    if (!name || name.trim() === "") return;
     
-    const targetName = name.trim();
-    categories[i] = targetName;
-    
-    for (let t of transactions) {
-        if (t.category === oldName) {
-            await syncUpdateTransaction(userUID, t.docId, { category: targetName });
+    showCustomPrompt(
+        "Rename Category",
+        `Provide a new description label for "${oldName}":`,
+        oldName,
+        "Category Name",
+        async (targetName) => {
+            categories[i] = targetName;
+            
+            for (let t of transactions) {
+                if (t.category === oldName) {
+                    await syncUpdateTransaction(userUID, t.docId, { category: targetName });
+                }
+            }
+            await saveConfigState();
+            loadCategories();
         }
-    }
-    await saveConfigState();
-    loadCategories();
+    );
 };
 
 window.removeCategory = async function(i) {
@@ -348,20 +426,20 @@ window.deleteTransaction = function(id) {
     });
 };
 
-window.editTransaction = async function(id) {
+window.editTransaction = function(id) {
     const item = transactions.find(x => x.id === id);
     if (!item) return;
 
-    const t = prompt("Modify Description Designation:", item.title);
-    if (t === null) return;
-
-    const a = prompt("Modify Financial Metric Value Amount (₹):", item.amount);
-    if (a === null || isNaN(Number(a)) || Number(a) <= 0) return;
-
-    await syncUpdateTransaction(userUID, item.docId, {
-        title: t.trim(),
-        amount: Number(a)
-    });
+    showCustomTransactionEditor(
+        item.title, 
+        item.amount, 
+        async (newTitle, newAmount) => {
+            await syncUpdateTransaction(userUID, item.docId, {
+                title: newTitle,
+                amount: newAmount
+            });
+        }
+    );
 };
 
 window.toggleStatus = async function(id) {
@@ -372,7 +450,7 @@ window.toggleStatus = async function(id) {
 };
 
 /* ==========================================
-    NEW FEATURE: PURGE ACTIVE CATEGORY VIEW
+    MASS PURGE ACTIVE CATEGORY VIEW
 ========================================== */
 function purgeActiveCategoryTransactions() {
     const activeCategory = filterCategory.value;
