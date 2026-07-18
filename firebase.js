@@ -1,67 +1,102 @@
-firebase.js
+// firebase.js
+// 1. Import the specific SDK functions from the official Firebase CDN
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, addDoc, getDoc, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { 
+    getAuth, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    signOut, 
+    onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { 
+    getFirestore, 
+    doc, 
+    setDoc, 
+    getDoc, 
+    collection, 
+    addDoc, 
+    getDocs, 
+    updateDoc, 
+    deleteDoc, 
+    query, 
+    orderBy 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// 2. Your Web App's Firebase Configuration (Replace with your exact keys)
 const firebaseConfig = {
-  apiKey: "AIzaSyCCnwz-4HDj0baMMfhJ0oHWXfuhrFTvIr0",
-  authDomain: "financeos-6eaf2.firebaseapp.com",
-  projectId: "financeos-6eaf2",
-  storageBucket: "financeos-6eaf2.firebasestorage.app",
-  messagingSenderId: "503013740949",
-  appId: "1:503013740949:web:a18ef8f8433711a672e69c",
-  measurementId: "G-F769EYMHLJ"
+    apiKey: "YOUR_API_KEY_HERE",
+    authDomain: "YOUR_AUTH_DOMAIN_HERE",
+    projectId: "YOUR_PROJECT_ID_HERE",
+    storageBucket: "YOUR_STORAGE_BUCKET_HERE",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID_HERE",
+    appId: "YOUR_APP_ID_HERE"
 };
 
+// 3. Initialize Firebase Services modules cleanly
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-/* --- APPLICATION LAYER AUTH ACTIONS --- */
-export const registerUser = (email, password) => createUserWithEmailAndPassword(auth, email, password);
-export const loginUser = (email, password) => signInWithEmailAndPassword(auth, email, password);
-export const logoutUser = () => signOut(auth);
-export const monitorAuthState = (callback) => onAuthStateChanged(auth, callback);
+/* ==========================================
+    Authentication Services
+========================================== */
+export async function registerUser(email, password) {
+    return createUserWithEmailAndPassword(auth, email, password);
+}
 
-/* --- CONFIG DATA CONTROL METRICS --- */
-export const saveUserSettings = async (userId, settings) => {
-    try {
-        await setDoc(doc(db, "users", userId, "config", "appSettings"), settings, { merge: true });
-    } catch (e) { console.error("Database connection failure updating settings:", e); }
-};
+export async function loginUser(email, password) {
+    return signInWithEmailAndPassword(auth, email, password);
+}
 
-export const getUserSettings = async (userId) => {
-    try {
-        const snap = await getDoc(doc(db, "users", userId, "config", "appSettings"));
-        return snap.exists() ? snap.data() : null;
-    } catch (e) { console.error("Database connections error getting settings:", e); return null; }
-};
+export async function logoutUser() {
+    return signOut(auth);
+}
 
-/* --- TRANSACTION LEDGER FIRESTORE CRUD --- */
-export const syncAddTransaction = async (userId, tx) => {
-    try {
-        const docRef = await addDoc(collection(db, "users", userId, "transactions"), tx);
-        return docRef.id;
-    } catch (e) { console.error("Failed adding ledger operation record:", e); }
-};
+export function monitorAuthState(callback) {
+    onAuthStateChanged(auth, callback);
+}
 
-export const syncGetTransactions = async (userId) => {
-    try {
-        const snap = await getDocs(collection(db, "users", userId, "transactions"));
-        let txList = [];
-        snap.forEach(doc => txList.push({ docId: doc.id, ...doc.data() }));
-        return txList;
-    } catch (e) { console.error("Failed collecting structural transactions list:", e); return []; }
-};
+/* ==========================================
+    User Settings / Theme Configs Store
+========================================== */
+export async function saveUserSettings(uid, settings) {
+    const userRef = doc(db, "users", uid);
+    return setDoc(userRef, settings, { merge: true });
+}
 
-export const syncUpdateTransaction = async (userId, docId, updatedFields) => {
-    try {
-        await updateDoc(doc(db, "users", userId, "transactions", docId), updatedFields);
-    } catch (e) { console.error("Failed updating structured database entry:", e); }
-};
+export async function getUserSettings(uid) {
+    const userRef = doc(db, "users", uid);
+    const docSnap = await getDoc(userRef);
+    return docSnap.exists() ? docSnap.data() : null;
+}
 
-export const syncDeleteTransaction = async (userId, docId) => {
-    try {
-        await deleteDoc(doc(db, "users", userId, "transactions", docId));
-    } catch (e) { console.error("Failed removing transaction data record:", e); }
-};
+/* ==========================================
+    Transactions Ledger CRUD Store Pipeline
+========================================== */
+export async function syncAddTransaction(uid, transactionData) {
+    const txCollectionRef = collection(db, "users", uid, "transactions");
+    const docRef = await addDoc(txCollectionRef, transactionData);
+    return docRef.id;
+}
+
+export async function syncGetTransactions(uid) {
+    const txCollectionRef = collection(db, "users", uid, "transactions");
+    const q = query(txCollectionRef, orderBy("id", "asc"));
+    const querySnapshot = await getDocs(q);
+    
+    const list = [];
+    querySnapshot.forEach((doc) => {
+        list.push({ docId: doc.id, ...doc.data() });
+    });
+    return list;
+}
+
+export async function syncUpdateTransaction(uid, docId, updatedFields) {
+    const txDocRef = doc(db, "users", uid, "transactions", docId);
+    return updateDoc(txDocRef, updatedFields);
+}
+
+export async function syncDeleteTransaction(uid, docId) {
+    const txDocRef = doc(db, "users", uid, "transactions", docId);
+    return deleteDoc(txDocRef);
+}
