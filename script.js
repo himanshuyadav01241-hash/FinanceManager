@@ -2,7 +2,8 @@
 import { 
     registerUser, loginUser, logoutUser, monitorAuthState, deleteCurrentUserAccount,
     saveUserSettings, getUserSettings,
-    syncAddTransaction, syncGetTransactions, syncUpdateTransaction, syncDeleteTransaction 
+    syncAddTransaction, syncGetTransactions, syncUpdateTransaction, syncDeleteTransaction,
+    loginWithGoogle // ✅ Added Google Auth Import pipeline
 } from "./firebase.js";
 
 const $ = id => document.getElementById(id);
@@ -16,7 +17,7 @@ let categories = ["Food", "Transport", "Shopping", "Bills", "Entertainment", "Ge
 let title, amount, type, category, status, addBtn, list, search, filterCategory;
 let balance, income, expense, saving, healthBadge, pendingIncome, pendingExpense;
 let theme, newCategory, addCategory, categoryList;
-let authScreen, appScreen, loginEmail, loginPassword, loginBtn, signupBtn, logoutBtn, deleteAccountBtn;
+let authScreen, appScreen, loginEmail, loginPassword, loginBtn, googleBtn, signupBtn, logoutBtn, deleteAccountBtn;
 
 /* ==========================================
     Initialization & DOM Binding Setup 
@@ -52,17 +53,16 @@ document.addEventListener("DOMContentLoaded", () => {
     loginEmail = $("loginEmail");
     loginPassword = $("loginPassword");
     loginBtn = $("loginBtn");
+    googleBtn = $("googleBtn"); // ✅ Bound new Google button to DOM layout
     signupBtn = $("signupBtn");
     logoutBtn = $("logoutBtn");
-    deleteAccountBtn = $("deleteAccountBtn"); // Target the new HTML deletion element
+    deleteAccountBtn = $("deleteAccountBtn"); 
 
     /* ==========================================
         Authentication Lifecycle Observer 
     ========================================== */
     monitorAuthState(async (user) => {
         if (user) {
-            // REMOVED THE AGGRESSIVE VERIFICATION CHECK FROM HERE 
-            // Users can now log in normally without getting instantly kicked out!
             userUID = user.uid;
             authScreen.style.display = "none";
             appScreen.style.display = "block";
@@ -87,6 +87,18 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    // ✅ Wired Google authentication login path
+    if (googleBtn) {
+        googleBtn.onclick = async () => {
+            try {
+                await loginWithGoogle();
+                // MonitorAuthState will handle dashboard injection seamlessly
+            } catch (e) {
+                alert("Google Authentication Error: " + e.message);
+            }
+        };
+    }
+
     signupBtn.onclick = async () => {
         const email = loginEmail.value.trim();
         const password = loginPassword.value;
@@ -95,34 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         try { 
             await registerUser(email, password); 
-            // The verification link is triggered here only when creating the account
             alert("📩 Account Created & Verification Email Sent! Please check your inbox (and spam folder) to confirm your email.");
-        } catch (e) { 
-            alert("Registration Error: " + e.message); 
-        }
-    };
-
-    /* --- AUTH TRIGGERS CONFIG --- */
-    loginBtn.onclick = async () => {
-        const email = loginEmail.value.trim();
-        const password = loginPassword.value;
-        if (!email || !password) return alert("Please enter your email and password.");
-        try { 
-            await loginUser(email, password); 
-        } catch (e) { 
-            alert("Login Error: " + e.message); 
-        }
-    };
-
-    signupBtn.onclick = async () => {
-        const email = loginEmail.value.trim();
-        const password = loginPassword.value;
-        if (!email || !password) return alert("Please specify an email and password.");
-        if (password.length < 6) return alert("Firebase Security Rule: Passwords must be at least 6 characters.");
-        
-        try { 
-            await registerUser(email, password); 
-            alert("Verification Email Sent! Please check your inbox and confirm the link before logging in.");
         } catch (e) { 
             alert("Registration Error: " + e.message); 
         }
@@ -130,7 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     logoutBtn.onclick = () => logoutUser();
 
-// Secure Deletion Handler Interface Trigger with String Confirmation
+    // Secure Deletion Handler Interface Trigger with String Confirmation
     if (deleteAccountBtn) {
         deleteAccountBtn.onclick = async () => {
             if (!userUID) return;
