@@ -45,25 +45,26 @@
 
     <div class="container" id="app" style="display:none;">
 
-        <header>
+        <header style="display: flex; flex-direction: column; gap: 15px; padding: 15px 10px;">
 
-            <div class="logo">
+            <div class="logo" style="display: flex; align-items: center; gap: 12px;">
 
                 <i class="fa-solid fa-wallet"></i>
 
                 <div>
 
-                    <h1>INSANE HR</h1>
+                    <h1 style="margin: 0; font-size: 1.4rem;">INSANE HR</h1>
 
-                    <span>FinanceOS Cloud</span>
+                    <span style="font-size: 0.85rem; opacity: 0.8;">FinanceOS Cloud</span>
 
                 </div>
 
             </div>
 
-            <div class="themeBox">
+            <!-- Mobile-Optimized Action Control Bar -->
+            <div class="themeBox" style="display: flex; flex-wrap: wrap; width: 100%; gap: 8px; justify-content: space-between; align-items: center;">
 
-                <select id="theme">
+                <select id="theme" style="flex: 1 1 calc(50% - 4px); min-width: 100px; padding: 10px; box-sizing: border-box;">
 
                     <option value="dark">🌙 Dark</option>
 
@@ -77,16 +78,16 @@
 
                 </select>
 
-                <button id="logoutBtn">
+                <button id="logoutBtn" style="flex: 1 1 calc(25% - 4px); min-width: 75px; padding: 10px; white-space: nowrap;">
 
                     Logout
 
                 </button>
 
                 <!-- Secure Deletion Trigger Hooked into matching script.js ID entry -->
-                <button id="deleteAccountBtn" style="background-color: #d9534f; color: white;">
+                <button id="deleteAccountBtn" style="background-color: #d9534f; color: white; flex: 1 1 calc(25% - 4px); min-width: 75px; padding: 10px; white-space: nowrap;">
 
-                    Delete Account
+                    Delete
 
                 </button>
 
