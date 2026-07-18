@@ -61,18 +61,8 @@ document.addEventListener("DOMContentLoaded", () => {
     ========================================== */
     monitorAuthState(async (user) => {
         if (user) {
-            // Check if the user has verified their email address
-            if (!user.emailVerified) {
-                alert("🔒 Access Denied: Please verify your email first! A verification link has been sent to your inbox.");
-                await logoutUser(); // Clear session immediately if unverified
-                userUID = null;
-                appScreen.style.display = "none";
-                authScreen.style.display = "flex";
-                clearFormStateFields();
-                return;
-            }
-
-            // Unlock dashboard if email check passes
+            // REMOVED THE AGGRESSIVE VERIFICATION CHECK FROM HERE 
+            // Users can now log in normally without getting instantly kicked out!
             userUID = user.uid;
             authScreen.style.display = "none";
             appScreen.style.display = "block";
@@ -84,6 +74,33 @@ document.addEventListener("DOMContentLoaded", () => {
             clearFormStateFields();
         }
     });
+
+    /* --- AUTH TRIGGERS CONFIG --- */
+    loginBtn.onclick = async () => {
+        const email = loginEmail.value.trim();
+        const password = loginPassword.value;
+        if (!email || !password) return alert("Please enter your email and password.");
+        try { 
+            await loginUser(email, password); 
+        } catch (e) { 
+            alert("Login Error: " + e.message); 
+        }
+    };
+
+    signupBtn.onclick = async () => {
+        const email = loginEmail.value.trim();
+        const password = loginPassword.value;
+        if (!email || !password) return alert("Please specify an email and password.");
+        if (password.length < 6) return alert("Firebase Security Rule: Passwords must be at least 6 characters.");
+        
+        try { 
+            await registerUser(email, password); 
+            // The verification link is triggered here only when creating the account
+            alert("📩 Account Created & Verification Email Sent! Please check your inbox (and spam folder) to confirm your email.");
+        } catch (e) { 
+            alert("Registration Error: " + e.message); 
+        }
+    };
 
     /* --- AUTH TRIGGERS CONFIG --- */
     loginBtn.onclick = async () => {
