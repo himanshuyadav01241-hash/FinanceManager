@@ -4,7 +4,7 @@ import {
     saveUserSettings, getUserSettings,
     syncAddTransaction, syncUpdateTransaction, syncDeleteTransaction,
     loginWithGoogle,
-    syncTransactionsRealtime // 👈 Changed import to real-time engine
+    syncTransactionsRealtime 
 } from "./firebase.js";
 
 const $ = id => document.getElementById(id);
@@ -13,7 +13,7 @@ const $ = id => document.getElementById(id);
 let userUID = null;
 let transactions = [];
 let categories = ["Food", "Transport", "Shopping", "Bills", "Entertainment", "General"];
-let unsubscribeTxListener = null; // 👈 Keeps track of the active data stream listener
+let unsubscribeTxListener = null; 
 
 // Declare global element variables to be populated when DOM is ready
 let title, amount, type, category, status, addBtn, list, search, filterCategory;
@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
             appScreen.style.display = "block";
             await initializeUserDashboard();
         } else {
-            // ✅ Clean up memory stream listener upon logout context
+            // Clean up memory stream listener upon logout context
             if (unsubscribeTxListener) {
                 unsubscribeTxListener();
                 unsubscribeTxListener = null;
@@ -162,13 +162,29 @@ async function initializeUserDashboard() {
 
     loadCategories();
 
-    // ✅ Switch to real-time live data streaming pipeline
-    if (unsubscribeTxListener) unsubscribeTxListener(); // kill any stale connections
-    
-    unsubscribeTxListener = syncTransactionsRealtime(userUID, (updatedTransactionsList) => {
-        transactions = updatedTransactionsList;
-        render(); // 👈 Automatically updates the UI interface instantly on any DB change!
-    });
+    // Reusable core engine to handle active stream binding safely
+    function startLiveStream() {
+        if (unsubscribeTxListener) {
+            unsubscribeTxListener(); 
+        }
+        
+        unsubscribeTxListener = syncTransactionsRealtime(userUID, (updatedTransactionsList) => {
+            transactions = updatedTransactionsList;
+            render(); 
+        });
+        console.log("⚡ Live data stream connected successfully.");
+    }
+
+    // Initial deployment invocation
+    startLiveStream();
+
+    // 📱 MOBILE RECOVERY INTERCEPTOR: Revives dead background sockets instantly on focus wake
+    document.onvisibilitychange = () => {
+        if (document.visibilityState === "visible" && userUID) {
+            console.log("📱 App context restored. Re-synchronizing stream pipelines...");
+            startLiveStream();
+        }
+    };
 }
 
 async function saveConfigState() {
@@ -275,8 +291,6 @@ async function addTransaction() {
         date: new Date().toLocaleDateString('en-IN')
     };
 
-    // ✅ Cleaned up code: We no longer need to push manually into memory list array here.
-    // The real-time listener will instantly capture the server document write and run render() for us!
     await syncAddTransaction(userUID, newTxPayload);
 
     title.value = "";
@@ -289,7 +303,6 @@ async function deleteTransaction(id) {
     
     if (confirm(`Delete operations record "${target.title}"?`)) {
         await syncDeleteTransaction(userUID, target.docId);
-        // Handled automatically via database stream
     }
 }
 window.deleteTransaction = deleteTransaction;
