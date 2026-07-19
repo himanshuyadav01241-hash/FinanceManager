@@ -11,9 +11,10 @@ const firebaseConfig = {
     measurementId: "G-F769EYMHLJ"
 };
 
-// Initialize Firebase Core & Auth instances
+// Initialize Firebase Core, Auth, and Firestore Cloud Database
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+const db = firebase.firestore(); // Added Cloud Database instance
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
 let state = {
@@ -88,33 +89,45 @@ const DOM = {
 };
 
 // ==========================================
-// 3. STORAGE & STATE PERSISTENCE CONTROLLERS
+// 3. CLOUD STORAGE & STATE PERSISTENCE CONTROLLERS
 // ==========================================
 function saveStateToStorage() {
     if (state.user) {
-        localStorage.setItem(`finance_tracker_user_${state.user}`, JSON.stringify({
+        // Pushes state modifications to Firebase Cloud Firestore immediately
+        db.collection("users").doc(state.user).set({
             transactions: state.transactions,
             categories: state.categories,
             theme: state.theme
-        }));
+        })
+        .then(() => console.log("Cloud database synchronized successfully."))
+        .catch((error) => console.error("Cloud database synchronization failed: ", error));
     }
 }
 
 function loadStateFromStorage(userId) {
     state.user = userId;
-    const savedData = localStorage.getItem(`finance_tracker_user_${userId}`);
-    if (savedData) {
-        const parsed = JSON.parse(savedData);
-        state.transactions = parsed.transactions || [];
-        state.categories = parsed.categories || DEFAULT_CATEGORIES;
-        state.theme = parsed.theme || "dark";
-    } else {
-        state.transactions = [];
-        state.categories = { ...DEFAULT_CATEGORIES };
-        state.theme = "dark";
-    }
     
-    checkAndProcessRecurringTransactions();
+    // Pulls state dynamically down from Cloud Firestore infrastructure
+    db.collection("users").doc(userId).get()
+        .then((doc) => {
+            if (doc.exists) {
+                const parsed = doc.data();
+                state.transactions = parsed.transactions || [];
+                state.categories = parsed.categories || DEFAULT_CATEGORIES;
+                state.theme = parsed.theme || "dark";
+            } else {
+                // If it's a completely brand new user layout structure, deploy baseline setup rules
+                state.transactions = [];
+                state.categories = { ...DEFAULT_CATEGORIES };
+                state.theme = "dark";
+            }
+            
+            checkAndProcessRecurringTransactions();
+            updateApplicationUI();
+        })
+        .catch((error) => {
+            console.error("Failed to read user data profile records from Cloud storage: ", error);
+        });
 }
 
 // ==========================================
@@ -577,16 +590,19 @@ DOM.deleteAccountBtn.addEventListener('click', () => {
     openModal({
         icon: '<i class="fa-solid fa-skull-crossbones" style="color:#d9534f"></i>',
         title: 'Complete System Destruction',
-        desc: 'This will completely drop all client local states bound to this account identity mapping from this device configuration profile.',
+        desc: 'This will completely drop all client database nodes bound to this account identity mapping.',
         type: 'deleteAccount',
         onConfirm: () => {
             const validationPhrase = DOM.modalInputConfirm.value.trim();
             if (validationPhrase === 'DELETE') {
-                localStorage.removeItem(`finance_tracker_user_${state.user}`);
-                state.transactions = [];
-                state.categories = { ...DEFAULT_CATEGORIES };
-                closeModal();
-                auth.signOut();
+                db.collection("users").doc(state.user).delete()
+                    .then(() => {
+                        state.transactions = [];
+                        state.categories = { ...DEFAULT_CATEGORIES };
+                        closeModal();
+                        auth.signOut();
+                    })
+                    .catch((err) => alert("Failed to clear cloud record database nodes."));
             } else {
                 alert("Incorrect validation confirmation value string.");
             }
@@ -662,13 +678,13 @@ DOM.logoutBtn.addEventListener('click', () => {
 function handleUserSessionRouting(user) {
     if (user && user.email) {
         const userIdentityKey = user.email.trim().toLowerCase().replace(/[^a-z0-9@.]/g, '_');
-        loadStateFromStorage(userIdentityKey);
         
         // Immediate visual view layout conversion
         if (DOM.authScreen) DOM.authScreen.style.display = 'none';
         if (DOM.app) DOM.app.style.display = 'block';
         
-        updateApplicationUI();
+        // Triggers firestore fetch loop, which handles updateApplicationUI automatically internally
+        loadStateFromStorage(userIdentityKey);
     }
 }
 
