@@ -1,13 +1,15 @@
 // ==========================================
 // 1. FIREBASE CONFIGURATION & INITIALIZATION
 // ==========================================
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY", // <-- Replace with your real Firebase Web API Key
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCCnwz-4HDj0baMMfhJ0oHWXfuhrFTvIr0",
+  authDomain: "financeos-6eaf2.firebaseapp.com",
+  projectId: "financeos-6eaf2",
+  storageBucket: "financeos-6eaf2.firebasestorage.app",
+  messagingSenderId: "503013740949",
+  appId: "1:503013740949:web:a18ef8f8433711a672e69c",
+  measurementId: "G-F769EYMHLJ"
 };
 
 if (!firebase.apps.length) {
