@@ -111,7 +111,7 @@ function loadStateFromStorage(userId) {
 // 4. DIALOGUE MODAL ENGINE SYSTEM (PROMPT ROUTING)
 // ==========================================
 function openModal({ icon, title, desc, type, onConfirm }) {
-    DOM.modalOverlay.style.display = 'flex';
+    DOM.modalOverlay.style.style.display = 'flex';
     DOM.modalIcon.innerHTML = icon;
     DOM.modalTitle.textContent = title;
     DOM.modalDesc.textContent = desc;
@@ -449,13 +449,6 @@ function renderAnalyticsGraphs() {
         analyticsChart.destroy();
     }
 
-    if (labels.length === 0) {
-        // Fallback display condition handling if metrics vector remains zeroed
-        if (ctx.canvas.style.display !== 'none') {
-            // Render basic stub architecture state internally
-        }
-    }
-
     // Initialize New Chart Canvas Matrix instance options references
     analyticsChart = new Chart(ctx, {
         type: 'pie',
@@ -532,13 +525,12 @@ DOM.addCategoryBtn.addEventListener('click', () => {
     const rawCatName = DOM.newCategoryInput.value.trim();
     if (!rawCatName) return;
 
-    // Safety structural validation block logic execution bounds configurations flags targets
     if (state.categories[rawCatName]) {
         alert("Target structural classification configuration scheme mapping indices records duplicate error.");
         return;
     }
 
-    state.categories[rawCatName] = 0; // Initialize base target baseline thresholds value limits arrays
+    state.categories[rawCatName] = 0; 
     DOM.newCategoryInput.value = '';
     saveStateToStorage();
     updateApplicationUI();
@@ -633,21 +625,78 @@ DOM.modalConfirmBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// 9. IDENTITY CONTROLLER & AUTH MUTATION (USER PROFILE ENGINE)
+// 9. IDENTITY CONTROLLER & GOOGLE SIGN-IN INTERACTIVE MOCK
 // ==========================================
 DOM.googleBtn.addEventListener('click', () => {
-    // Replaced randomized arrays with an explicit browser user profile prompt
-    const userEmailInput = prompt("Enter your account email to sign in:", "developer@gmail.com");
-    
-    if (userEmailInput && userEmailInput.trim() !== "") {
-        const cleanlyFormattedId = userEmailInput.trim().toLowerCase();
-        loadStateFromStorage(cleanlyFormattedId);
-        saveStateToStorage();
-        checkAuthSessionState();
-    } else {
-        alert("A valid email handle parameter configuration profile is required to initialize workspace instances.");
-    }
+    // Injecting a clean, custom inline Google Account Selector directly into your custom modal frame
+    openModal({
+        icon: '<i class="fa-brands fa-google" style="color:#4285F4; font-size: 2rem;"></i>',
+        title: 'Sign in with Google',
+        desc: 'Select a Google account to continue to your Personal Finance Workspace Sandbox:',
+        type: 'standard',
+        onConfirm: () => {
+            // Callback placeholder: execution routes through account chip interactions below
+        }
+    });
+
+    // Remap custom modal content layout to simulate the classic Google Auth profile picker
+    DOM.modalDesc.innerHTML = `
+        <p style="margin-bottom: 15px; font-size: 0.9rem; opacity: 0.8;">Choose a Gmail workspace account profile to isolate your transaction records database:</p>
+        <div class="google-account-picker" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+            <button class="g-account-chip" data-email="alpha_user@gmail.com" style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; text-align: left; font-family: inherit; width: 100%;">
+                <div style="background: #4285F4; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem;">A</div>
+                <div>
+                    <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-color);">Alpha Tester</div>
+                    <div style="font-size: 0.75rem; opacity: 0.6;">alpha_user@gmail.com</div>
+                </div>
+            </button>
+            <button class="g-account-chip" data-email="developer_sandbox@gmail.com" style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; text-align: left; font-family: inherit; width: 100%;">
+                <div style="background: #0F9D58; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem;">D</div>
+                <div>
+                    <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-color);">Dev Workspace</div>
+                    <div style="font-size: 0.75rem; opacity: 0.6;">developer_sandbox@gmail.com</div>
+                </div>
+            </button>
+            <button class="g-account-chip" data-email="beta_tester@gmail.com" style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; text-align: left; font-family: inherit; width: 100%;">
+                <div style="background: #DB4437; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem;">B</div>
+                <div>
+                    <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-color);">Beta Profile</div>
+                    <div style="font-size: 0.75rem; opacity: 0.6;">beta_tester@gmail.com</div>
+                </div>
+            </button>
+            <div style="border-top: 1px solid var(--border-color); margin-top: 4px; padding-top: 8px;">
+                <button id="addCustomGmailBtn" style="background: none; border: none; color: #4285F4; font-size: 0.8rem; cursor: pointer; padding: 4px; font-weight: 600; font-family: inherit;">+ Use another account</button>
+            </div>
+        </div>
+    `;
+
+    // Hide standard bottom confirmation layout button since the chips handle authorization execution
+    DOM.modalConfirmBtn.style.display = 'none';
+
+    // Hook click triggers to the simulated profile selector cards
+    document.querySelectorAll('.g-account-chip').forEach(chip => {
+        chip.addEventListener('click', (e) => {
+            const chosenEmail = e.currentTarget.getAttribute('data-email');
+            executeMockGoogleAuth(chosenEmail);
+        });
+    });
+
+    // Handle "Use another account" custom entry logic flow inside the modal
+    document.getElementById('addCustomGmailBtn').addEventListener('click', () => {
+        const customEmail = prompt("Enter custom Gmail address identifier:", "yourname@gmail.com");
+        if (customEmail && customEmail.trim() !== "") {
+            executeMockGoogleAuth(customEmail.trim().toLowerCase());
+        }
+    });
 });
+
+function executeMockGoogleAuth(emailId) {
+    loadStateFromStorage(emailId);
+    saveStateToStorage();
+    DOM.modalConfirmBtn.style.display = 'inline-block'; // Restore base element layout state
+    closeModal();
+    checkAuthSessionState();
+}
 
 DOM.logoutBtn.addEventListener('click', () => {
     state.user = null;
