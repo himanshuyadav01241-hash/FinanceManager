@@ -1,5 +1,5 @@
 // ==========================================
-// 1. INITIALIZATION & FIREBASE CONFIGURATION
+// 1. FIREBASE CONFIGURATION & INITIALIZATION
 // ==========================================
 const firebaseConfig = {
   apiKey: "AIzaSyCCnwz-4HDj0baMMfhJ0oHWXfuhrFTvIr0",
@@ -11,55 +11,53 @@ const firebaseConfig = {
   measurementId: "G-F769EYMHLJ"
 };
 
-// Initialize Firebase Instance Safely
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
+
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Application Reactive State Variables
-let currentUser = null;
-let unsubscribeTransactions = null;
-let unsubscribeCategories = null;
-let transactions = [];
-let categories = ['Food', 'Utilities', 'Salary', 'Entertainment', 'Rent'];
-let chartInstance = null;
-let modalCallback = null;
-
-// DOM Elements Selection Archetype
+// ==========================================
+// 2. DOM ELEMENT SELECTORS
+// ==========================================
 const authScreen = document.getElementById('authScreen');
 const appScreen = document.getElementById('app');
-const emailAuthForm = document.getElementById('emailAuthForm');
-const authEmail = document.getElementById('authEmail');
-const authPassword = document.getElementById('authPassword');
-const customAuthBtn = document.getElementById('customAuthBtn');
 const googleBtn = document.getElementById('googleBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const themeSelect = document.getElementById('theme');
 
+const emailAuthForm = document.getElementById('emailAuthForm');
+const authEmail = document.getElementById('authEmail');
+const authPassword = document.getElementById('authPassword');
+const customAuthBtn = document.getElementById('customAuthBtn');
+const toggleAuthMode = document.getElementById('toggleAuthMode');
+const authTitle = document.getElementById('authTitle');
+const authSubtitle = document.getElementById('authSubtitle');
+
+const titleInput = document.getElementById('title');
+const amountInput = document.getElementById('amount');
+const transactionDateInput = document.getElementById('transactionDate'); // Captured custom date selector element
+const typeSelect = document.getElementById('type');
+const categorySelect = document.getElementById('category');
+const statusSelect = document.getElementById('status');
+const isRecurringCheck = document.getElementById('isRecurring');
+const addBtn = document.getElementById('addBtn');
+
 const balanceEl = document.getElementById('balance');
-const healthBadge = document.getElementById('healthBadge');
+const healthBadgeEl = document.getElementById('healthBadge');
 const incomeEl = document.getElementById('income');
 const pendingIncomeEl = document.getElementById('pendingIncome');
 const expenseEl = document.getElementById('expense');
 const pendingExpenseEl = document.getElementById('pendingExpense');
 const savingEl = document.getElementById('saving');
 
-const txTitle = document.getElementById('title');
-const txAmount = document.getElementById('amount');
-const txType = document.getElementById('type');
-const txCategory = document.getElementById('category');
-const txStatus = document.getElementById('status');
-const txIsRecurring = document.getElementById('isRecurring');
-const addBtn = document.getElementById('addBtn');
-
 const newCategoryInput = document.getElementById('newCategory');
 const addCategoryBtn = document.getElementById('addCategory');
 const categoryListEl = document.getElementById('categoryList');
-const filterCategorySelect = document.getElementById('filterCategory');
 
 const searchInput = document.getElementById('search');
+const filterCategorySelect = document.getElementById('filterCategory');
 const startDateInput = document.getElementById('startDate');
 const endDateInput = document.getElementById('endDate');
 const transactionListEl = document.getElementById('transactionList');
@@ -67,485 +65,688 @@ const exportBtn = document.getElementById('exportBtn');
 const purgeCategoryBtn = document.getElementById('purgeCategoryBtn');
 const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 
-const customModalOverlay = document.getElementById('customModalOverlay');
-const modalIconContainer = document.getElementById('modalIconContainer');
+const modalOverlay = document.getElementById('customModalOverlay');
 const modalTitle = document.getElementById('modalTitle');
 const modalDescription = document.getElementById('modalDescription');
-const modalCancelBtn = document.getElementById('modalCancelBtn');
+const modalIconContainer = document.getElementById('modalIconContainer');
 const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+// Global Application State Variables
+let currentUser = null;
+let transactions = [];
+let userCategories = ["Salary", "Food", "Rent", "Utilities", "Entertainment"];
+let analyticsChart = null;
+let currentModalAction = null;
+let isLoginMode = true;
 
 // ==========================================
-// 2. AUTHENTICATION & ROUTING CONTROLLERS
+// 3. AUTHENTICATION SERVICES
 // ==========================================
-auth.onAuthStateChanged(user => {
+
+if (toggleAuthMode) {
+    toggleAuthMode.addEventListener('click', (e) => {
+        e.preventDefault();
+        isLoginMode = !isLoginMode;
+        if (isLoginMode) {
+            authTitle.textContent = "Welcome Back";
+            authSubtitle.textContent = "Sign in to manage and secure your transactions across all your devices instantly.";
+            customAuthBtn.textContent = "Sign In";
+            toggleAuthMode.textContent = "Don't have an account? Sign Up";
+        } else {
+            authTitle.textContent = "Create Account";
+            authSubtitle.textContent = "Sign up now to start tracking your finances across devices seamlessly.";
+            customAuthBtn.textContent = "Sign Up";
+            toggleAuthMode.textContent = "Already have an account? Sign In";
+        }
+    });
+}
+
+if (emailAuthForm) {
+    emailAuthForm.addEventListener('submit', async (e) => {
+        e.preventDefault(); 
+        
+        const email = authEmail.value.trim();
+        const password = authPassword.value;
+
+        if (!email || !password) {
+            alert("Please complete all requested sign-in credentials.");
+            return;
+        }
+
+        try {
+            if (isLoginMode) {
+                await auth.signInWithEmailAndPassword(email, password);
+            } else {
+                await auth.createUserWithEmailAndPassword(email, password);
+            }
+            authEmail.value = "";
+            authPassword.value = "";
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+}
+
+if (googleBtn) {
+    googleBtn.addEventListener('click', async () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        try {
+            await auth.signInWithPopup(provider);
+        } catch (error) {
+            alert("Google Sign-In Failed: " + error.message);
+        }
+    });
+}
+
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        auth.signOut();
+    });
+}
+
+auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = user;
-        authScreen.style.display = 'none';
-        appScreen.style.display = 'block';
-        initializeDashboard();
+        if(authScreen) authScreen.style.display = 'none';
+        if(appScreen) appScreen.style.display = 'block';
+        toggleBlossomCanvas(false); 
+        initializeUserWorkspace();
     } else {
         currentUser = null;
-        authScreen.style.display = 'flex';
-        appScreen.style.display = 'none';
-        cleanupDashboardSubscriptions();
+        transactions = [];
+        if(authScreen) authScreen.style.display = 'flex';
+        if(appScreen) appScreen.style.display = 'none';
+        toggleBlossomCanvas(true); 
+        if(analyticsChart) analyticsChart.destroy();
     }
 });
 
-// Hybrid Email Flow: Automatic Account Login/Registration Setup
-customAuthBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const email = authEmail.value.trim();
-    const password = authPassword.value;
+// ==========================================
+// 4. DATA ENGINE & DATABASE WORKSPACE
+// ==========================================
 
-    if (!email || !password) return alert('Please enter both email and password.');
+function initializeUserWorkspace() {
+    // Default the date choice input field to today's system tracking parameters
+    if (transactionDateInput) {
+        transactionDateInput.value = new Date().toISOString().split('T')[0];
+    }
 
-    try {
-        await auth.signInWithEmailAndPassword(email, password);
-    } catch (loginError) {
-        if (loginError.code === 'auth/user-not-found') {
-            try {
-                await auth.createUserWithEmailAndPassword(email, password);
-            } catch (createError) {
-                alert(createError.message);
-            }
+    db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
+        if (doc.exists && doc.data().categories) {
+            userCategories = doc.data().categories;
         } else {
-            alert(loginError.message);
+            db.collection('users').doc(currentUser.uid).set({ categories: userCategories });
         }
-    }
-});
+        renderCategorySelectors();
+    });
 
-// Google Authentication Flow Provider
-googleBtn.addEventListener('click', async () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    try {
-        await auth.signInWithPopup(provider);
-    } catch (error) {
-        alert(error.message);
-    }
-});
-
-// User Session Termination
-logoutBtn.addEventListener('click', () => {
-    auth.signOut();
-});
-
-// ==========================================
-// 3. LIFECYCLE MANAGEMENT & REAL-TIME DATA
-// ==========================================
-function initializeDashboard() {
-    setupThemeController();
-    
-    // Continuous User Document Streams (Custom Category Data Storage)
-    unsubscribeCategories = db.collection('users').doc(currentUser.uid)
-        .onSnapshot(doc => {
-            if (doc.exists && doc.data().categories) {
-                categories = doc.data().categories;
-            } else {
-                db.collection('users').doc(currentUser.uid).set({ categories }, { merge: true });
-            }
-            renderCategoryUI();
-        });
-
-    // Sub-Collection Streams (Dynamic Live Transactions Ledger)
-    unsubscribeTransactions = db.collection('users').doc(currentUser.uid).collection('transactions')
-        .orderBy('createdAt', 'desc')
+    db.collection('users').doc(currentUser.uid).collection('transactions')
+        .orderBy('date', 'desc') // Modified ordering index properties to look for user custom payment dates
         .onSnapshot(snapshot => {
-            transactions = [];
-            snapshot.forEach(doc => {
-                transactions.push({ id: doc.id, ...doc.data() });
-            });
-            processAndRenderDashboard();
-        }, error => console.error("Firestore real-time error:", error));
-}
-
-function cleanupDashboardSubscriptions() {
-    if (unsubscribeTransactions) unsubscribeTransactions();
-    if (unsubscribeCategories) unsubscribeCategories();
-    transactions = [];
+            transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            processCalculationsAndRender();
+        }, error => {
+            console.error("Firestore synchronizer crash: ", error);
+        });
 }
 
 // ==========================================
-// 4. TRANSACTION ENGINE & DATA RECORDING
+// 5. TRANSACTIONS & MANAGEMENT LOGIC
 // ==========================================
-addBtn.addEventListener('click', async () => {
-    const title = txTitle.value.trim();
-    const amount = parseFloat(txAmount.value);
-    const type = txType.value;
-    const category = txCategory.value;
-    const status = txStatus.value;
-    const isRecurring = txIsRecurring.checked;
 
-    if (!title || isNaN(amount) || amount <= 0) {
-        return alert('Please fill in a valid transaction name and numerical amount.');
-    }
+if (addBtn) {
+    addBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const title = titleInput.value.trim();
+        const amount = parseFloat(amountInput.value);
+        const type = typeSelect.value;
+        const category = categorySelect.value;
+        const status = statusSelect.value;
+        const isRecurring = isRecurringCheck.checked;
+        
+        // Dynamic fallback checking if a user leaves custom date field blank
+        let chosenDate = transactionDateInput && transactionDateInput.value ? transactionDateInput.value : new Date().toISOString().split('T')[0];
 
-    const payload = {
-        title,
-        amount,
-        type,
-        category,
-        status,
-        isRecurring,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
+        if (!title || isNaN(amount) || amount <= 0) {
+            alert("Provide valid description and amount quantities.");
+            return;
+        }
 
-    try {
-        await db.collection('users').doc(currentUser.uid).collection('transactions').add(payload);
-        txTitle.value = '';
-        txAmount.value = '';
-        txIsRecurring.checked = false;
-    } catch (error) {
-        alert('Error saving record: ' + error.message);
-    }
-});
+        const payload = {
+            title,
+            amount,
+            date: chosenDate, // Custom designated transaction logging date string format (YYYY-MM-DD)
+            type,
+            category,
+            status,
+            isRecurring,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        try {
+            await db.collection('users').doc(currentUser.uid).collection('transactions').add(payload);
+            titleInput.value = '';
+            amountInput.value = '';
+            isRecurringCheck.checked = false;
+            if (transactionDateInput) {
+                transactionDateInput.value = new Date().toISOString().split('T')[0];
+            }
+        } catch (error) {
+            alert("Operation failed targeting data pipeline.");
+        }
+    });
+}
 
 async function deleteTransaction(id) {
     try {
         await db.collection('users').doc(currentUser.uid).collection('transactions').doc(id).delete();
     } catch (error) {
-        alert('Deletion error: ' + error.message);
+        alert("Failed to erase log segment.");
+    }
+}
+
+// Open custom confirmation interface window tracking manual state selection inputs
+function openStatusChangeModal(transactionId, currentStatus) {
+    const modalInputsWrapper = document.getElementById('modalInputsWrapper');
+    const dynamicStatusField = document.getElementById('dynamicStatusField');
+    const updatedStatusDropdown = document.getElementById('updatedStatusDropdown');
+    const deleteConfirmationInput = document.getElementById('deleteConfirmationInput');
+
+    if (!modalInputsWrapper || !dynamicStatusField || !updatedStatusDropdown) {
+        // Safe standard fallback in case matching HTML dynamic nodes aren't found
+        const nextStatus = currentStatus === 'paid' ? 'pending' : 'paid';
+        if (confirm(`Change status to ${nextStatus === 'paid' ? 'Settled' : 'Pending'}?`)) {
+            db.collection('users').doc(currentUser.uid).collection('transactions').doc(transactionId).update({ status: nextStatus });
+        }
+        return;
+    }
+
+    // Explicit window configuration states targeting choice dropdown structures
+    if (deleteConfirmationInput) deleteConfirmationInput.style.display = 'none';
+    modalInputsWrapper.style.display = 'block';
+    dynamicStatusField.style.display = 'block';
+    updatedStatusDropdown.value = currentStatus;
+
+    displayModal(
+        "Update Payment Status",
+        "Select the updated accounting log tracking state for this record below:",
+        "fa-solid fa-file-invoice-dollar",
+        async () => {
+            const selectedStatusValue = updatedStatusDropdown.value;
+            try {
+                await db.collection('users').doc(currentUser.uid).collection('transactions').doc(transactionId).update({
+                    status: selectedStatusValue
+                });
+            } catch (error) {
+                alert("Failed to modify transaction state parameters.");
+            }
+        }
+    );
+}
+
+// ==========================================
+// 6. CATEGORIES ENGINE MODULES
+// ==========================================
+
+function renderCategorySelectors() {
+    if(categorySelect) categorySelect.innerHTML = userCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+    if(filterCategorySelect) filterCategorySelect.innerHTML = `<option value="all">All Categories</option>` + userCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+    if(categoryListEl) {
+        categoryListEl.innerHTML = userCategories.map(cat => `
+            <div class="categoryCard">
+                <span>${cat}</span>
+                <button onclick="deleteCategory('${cat}')" style="background:transparent; border:none; color:var(--text-primary); padding:2px 6px;">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+}
+
+if (addCategoryBtn) {
+    addCategoryBtn.addEventListener('click', async () => {
+        const newCat = newCategoryInput.value.trim();
+        if (!newCat || userCategories.includes(newCat)) return;
+
+        const updatedCategories = [...userCategories, newCat];
+        try {
+            await db.collection('users').doc(currentUser.uid).update({ categories: updatedCategories });
+            newCategoryInput.value = '';
+        } catch (error) {
+            alert("Failed to synchronize category collection metadata.");
+        }
+    });
+}
+
+async function deleteCategory(categoryName) {
+    const updatedCategories = userCategories.filter(cat => cat !== categoryName);
+    try {
+        await db.collection('users').doc(currentUser.uid).update({ categories: updatedCategories });
+    } catch (error) {
+        console.error("Failed modification routines.");
     }
 }
 
 // ==========================================
-// 5. METRIC AGGREGATION & DATA ANALYSIS
+// 7. MATH CALCULATIONS & UI RENDERING
 // ==========================================
-function processAndRenderDashboard() {
-    let settledIncome = 0;
+
+function processCalculationsAndRender() {
+    let totalBalance = 0;
+    let totalIncome = 0;
+    let totalExpense = 0;
     let pendingIncome = 0;
-    let settledExpense = 0;
     let pendingExpense = 0;
 
     transactions.forEach(t => {
         if (t.type === 'income') {
-            if (t.status === 'paid') settledIncome += t.amount;
+            if (t.status === 'paid') totalIncome += t.amount;
             else pendingIncome += t.amount;
         } else {
-            if (t.status === 'paid') settledExpense += t.amount;
+            if (t.status === 'paid') totalExpense += t.amount;
             else pendingExpense += t.amount;
         }
     });
 
-    const netBalance = settledIncome - settledExpense;
-    
-    // Savings Margin Percentage Calculation
-    let savingsMargin = 0;
-    if (settledIncome > 0) {
-        savingsMargin = Math.round(((settledIncome - settledExpense) / settledIncome) * 100);
+    totalBalance = totalIncome - totalExpense;
+
+    if(balanceEl) balanceEl.textContent = `₹${totalBalance.toLocaleString()}`;
+    if(incomeEl) incomeEl.textContent = `₹${totalIncome.toLocaleString()}`;
+    if(expenseEl) expenseEl.textContent = `₹${totalExpense.toLocaleString()}`;
+    if(pendingIncomeEl) pendingIncomeEl.textContent = `Pending: ₹${pendingIncome.toLocaleString()}`;
+    if(pendingExpenseEl) pendingExpenseEl.textContent = `Pending: ₹${pendingExpense.toLocaleString()}`;
+
+    if (healthBadgeEl) {
+        if (totalBalance > 5000) {
+            healthBadgeEl.textContent = "Healthy";
+            healthBadgeEl.className = "badge badge-good";
+        } else if (totalBalance >= 0) {
+            healthBadgeEl.textContent = "Warning";
+            healthBadgeEl.className = "badge badge-warn";
+        } else {
+            healthBadgeEl.textContent = "Deficit";
+            healthBadgeEl.className = "badge badge-danger";
+        }
     }
 
-    // UI Panel Values Interpolation
-    balanceEl.textContent = `₹${netBalance.toLocaleString('en-IN')}`;
-    incomeEl.textContent = `₹${settledIncome.toLocaleString('en-IN')}`;
-    pendingIncomeEl.textContent = `Pending: ₹${pendingIncome.toLocaleString('en-IN')}`;
-    expenseEl.textContent = `₹${settledExpense.toLocaleString('en-IN')}`;
-    pendingExpenseEl.textContent = `Pending: ₹${pendingExpense.toLocaleString('en-IN')}`;
-    savingEl.textContent = `${savingsMargin}%`;
-
-    // Dynamic Financial Safety Health Badge Assignment
-    healthBadge.className = 'badge';
-    if (netBalance > settledExpense * 0.5) {
-        healthBadge.textContent = 'Healthy';
-        healthBadge.classList.add('badge-good');
-    } else if (netBalance >= 0) {
-        healthBadge.textContent = 'Warning';
-        healthBadge.classList.add('badge-warn');
-    } else {
-        healthBadge.textContent = 'Critical';
-        healthBadge.classList.add('badge-danger');
+    if (savingEl) {
+        if (totalIncome > 0) {
+            const rate = ((totalIncome - totalExpense) / totalIncome) * 100;
+            savingEl.textContent = `${Math.max(0, Math.round(rate))}%`;
+        } else {
+            savingEl.textContent = "0%";
+        }
     }
 
     renderLedger();
     renderAnalyticsChart();
 }
 
-// ==========================================
-// 6. LEDGER RENDERER & RUNTIME FILTERING
-// ==========================================
 function renderLedger() {
-    transactionListEl.innerHTML = '';
-    const query = searchInput.value.toLowerCase();
-    const selectedCat = filterCategorySelect.value;
-    const start = startDateInput.value ? new Date(startDateInput.value) : null;
-    const end = endDateInput.value ? new Date(endDateInput.value) : null;
-
-    if (end) end.setHours(23, 59, 59, 999);
+    const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
+    const catFilter = filterCategorySelect ? filterCategorySelect.value : 'all';
+    
+    // Parse baseline strings out cleanly into timestamp numeric comparison states
+    const startVal = startDateInput && startDateInput.value ? new Date(startDateInput.value + 'T00:00:00') : null;
+    const endVal = endDateInput && endDateInput.value ? new Date(endDateInput.value + 'T23:59:59') : null;
 
     const filtered = transactions.filter(t => {
-        const matchesSearch = t.title.toLowerCase().includes(query);
-        const matchesCategory = selectedCat === 'all' || t.category === selectedCat;
+        const matchesSearch = t.title ? t.title.toLowerCase().includes(searchVal) : false;
+        const matchesCat = (catFilter === 'all') || (t.category === catFilter);
         
         let matchesDate = true;
-        if (t.createdAt && t.createdAt.toDate) {
-            const dateObj = t.createdAt.toDate();
-            if (start && dateObj < start) matchesDate = false;
-            if (end && dateObj > end) matchesDate = false;
+        if (t.date) {
+            const txDate = new Date(t.date + 'T00:00:00');
+            if (startVal && txDate < startVal) matchesDate = false;
+            if (endVal && txDate > endVal) matchesDate = false;
         }
-
-        return matchesSearch && matchesCategory && matchesDate;
-    });
-
-    if (filtered.length === 0) {
-        transactionListEl.innerHTML = `<li style="text-align:center; padding: 20px; color:var(--text-muted);">No records match current filters</li>`;
-        return;
-    }
-
-    filtered.forEach(t => {
-        const li = document.createElement('li');
-        li.className = 'categoryCard';
-        li.style.borderLeft = `4px solid ${t.type === 'income' ? 'var(--success-accent)' : 'var(--danger-accent)'}`;
         
-        const timestamp = t.createdAt && t.createdAt.toDate ? t.createdAt.toDate().toLocaleDateString('en-IN') : 'Syncing...';
-        const recurringTag = t.isRecurring ? ' <i class="fa-solid fa-arrows-spin" title="Monthly Recurring"></i>' : '';
-
-        li.innerHTML = `
-            <div>
-                <strong style="display:block;">${t.title}${recurringTag}</strong>
-                <small style="color:var(--text-muted);">${t.category} • ${timestamp}</small>
-            </div>
-            <div style="display:flex; align-items:center; gap:12px;">
-                <span class="status-badge ${t.status === 'paid' ? 'status-paid' : 'status-pending'}">
-                    ${t.status === 'paid' ? 'Settled' : 'Pending'}
-                </span>
-                <span style="font-weight:bold;">${t.type === 'income' ? '+' : '-'}₹${t.amount}</span>
-                <button onclick="deleteTransaction('${t.id}')" style="background:transparent; border:none; color:var(--danger-accent); cursor:pointer;">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </div>
-        `;
-        transactionListEl.appendChild(li);
+        return matchesSearch && matchesCat && matchesDate;
     });
+
+    if (transactionListEl) {
+        transactionListEl.innerHTML = filtered.map(t => {
+            const sign = t.type === 'income' ? '+' : '-';
+            const colorClass = t.type === 'income' ? 'incomeText' : 'expenseText';
+            const statusClass = t.status === 'paid' ? 'status-paid' : 'status-pending';
+            const statusText = t.status === 'paid' ? 'Settled' : 'Pending';
+            const displayDate = t.date ? t.date : ''; 
+            const repeatIcon = t.isRecurring ? `<i class="fa-solid fa-arrows-rotate" title="Recurring Event" style="margin-left:5px; font-size:0.8rem; opacity:0.6;"></i>` : '';
+
+            return `
+                <li class="categoryCard" style="margin-bottom: 10px;">
+                    <div>
+                        <h3 style="margin: 0 0 4px 0; font-size: 1rem;">${t.title} ${repeatIcon}</h3>
+                        <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
+                            <span class="status-pill ${statusClass}" onclick="openStatusChangeModal('${t.id}', '${t.status}')">${statusText}</span> · ${t.category} · <small>${displayDate}</small>
+                        </p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="${colorClass}" style="font-weight: bold;">${sign}₹${t.amount}</span>
+                        <button onclick="deleteTransaction('${t.id}')" style="background:transparent; border:none; color: var(--danger-accent);">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </li>
+            `;
+        }).join('');
+    }
 }
 
-// Map transaction context globally for execution inside runtime elements
-window.deleteTransaction = deleteTransaction;
-
-// Set up event listeners for filters
-[searchInput, filterCategorySelect, startDateInput, endDateInput].forEach(elem => {
-    elem.addEventListener('input', renderLedger);
+[searchInput, filterCategorySelect, startDateInput, endDateInput].forEach(el => {
+    if(el) el.addEventListener('input', renderLedger);
 });
 
 // ==========================================
-// 7. CATEGORY MANAGEMENT SYSTEMS
+// 8. GRAPHICAL ANALYTICS COMPONENT
 // ==========================================
-function renderCategoryUI() {
-    const priorAddSelection = txCategory.value;
-    const priorFilterSelection = filterCategorySelect.value;
 
-    txCategory.innerHTML = '';
-    filterCategorySelect.innerHTML = '<option value="all">All Categories</option>';
-    categoryListEl.innerHTML = '';
-
-    categories.forEach(cat => {
-        const opt1 = document.createElement('option');
-        opt1.value = cat; opt1.textContent = cat;
-        txCategory.appendChild(opt1);
-
-        const opt2 = document.createElement('option');
-        opt2.value = cat; opt2.textContent = cat;
-        filterCategorySelect.appendChild(opt2);
-
-        const row = document.createElement('div');
-        row.className = 'categoryCard';
-        row.innerHTML = `
-            <span>${cat}</span>
-            <button onclick="removeCategory('${cat}')" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer;">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        `;
-        categoryListEl.appendChild(row);
-    });
-
-    if (categories.includes(priorAddSelection)) txCategory.value = priorAddSelection;
-    if (categories.includes(priorFilterSelection)) filterCategorySelect.value = priorFilterSelection;
-}
-
-addCategoryBtn.addEventListener('click', async () => {
-    const freshCat = newCategoryInput.value.trim();
-    if (!freshCat || categories.includes(freshCat)) return;
-    
-    categories.push(freshCat);
-    newCategoryInput.value = '';
-    
-    await db.collection('users').doc(currentUser.uid).set({ categories }, { merge: true });
-});
-
-window.removeCategory = async function(targetCat) {
-    const updated = categories.filter(c => c !== targetCat);
-    await db.collection('users').doc(currentUser.uid).set({ categories: updated }, { merge: true });
-};
-
-// ==========================================
-// 8. CANVAS GRAPHICS SYSTEM (CHART.JS)
-// ==========================================
 function renderAnalyticsChart() {
-    const ctx = document.getElementById('analyticsChart').getContext('2d');
+    const chartCanvas = document.getElementById('analyticsChart');
+    if (!chartCanvas) return;
     
-    const summary = {};
-    transactions.filter(t => t.type === 'expense').forEach(t => {
-        summary[t.category] = (summary[t.category] || 0) + t.amount;
+    const ctx = chartCanvas.getContext('2d');
+    const expenseDataMap = {};
+    userCategories.forEach(c => expenseDataMap[c] = 0);
+
+    transactions.forEach(t => {
+        if (t.type === 'expense' && t.status === 'paid' && expenseDataMap[t.category] !== undefined) {
+            expenseDataMap[t.category] += t.amount;
+        }
     });
 
-    const labels = Object.keys(summary);
-    const data = Object.values(summary);
+    const labels = Object.keys(expenseDataMap).filter(c => expenseDataMap[c] > 0);
+    const data = labels.map(c => expenseDataMap[c]);
 
-    if (chartInstance) {
-        chartInstance.destroy();
+    if (analyticsChart) {
+        analyticsChart.destroy();
     }
 
-    if (labels.length === 0) {
-        ctx.clearRect(0, 0, 320, 320);
+    if (data.length === 0) {
+        if(ctx.canvas) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         return;
     }
 
-    const computedStyle = getComputedStyle(document.body);
-    const primaryText = computedStyle.getPropertyValue('--text-primary').trim();
-    const inputBg = computedStyle.getPropertyValue('--bg-input').trim();
+    const computedStyles = getComputedStyle(document.documentElement);
+    const labelColor = computedStyles.getPropertyValue('--text-primary').trim() || '#ffffff';
 
-    chartInstance = new Chart(ctx, {
+    analyticsChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: labels,
             datasets: [{
                 data: data,
                 backgroundColor: [
-                    '#4285F4', '#0F9D58', '#F4B400', '#db4437', '#9c27b0', '#00bcd4', '#ff5722'
+                    '#4285F4', '#0F9D58', '#F4B400', '#d9534f', 
+                    '#9b59b6', '#3498db', '#e67e22', '#1a73e8'
                 ],
-                borderWidth: 2,
-                borderColor: inputBg
+                borderWidth: 1,
+                borderColor: computedStyles.getPropertyValue('--bg-surface').trim() || '#1e1e1e'
             }]
         },
         options: {
-            responsive: true,
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { color: primaryText, font: { family: 'sans-serif', size: 11 } }
+                    labels: { color: labelColor }
                 }
-            }
+            },
+            responsive: true,
+            maintainAspectRatio: false
         }
     });
 }
 
 // ==========================================
-// 9. THEME ENGINE CONTROLLER
+// 9. DATA CONVERSION EXPORT MODULES (CSV)
 // ==========================================
-function setupThemeController() {
-    const storedTheme = localStorage.getItem('tracker-theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', storedTheme);
-    themeSelect.value = storedTheme;
 
-    themeSelect.addEventListener('change', (e) => {
-        const selectedTheme = e.target.value;
-        document.documentElement.setAttribute('data-theme', selectedTheme);
-        localStorage.setItem('tracker-theme', selectedTheme);
-        renderAnalyticsChart();
+if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+        if (transactions.length === 0) {
+            alert("No transaction entries available for extraction.");
+            return;
+        }
+
+        let csvContent = "data:text/csv;charset=utf-8,Description,Amount,Date,Type,Category,Status,Recurring\n";
+        transactions.forEach(t => {
+            csvContent += `"${t.title.replace(/"/g, '""')}",${t.amount},${t.date || ''},${t.type},${t.category},${t.status},${t.isRecurring}\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Ledger_Export_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     });
 }
 
 // ==========================================
-// 10. SYSTEM POP-UP MODALS & CLEANUP UTILS
+// 10. PROMPT MODAL INTERFACES
 // ==========================================
-function triggerModal(title, description, iconClass, onConfirm) {
-    modalTitle.textContent = title;
-    modalDescription.textContent = description;
-    modalIconContainer.innerHTML = `<i class="${iconClass}"></i>`;
-    customModalOverlay.style.display = 'flex';
-    modalCallback = onConfirm;
+
+function displayModal(title, description, iconClass, confirmAction) {
+    if(modalTitle) modalTitle.textContent = title;
+    if(modalDescription) modalDescription.textContent = description;
+    if(modalIconContainer) modalIconContainer.innerHTML = `<i class="${iconClass}"></i>`;
+    currentModalAction = confirmAction;
+    if(modalOverlay) modalOverlay.style.display = 'flex';
 }
 
-modalCancelBtn.addEventListener('click', () => {
-    customModalOverlay.style.display = 'none';
-    modalCallback = null;
-});
+if (modalCancelBtn) {
+    modalCancelBtn.addEventListener('click', () => {
+        if(modalOverlay) modalOverlay.style.display = 'none';
+        
+        // Hide sub-input wraps upon dialog termination
+        const modalInputsWrapper = document.getElementById('modalInputsWrapper');
+        const dynamicStatusField = document.getElementById('dynamicStatusField');
+        if (modalInputsWrapper) modalInputsWrapper.style.display = 'none';
+        if (dynamicStatusField) dynamicStatusField.style.display = 'none';
+        
+        currentModalAction = null;
+    });
+}
 
-modalConfirmBtn.addEventListener('click', () => {
-    if (modalCallback) modalCallback();
-    customModalOverlay.style.display = 'none';
-});
-
-// Purge Targeted Records
-purgeCategoryBtn.addEventListener('click', () => {
-    const targetCat = filterCategorySelect.value;
-    const scopeMessage = targetCat === 'all' 
-        ? "all transactional logs currently saved inside this account profile" 
-        : `all logs mapped under the "${targetCat}" category matching your workspace setup`;
-
-    triggerModal(
-        "Purge Records?",
-        `Are you sure you want to permanently clear ${scopeMessage}? This change cannot be reverted.`,
-        "fa-solid fa-triangle-exclamation",
-        async () => {
-            const batch = db.batch();
-            const query = searchInput.value.toLowerCase();
-            const start = startDateInput.value ? new Date(startDateInput.value) : null;
-            const end = endDateInput.value ? new Date(endDateInput.value) : null;
-            if (end) end.setHours(23, 59, 59, 999);
-
-            transactions.forEach(t => {
-                const matchesSearch = t.title.toLowerCase().includes(query);
-                const matchesCategory = targetCat === 'all' || t.category === targetCat;
-                let matchesDate = true;
-                if (t.createdAt && t.createdAt.toDate) {
-                    const dateObj = t.createdAt.toDate();
-                    if (start && dateObj < start) matchesDate = false;
-                    if (end && dateObj > end) matchesDate = false;
-                }
-
-                if (matchesSearch && matchesCategory && matchesDate) {
-                    const ref = db.collection('users').doc(currentUser.uid).collection('transactions').doc(t.id);
-                    batch.delete(ref);
-                }
-            });
-
-            await batch.commit();
+if (modalConfirmBtn) {
+    modalConfirmBtn.addEventListener('click', () => {
+        if (typeof currentModalAction === 'function') {
+            currentModalAction();
         }
-    );
-});
+        if(modalOverlay) modalOverlay.style.display = 'none';
+        
+        // Reset operational view containers cleanly
+        const modalInputsWrapper = document.getElementById('modalInputsWrapper');
+        const dynamicStatusField = document.getElementById('dynamicStatusField');
+        if (modalInputsWrapper) modalInputsWrapper.style.display = 'none';
+        if (dynamicStatusField) dynamicStatusField.style.display = 'none';
+    });
+}
 
-// Profile Data Reset Engine
-deleteAccountBtn.addEventListener('click', () => {
-    triggerModal(
-        "Wipe Out Ledger Profiles?",
-        "CRITICAL WARNING: This completely deletes all custom categories and structural transaction instances permanently.",
-        "fa-solid fa-radiation",
-        async () => {
-            try {
-                const snapshot = await db.collection('users').doc(currentUser.uid).collection('transactions').get();
+if (purgeCategoryBtn) {
+    purgeCategoryBtn.addEventListener('click', () => {
+        const targetCat = filterCategorySelect ? filterCategorySelect.value : 'all';
+        const desc = targetCat === 'all' 
+            ? "This will delete every transaction history item logged in your profile."
+            : `This will completely wipe all ledger entries under the category: "${targetCat}".`;
+
+        displayModal(
+            "Purge Transaction Logs?",
+            desc,
+            "fa-solid fa-triangle-exclamation",
+            async () => {
                 const batch = db.batch();
-                snapshot.forEach(doc => batch.delete(doc.ref));
+                transactions.forEach(t => {
+                    if (targetCat === 'all' || t.category === targetCat) {
+                        const ref = db.collection('users').doc(currentUser.uid).collection('transactions').doc(t.id);
+                        batch.delete(ref);
+                    }
+                });
                 await batch.commit();
-
-                await db.collection('users').doc(currentUser.uid).delete();
-                alert("Profile data wiped successfully.");
-            } catch (err) {
-                alert("Error during structural wipeout: " + err.message);
             }
+        );
+    });
+}
+
+if (deleteAccountBtn) {
+    deleteAccountBtn.addEventListener('click', () => {
+        displayModal(
+            "Permanently Wipe All Data?",
+            "Warning: This action completely empties all cloud records. You will log out immediately and this process cannot be undone.",
+            "fa-solid fa-skull-crossbones",
+            async () => {
+                try {
+                    const snapshot = await db.collection('users').doc(currentUser.uid).collection('transactions').get();
+                    const batch = db.batch();
+                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                    await db.collection('users').doc(currentUser.uid).delete();
+                    await auth.currentUser.delete();
+                } catch (error) {
+                    alert("Account destruction failure. Logging out as precaution. Error: " + error.message);
+                    auth.signOut();
+                }
+            }
+        );
+    });
+}
+
+// ==========================================
+// 11. LAYOUT THEME MANAGEMENT
+// ==========================================
+
+function configureApplicationTheme(themeValue) {
+    document.documentElement.setAttribute('data-theme', themeValue);
+    
+    const targetSelectors = document.querySelectorAll('#theme, .theme-select-context');
+    targetSelectors.forEach(selectElement => {
+        if (selectElement.value !== themeValue) {
+            selectElement.value = themeValue;
         }
-    );
+    });
+
+    renderAnalyticsChart();
+}
+
+document.addEventListener('change', (e) => {
+    if (e.target && (e.target.id === 'theme' || e.target.classList.contains('theme-select-context'))) {
+        configureApplicationTheme(e.target.value);
+    }
 });
 
 // ==========================================
-// 11. FILE EXPORT: FLAT ARCHIVE COMPILES (CSV)
+// 12. CHERRY BLOSSOM CANVAS ENGINE
 // ==========================================
-exportBtn.addEventListener('click', () => {
-    if (transactions.length === 0) return alert("No operational data targets present to pack.");
+let blossomCanvas = null;
+let blossomCtx = null;
+let animationFrameId = null;
 
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "ID,Description,Amount,Type,Category,Status,Recurring,Date\r\n";
+function initBlossomEngine() {
+    if(blossomCanvas) return; 
+    
+    blossomCanvas = document.createElement('canvas');
+    blossomCtx = blossomCanvas.getContext('2d');
+    
+    blossomCanvas.style.position = 'fixed';
+    blossomCanvas.style.top = '0';
+    blossomCanvas.style.left = '0';
+    blossomCanvas.style.width = '100vw';
+    blossomCanvas.style.height = '100vh';
+    blossomCanvas.style.pointerEvents = 'none';
+    blossomCanvas.style.zIndex = '0'; 
+    
+    document.body.prepend(blossomCanvas);
 
-    transactions.forEach(t => {
-        const dateStr = t.createdAt && t.createdAt.toDate ? t.createdAt.toDate().toISOString() : 'Pending';
-        const cleanTitle = t.title.replace(/,/g, '');
-        const row = `${t.id},${cleanTitle},${t.amount},${t.type},${t.category},${t.status},${t.isRecurring},${dateStr}`;
-        csvContent += row + "\r\n";
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    blossomCanvas.width = width;
+    blossomCanvas.height = height;
+
+    const maxPetals = 30; 
+    const petals = [];
+    const colors = ['#fde8e9', '#f9d7da', '#f5c6cb', '#f2b5bc'];
+
+    function random(min, max) { return Math.random() * (max - min) + min; }
+
+    for (let i = 0; i < maxPetals; i++) {
+        petals.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            size: random(6, 14),
+            color: colors[Math.floor(Math.random() * colors.length)],
+            speedX: random(-0.4, 0.4),
+            speedY: random(0.5, 1.2),
+            rotation: random(0, Math.PI * 2),
+            wobble: random(0, Math.PI * 2),
+            wobbleSpeed: random(0.01, 0.03)
+        });
+    }
+
+    function drawPetal(p) {
+        blossomCtx.save();
+        blossomCtx.translate(p.x, p.y);
+        blossomCtx.rotate(p.rotation);
+        blossomCtx.beginPath();
+        blossomCtx.moveTo(0, 0);
+        blossomCtx.bezierCurveTo(-p.size / 2, -p.size / 3, -p.size / 3, -p.size / 1.5, 0, -p.size / 1.2);
+        blossomCtx.bezierCurveTo(p.size / 3, -p.size / 1.5, p.size / 2, -p.size / 3, 0, 0);
+        blossomCtx.fillStyle = p.color;
+        blossomCtx.fill();
+        blossomCtx.restore();
+    }
+
+    function updateAnimation() {
+        if (!blossomCtx) return;
+        blossomCtx.clearRect(0, 0, width, height);
+        
+        petals.forEach(p => {
+            p.x += p.speedX + Math.sin(p.wobble) * 0.2;
+            p.y += p.speedY;
+            p.rotation += 0.006;
+            p.wobble += p.wobbleSpeed;
+
+            if (p.x < -p.size) p.x = width + p.size;
+            if (p.x > width + p.size) p.x = -p.size;
+            if (p.y > height + p.size) p.y = -p.size;
+        });
+
+        petals.forEach(drawPetal);
+        animationFrameId = requestAnimationFrame(updateAnimation);
+    }
+
+    window.addEventListener('resize', () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        if(blossomCanvas) {
+            blossomCanvas.width = width;
+            blossomCanvas.height = height;
+        }
     });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Finance_Export_${new Date().toISOString().slice(0,10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    updateAnimation();
+}
+
+function toggleBlossomCanvas(show) {
+    if (show) {
+        if (!blossomCanvas) {
+            initBlossomEngine();
+        } else {
+            blossomCanvas.style.display = 'block';
+        }
+    } else {
+        if (blossomCanvas) {
+            blossomCanvas.style.display = 'none';
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!currentUser) toggleBlossomCanvas(true);
+    
+    const initialThemeSelection = document.getElementById('theme');
+    if (initialThemeSelection) {
+        configureApplicationTheme(initialThemeSelection.value);
+    }
 });
