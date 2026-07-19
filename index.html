@@ -60,7 +60,6 @@
             justify-content: center;
             min-height: 100vh;
             padding: 20px;
-            /* Keeps the bg image on mobile, but aligns it 35% from the left to shift it beautifully */
             background: linear-gradient(135deg, rgba(255, 235, 238, 0.65) 0%, rgba(255, 255, 255, 0.45) 100%), 
                         url('images/bg.png') no-repeat;
             background-position: 35% center;
@@ -215,18 +214,31 @@
         /* ==========================================
            3. DASHBOARD WORKSPACE LAYOUT
            ========================================== */
-        #app { display: none; padding: 20px; max-width: 1300px; margin: 0 auto; }
+        #app { display: none; padding: 15px; max-width: 1300px; margin: 0 auto; }
         
         header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 15px;
             margin-bottom: 25px;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 15px;
         }
 
-        .user-controls { display: flex; align-items: center; gap: 12px; }
+        .user-controls { 
+            display: flex; 
+            flex-wrap: wrap; 
+            align-items: center; 
+            gap: 10px; 
+            width: 100%;
+        }
+
+        .user-controls select, 
+        .user-controls button {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+        }
         
         select, input, button {
             background: var(--bg-input);
@@ -244,7 +256,7 @@
 
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: 1fr;
             gap: 16px;
             margin-bottom: 25px;
         }
@@ -271,30 +283,23 @@
 
         .workspace-layout {
             display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            gap: 24px;
-        }
-
-        .col-left { grid-column: span 5; }
-        .col-right { grid-column: span 7; }
-
-        @media (max-width: 992px) {
-            .col-left, .col-right { grid-column: span 12; }
+            grid-template-columns: 1fr;
+            gap: 20px;
         }
 
         .panel {
             background: var(--bg-surface);
-            padding: 24px;
+            padding: 20px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
-            margin-bottom: 24px;
+            margin-bottom: 0px;
         }
 
         .panel h3 { margin-top: 0; margin-bottom: 20px; font-size: 1.2rem; }
 
         .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
         .form-group label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
-        .form-row-mixed { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-row-mixed { display: grid; grid-template-columns: 1fr; gap: 12px; }
         .checkbox-row { flex-direction: row; align-items: center; gap: 8px; margin-top: 8px; }
 
         .categoryCard {
@@ -307,9 +312,9 @@
 
         .filter-ribbon {
             display: grid;
-            grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 12px;
+            grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px;
         }
-        .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .date-row { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 16px; }
         .transaction-ledger { list-style: none; padding: 0; margin: 0; }
         
         .status-badge { font-weight: bold; text-transform: uppercase; border-radius: 4px; padding: 2px 6px;}
@@ -331,6 +336,28 @@
         .modal-icon-holder { font-size: 3rem; margin-bottom: 15px; }
         .modal-inputs-wrapper input { width: 100%; margin-top: 15px; text-align: center; }
         .modal-buttons-wrapper { display: flex; gap: 12px; justify-content: center; margin-top: 25px; }
+
+        /* ==========================================
+           4. TABLET & DESKTOP RESPONSIVE MODIFIERS
+           ========================================== */
+        @media (min-width: 768px) {
+            #app { padding: 20px; }
+            header { flex-direction: row; justify-content: space-between; align-items: center; }
+            .user-controls { width: auto; }
+            .user-controls select, .user-controls button { flex: none; width: auto; }
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .form-row-mixed { grid-template-columns: 1fr 1fr; }
+            .filter-ribbon { grid-template-columns: 2fr 1fr; }
+            .date-row { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (min-width: 992px) {
+            .metrics-grid { grid-template-columns: repeat(4, 1fr); }
+            .workspace-layout { grid-template-columns: repeat(12, 1fr); gap: 24px; }
+            .col-left { grid-column: span 5; }
+            .col-right { grid-column: span 7; }
+            .panel { padding: 24px; }
+        }
     </style>
 </head>
 <body>
@@ -389,6 +416,7 @@
                     <option value="light-blue">Ocean Breeze (Light Blue)</option>
                 </select>
                 <button id="logoutBtn" style="background:transparent; border: 1px solid var(--border-color);"><i class="fa-solid fa-sign-out-alt"></i> Logout</button>
+                <button id="deleteAccountBtn" class="danger-btn" style="padding: 10px 14px;"><i class="fa-solid fa-user-xmark"></i> Delete Account</button>
             </div>
         </header>
 
@@ -495,12 +523,6 @@
                     <div style="max-width: 320px; margin: 0 auto; padding:10px;">
                         <canvas id="analyticsChart"></canvas>
                     </div>
-                </div>
-
-                <div class="panel" style="border: 1px dashed var(--danger-accent); background: rgba(219,68,55, 0.02);">
-                    <h4 style="color:var(--danger-accent); margin-top:0; margin-bottom:6px;">Danger Zone</h4>
-                    <p style="font-size:0.85rem; margin:0 0 12px 0; opacity:0.8;">Permanently clear all transactional data linked to this profile.</p>
-                    <button id="deleteAccountBtn" class="danger-btn" style="font-size:0.8rem; padding:8px 14px;">Wipe All Data</button>
                 </div>
             </div>
         </div>
