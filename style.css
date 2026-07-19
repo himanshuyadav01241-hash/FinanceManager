@@ -23,6 +23,43 @@
   --select-dropdown-text: #ffe3ec;
 }
 
+/* Base Built-in UI Themes */
+body[data-theme="light-blue"] {
+  --bg: #f0f4f8;                  /* Premium soft blue canvas */
+  --card: rgba(255, 255, 255, 0.85);
+  --border: rgba(16, 42, 67, 0.08);
+  --text: #102a43;                /* Dark Slate Blue Typography */
+  --primary: #2196f3;             /* Vibrant Accent Ocean Blue */
+  --input-bg: rgba(16, 42, 67, 0.04);
+  --select-dropdown-bg: #ffffff;
+  --select-dropdown-text: #102a43;
+}
+
+body[data-theme="sakura"] {
+  --bg: #1f0f13;
+  --card: rgba(45, 23, 29, 0.7);
+  --border: rgba(242, 181, 188, 0.25);
+  --text: #fcdad7;
+  --primary: #d67b88;
+  --input-bg: rgba(61, 32, 40, 0.45);
+  --select-dropdown-bg: #2b151a;
+  --select-dropdown-text: #fcdad7;
+}
+
+/* ==========================================
+   DYNAMIC ENVIRONMENTAL WEATHER/SEASON THEMES
+   ========================================== */
+body[data-weather="spring"] {
+  --bg: #1c1216;
+  --card: rgba(38, 25, 32, 0.65);
+  --border: rgba(255, 133, 162, 0.2);
+  --text: #ffe3ec;
+  --input-bg: rgba(54, 36, 45, 0.4);
+  --primary: #ff85a2; /* Cherry Blossom Pink */
+  --select-dropdown-bg: #261920;
+  --select-dropdown-text: #ffe3ec;
+}
+
 /* Core Document & Dynamic Canvas Bindings */
 body {
   background: linear-gradient(135deg, #070707, var(--bg));
@@ -71,7 +108,7 @@ header {
 .logo { display: flex; align-items: center; gap: 10px; }
 .logo i { font-size: 32px; color: var(--primary); }
 .logo h1 { font-size: 22px; font-weight: 700; }
-.logo span { display: block; font-size: 11px; opacity: .7; }
+.logo span { block; font-size: 11px; opacity: .7; }
 
 /* Global Selection Modifiers */
 .themeBox select, .form select, .search-filters select {
@@ -331,7 +368,7 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   text-align: center;
   animation: authCardFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) ease-out;
   position: relative;
-  z-index: 2;
+  z-index: 2; /* Stands clean above the floating backdrop particles */
 }
 
 @keyframes authCardFadeIn {
@@ -339,6 +376,7 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Floating Brand Assets */
 .authCard > i.fa-wallet {
   font-size: 4rem;
   background: linear-gradient(135deg, var(--primary) 0%, #bd0000 100%);
@@ -370,6 +408,7 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   margin-bottom: 35px;
 }
 
+/* Safe Google Social Layout Anchor Protection */
 .google-btn {
   background-color: #ffffff !important;
   color: #3c4043 !important;
@@ -395,6 +434,7 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
 }
 .google-btn:active { transform: translateY(0); }
 
+/* Absolute Layout Fix for Glitchy Images inside the Auth Button */
 .google-btn img {
   width: 20px !important;
   height: 20px !important;
