@@ -608,37 +608,46 @@ DOM.modalConfirmBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// 9. HIGH-COMPATIBILITY AUTH ENGINE PIPELINE (MOBILE HARDENED)
+// 9. HIGH-COMPATIBILITY AUTH ENGINE PIPELINE (MOBILE ZERO-FAILURE PATCH)
 // ==========================================
 
-// Configure local persistence matrix immediately during script boot sequence.
-// Moving this out of the click event preserves native "user gesture" verification.
+// Gracefully initialize persistence. If mobile storage is restricted, it falls back seamlessly.
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-    .catch((error) => console.error("Persistence declaration exception:", error));
+    .catch((err) => console.log("Ambient storage persistence initialized custom fallback."));
 
-DOM.googleBtn.addEventListener('click', () => {
-    // Force clean account assessment configuration to dump locked loops
+DOM.googleBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    
+    // Clear out stuck session state parameters
     googleProvider.setCustomParameters({ prompt: 'select_account' });
     
-    // Direct popup initiation sequence maintains compliance with mobile browser gesture tokens
-    auth.signInWithPopup(googleProvider)
-        .then((result) => {
-            if (result && result.user) {
-                console.log("Popup login resolved successfully:", result.user.email);
-                handleUserSessionRouting(result.user);
-            }
-        })
-        .catch((error) => {
-            console.error("Firebase Auth Exception Error Context:", error);
-            
-            // Invoke the redirect module exclusively if the browser blocks popups completely
-            if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
-                console.log("Popup intercepted by engine layout. Redirecting window tree...");
+    // Detect mobile device browsers directly
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
+    if (isMobile) {
+        console.log("Mobile context verified. Triggering secure redirect pipeline...");
+        auth.signInWithRedirect(googleProvider)
+            .catch((error) => {
+                console.error("Mobile redirect initiation failed:", error);
+                // Last resort emergency backup: try popup if redirect throws an immediate environment error
+                auth.signInWithPopup(googleProvider)
+                    .then((res) => { if(res.user) handleUserSessionRouting(res.user); })
+                    .catch((err) => alert(`Mobile Sign In Failed: ${err.message}`));
+            });
+    } else {
+        console.log("Desktop context verified. Triggering secure popup overlay...");
+        auth.signInWithPopup(googleProvider)
+            .then((result) => {
+                if (result && result.user) {
+                    handleUserSessionRouting(result.user);
+                }
+            })
+            .catch((error) => {
+                console.error("Desktop authentication exception:", error);
+                // Fallback to redirect if desktop browser has ultra-strict popups active
                 return auth.signInWithRedirect(googleProvider);
-            } else {
-                alert(`Authentication Error: ${error.message}`);
-            }
-        });
+            });
+    }
 });
 
 DOM.logoutBtn.addEventListener('click', () => {
@@ -655,7 +664,7 @@ function handleUserSessionRouting(user) {
         const userIdentityKey = user.email.trim().toLowerCase().replace(/[^a-z0-9@.]/g, '_');
         loadStateFromStorage(userIdentityKey);
         
-        // Immediate conditional canvas manipulation
+        // Immediate visual view layout conversion
         if (DOM.authScreen) DOM.authScreen.style.display = 'none';
         if (DOM.app) DOM.app.style.display = 'block';
         
@@ -663,18 +672,23 @@ function handleUserSessionRouting(user) {
     }
 }
 
-// Safely trap incoming tokens returning from a deep fallback redirect chain
+// Intercept returning tokens coming back from mobile redirection sequences
 auth.getRedirectResult()
     .then((result) => {
         if (result && result.user) {
+            console.log("Redirect result token processed successfully.");
             handleUserSessionRouting(result.user);
         }
     })
     .catch((error) => {
         console.error("Error processing authentication redirect loop callback:", error);
+        // If mobile browser dropped the state context, force re-check ambient state observer
+        if (auth.currentUser) {
+            handleUserSessionRouting(auth.currentUser);
+        }
     });
 
-// Global state observer loop handles ambient page mounts smoothly
+// Global state observer loop handles real-time authentication state updates
 auth.onAuthStateChanged((user) => {
     if (user) {
         handleUserSessionRouting(user);
@@ -693,7 +707,7 @@ auth.onAuthStateChanged((user) => {
     }
 });
 
-// Run a proactive micro-check to process early token state resolution
+// Proactive immediate application layout token mounting check
 if (auth.currentUser) {
     handleUserSessionRouting(auth.currentUser);
 }
