@@ -81,7 +81,7 @@ body {
 }
 
 /* Translucent layer frosting for panels to see tree art layers */
-.authCard, .card, .form, .transaction, .categoryCard {
+.authCard, .card, .form, .transaction, .categoryCard, .danger-zone {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -100,24 +100,32 @@ body {
 
 header {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  gap: 12px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .logo { display: flex; align-items: center; gap: 10px; }
-.logo i { font-size: 32px; color: var(--primary); }
-.logo h1 { font-size: 22px; font-weight: 700; }
-.logo span { block; font-size: 11px; opacity: .7; }
+.logo i { font-size: 28px; color: var(--primary); }
+.logo h1 { font-size: 18px; font-weight: 700; }
+.logo span { display: block; font-size: 11px; opacity: .7; }
 
 /* Global Selection Modifiers */
 .themeBox select, .form select, .search-filters select {
-  padding: 12px;
+  padding: 10px 32px 10px 12px;
   border: 2px solid var(--border);
   border-radius: 10px;
   background-color: var(--select-dropdown-bg) !important;
   color: var(--select-dropdown-text) !important;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   outline: none;
   cursor: pointer;
@@ -135,12 +143,26 @@ select option {
   padding: 12px;
 }
 
+/* Logout Button Base Fix */
+.header-actions button {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* ==========================================
-   KPI DASH METRICS CARDS
+   KPI DASH METRICS CARDS (MOBILE FIRST OVERHAUL)
    ========================================== */
 .cards {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr; /* Single column on mobile prevents text truncation */
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -162,21 +184,16 @@ select option {
 .expense h2 { color: var(--expense); }
 .saving h2 { color: var(--saving); }
 
-.cards .card:first-child, 
-.cards .card:nth-child(4) {
-  grid-column: span 2;
-}
-
 .pending-summary-card {
-  grid-column: span 2;
   background: rgba(245, 158, 11, 0.05);
   border: 1px dashed #f59e0b;
 }
 .pending-split-metrics {
   display: flex;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-top: 5px;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 /* Badging Metrics */
@@ -209,8 +226,8 @@ select option {
    FINANCE CORE WORKSPACE LOGIC
    ========================================== */
 .finance-workspace {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   margin: 16px 0;
 }
@@ -255,12 +272,12 @@ select option {
 /* Dynamic Tags Manager */
 .categoryManager { display: flex; gap: 8px; margin-bottom: 16px; }
 .categoryManager input { margin-bottom: 0; }
-.categoryManager button { width: 52px; padding: 12px; }
+.categoryManager button { width: 52px; padding: 12px; flex-shrink: 0; }
 
 #categoryList {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   max-height: 180px;
   overflow-y: auto;
   padding: 4px;
@@ -270,20 +287,21 @@ select option {
   background: var(--select-dropdown-bg);
   border: 1px solid var(--border);
   border-left: 4px solid var(--primary);
-  padding: 8px 14px;
+  padding: 8px 12px;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  max-width: 100%;
 }
-.categoryCard span { font-size: 13px; font-weight: 600; color: var(--select-dropdown-text); }
-.categoryCard div { display: flex; gap: 8px; }
+.categoryCard span { font-size: 12px; font-weight: 600; color: var(--select-dropdown-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.categoryCard div { display: flex; gap: 6px; }
 .categoryCard button {
   background: rgba(0, 0, 0, 0.05);
   border: none;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 4px;
@@ -299,7 +317,7 @@ select option {
   gap: 10px;
   margin: 20px 0;
 }
-.search-box, .filter-box { position: relative; display: flex; align-items: center; }
+.search-box, .filter-box { position: relative; display: flex; align-items: center; width: 100%; }
 .search-box i, .filter-box i { position: absolute; left: 16px; opacity: 0.6; font-size: 14px; pointer-events: none; z-index: 2; }
 
 .search-filters input {
@@ -323,18 +341,66 @@ select option {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
+  padding: 12px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
+  gap: 8px;
 }
-.leftSide h3 { font-size: 14px; font-weight: 600; }
+.leftSide { min-width: 0; flex: 1; }
+.leftSide h3 { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .leftSide p { font-size: 11px; opacity: 0.6; }
-.rightSide { display: flex; align-items: center; gap: 12px; }
-.amount { font-size: 14px; font-weight: 700; }
+.rightSide { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.amount { font-size: 13px; font-weight: 700; }
 .incomeText { color: var(--income); }
 .expenseText { color: var(--expense); }
-.actionBtn { border: none; background: none; font-size: 14px; padding: 4px; color: var(--text); cursor: pointer; }
+.actionBtn { border: none; background: none; font-size: 13px; padding: 4px; color: var(--text); cursor: pointer; }
+
+/* ==========================================
+   PRACTICAL ACCOUNT DELETION TARGET NODE
+   ========================================== */
+.danger-zone {
+  margin-top: 30px;
+  padding: 20px;
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+.danger-zone h3 {
+  font-size: 14px;
+  color: var(--expense);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.danger-zone p {
+  font-size: 12px;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+.delete-account-btn {
+  background: transparent;
+  color: var(--expense);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%; /* Spans full horizontal bounds cleanly on touch panels */
+  text-align: center;
+}
+.delete-account-btn:hover {
+  background: var(--expense);
+  color: #fff;
+  border-color: var(--expense);
+}
 
 footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-size: 11px; }
 
@@ -351,7 +417,7 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  padding: 20px;
+  padding: 16px;
 }
 
 .authCard {
@@ -359,7 +425,7 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   backdrop-filter: blur(20px) saturate(120%);
   -webkit-backdrop-filter: blur(20px) saturate(120%);
   border: 1px solid var(--border);
-  padding: 50px 35px;
+  padding: 30px 20px;
   width: 100%;
   max-width: 420px;
   border-radius: 24px;
@@ -368,7 +434,7 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   text-align: center;
   animation: authCardFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) ease-out;
   position: relative;
-  z-index: 2; /* Stands clean above the floating backdrop particles */
+  z-index: 2;
 }
 
 @keyframes authCardFadeIn {
@@ -376,13 +442,12 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Floating Brand Assets */
 .authCard > i.fa-wallet {
-  font-size: 4rem;
+  font-size: 3rem;
   background: linear-gradient(135deg, var(--primary) 0%, #bd0000 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
   display: inline-block;
   filter: drop-shadow(0 8px 16px rgba(255, 51, 51, 0.3));
   animation: floatWallet 3.5s ease-in-out infinite;
@@ -395,27 +460,26 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
 
 .authCard h1 {
   color: #ffffff;
-  font-size: 2rem;
+  font-size: 1.6rem;
   font-weight: 700;
   letter-spacing: -0.5px;
-  margin: 0 0 12px 0;
+  margin: 0 0 8px 0;
 }
 
 .authCard p {
   color: var(--text-muted, #ffe3ec);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   line-height: 1.5;
-  margin-bottom: 35px;
+  margin-bottom: 25px;
 }
 
-/* Safe Google Social Layout Anchor Protection */
 .google-btn {
   background-color: #ffffff !important;
   color: #3c4043 !important;
   border: 1px solid #e0e0e0;
-  padding: 14px 24px;
+  padding: 12px 20px;
   border-radius: 12px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -427,19 +491,12 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   box-shadow: 0 2px 4px rgba(0,0,0,0.08);
   transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
-.google-btn:hover {
-  background-color: #f8f9fa !important;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
-  transform: translateY(-1px);
-}
-.google-btn:active { transform: translateY(0); }
 
-/* Absolute Layout Fix for Glitchy Images inside the Auth Button */
 .google-btn img {
-  width: 20px !important;
-  height: 20px !important;
-  max-width: 20px !important;
-  max-height: 20px !important;
+  width: 18px !important;
+  height: 18px !important;
+  max-width: 18px !important;
+  max-height: 18px !important;
   flex-shrink: 0 !important;
   object-fit: contain !important;
   display: inline-block !important;
@@ -447,31 +504,23 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
 
 .authCard input {
   width: 100%;
-  padding: 14px 18px;
+  padding: 12px 16px;
   background: rgba(13, 8, 9, 0.5);
   border: 1px solid var(--border);
   border-radius: 12px;
   color: #ffffff;
-  font-size: 0.95rem;
-  margin-bottom: 16px;
-  transition: all 0.25s ease;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
   outline: none;
 }
-.authCard input:focus {
-  border-color: var(--primary);
-  background: rgba(13, 8, 9, 0.8);
-  box-shadow: 0 0 0 4px rgba(255, 133, 162, 0.25);
-}
-.authCard input::placeholder { color: rgba(255, 255, 255, 0.3); }
 
 .authCard button:not(.google-btn) {
   width: 100%;
-  padding: 14px;
-  font-size: 1rem;
+  padding: 12px;
+  font-size: 0.95rem;
   font-weight: 600;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
   margin-bottom: 12px;
   border: none;
 }
@@ -479,14 +528,7 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
 #loginBtn {
   background: linear-gradient(135deg, var(--primary) 0%, #d94e73 100%);
   color: #ffffff;
-  box-shadow: 0 4px 15px rgba(255, 133, 162, 0.3);
 }
-#loginBtn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 133, 162, 0.4);
-  filter: brightness(1.1);
-}
-#loginBtn:active { transform: translateY(0); }
 
 #signupBtn {
   background: transparent;
@@ -494,20 +536,26 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   border: 1px solid var(--border);
   margin-bottom: 0;
 }
-#signupBtn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--primary);
-}
 
 /* ==========================================
-   RESPONSIVE LAYOUT RESPONSIVENESS MEDIA QUERIES
+   TABLET & DESKTOP MIGRATION MEDIA QUERIES
    ========================================== */
 @media (min-width: 768px) {
   .container { padding: 24px; }
+  .logo i { font-size: 32px; }
+  .logo h1 { font-size: 22px; }
+  
   .cards { grid-template-columns: repeat(4, 1fr); }
   .cards .card:first-child, .cards .card:nth-child(4) { grid-column: auto; }
   .pending-summary-card { grid-column: span 4; }
-  .finance-workspace { grid-template-columns: 1fr 1fr; gap: 20px; }
+  
+  .finance-workspace { grid-template-columns: 1fr 1fr; display: grid; gap: 20px; }
   .search-filters { grid-template-columns: 2fr 1fr; gap: 12px; }
   .card h2 { font-size: 24px; }
+  .authCard { padding: 50px 35px; }
+  .authCard h1 { font-size: 2rem; }
+  .authCard p { font-size: 0.95rem; }
+  
+  .danger-zone { flex-direction: row; align-items: center; justify-content: space-between; }
+  .delete-account-btn { width: auto; }
 }
