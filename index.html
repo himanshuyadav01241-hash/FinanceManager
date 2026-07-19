@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinanceOs</title>
-    <!-- Favicon link to replace the generic browser globe icon -->
     <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/48/wallet.png">
-    <!-- FontAwesome for UI Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js for graphical analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ==========================================
@@ -60,34 +57,17 @@
             justify-content: center;
             min-height: 100vh;
             padding: 20px;
-            background: linear-gradient(135deg, rgba(255, 235, 238, 0.65) 0%, rgba(255, 255, 255, 0.45) 100%), 
-                        url('images/bg.png') no-repeat;
-            background-position: 35% center;
-            background-size: cover;
-        }
-
-        /* Responsive Desktop Optimization */
-        @media (min-width: 768px) {
-            #authScreen {
-                background-position: center center;
-            }
+            background: linear-gradient(135deg, rgba(255, 235, 238, 0.65) 0%, rgba(255, 255, 255, 0.45) 100%);
         }
 
         .auth-card {
             background: #ffffff;
             padding: 40px 35px;
             border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(74, 21, 37, 0.12), 0 5px 15px rgba(0, 0, 0, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 15px 35px rgba(74, 21, 37, 0.12);
             max-width: 420px;
             width: 100%;
             text-align: center;
-        }
-
-        @media (max-width: 400px) {
-            .auth-card {
-                padding: 30px 20px;
-            }
         }
 
         .auth-brand {
@@ -97,118 +77,17 @@
             margin-bottom: 8px;
         }
 
-        .auth-brand i {
-            font-size: 1.8rem;
-            color: #ff6b84;
-        }
-
-        .auth-brand h2 {
-            color: #2d0c16 !important;
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        .auth-card p {
-            color: #5c3a43 !important;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            margin: 4px 0 24px 0;
-        }
-
-        .auth-form {
-            text-align: left;
-        }
-
-        .auth-form .form-group {
-            margin-bottom: 18px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .auth-form label {
-            font-size: 0.85rem;
-            color: #4a1525;
-            font-weight: 600;
-        }
-
+        .auth-brand h2 { margin: 0; font-size: 1.8rem; font-weight: 700; }
+        .auth-form { text-align: left; }
+        .auth-form .form-group { margin-bottom: 18px; display: flex; flex-direction: column; gap: 6px; }
         .auth-form input {
-            width: 100%;
-            padding: 12px 14px;
-            background: #fcf8f9;
-            border: 1px solid rgba(156, 77, 102, 0.25);
-            color: #2d0c16;
-            border-radius: 8px;
-            outline: none;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
-        }
-
-        .auth-form input:focus {
-            border-color: #ff8da1;
-            background: #ffffff;
-            box-shadow: 0 0 0 3px rgba(255, 141, 161, 0.2);
+            width: 100%; padding: 12px 14px; background: #fcf8f9;
+            border: 1px solid rgba(156, 77, 102, 0.25); border-radius: 8px; outline: none;
         }
 
         .auth-btn-primary {
-            width: 100%;
-            background: #ff6b84;
-            color: white;
-            border: none;
-            padding: 14px;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.2s;
-            margin-top: 8px;
-            box-shadow: 0 4px 12px rgba(255, 107, 132, 0.25);
-        }
-
-        .auth-btn-primary:hover { 
-            background: #ff526f;
-        }
-
-        .auth-divider {
-            display: flex;
-            align-items: center;
-            text-align: center;
-            margin: 22px 0;
-            color: #a3858c;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .auth-divider::before, .auth-divider::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid rgba(156, 77, 102, 0.15);
-        }
-
-        .auth-divider::before { margin-right: 1em; }
-        .auth-divider::after { margin-left: 1em; }
-
-        .google-btn {
-            background-color: #ffffff;
-            color: #444444;
-            border: 1px solid rgba(156, 77, 102, 0.2);
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            width: 100%;
-            transition: all 0.2s;
-        }
-
-        .google-btn:hover { 
-            background-color: #fcf8f9;
-            border-color: rgba(156, 77, 102, 0.35);
+            width: 100%; background: #ff6b84; color: white; border: none;
+            padding: 14px; font-weight: 600; border-radius: 8px; cursor: pointer;
         }
 
         /* ==========================================
@@ -217,84 +96,30 @@
         #app { display: none; padding: 15px; max-width: 1300px; margin: 0 auto; }
         
         header {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-bottom: 25px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 15px;
+            display: flex; flex-direction: column; gap: 15px;
+            margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;
         }
 
-        .user-controls { 
-            display: flex; 
-            flex-wrap: wrap; 
-            align-items: center; 
-            gap: 10px; 
-            width: 100%;
-        }
-
-        .user-controls select, 
-        .user-controls button {
-            flex: 1;
-            min-width: 120px;
-            text-align: center;
-        }
+        .user-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; width: 100%; }
+        .user-controls select, .user-controls button { flex: 1; min-width: 120px; text-align: center; }
         
         select, input, button {
-            background: var(--bg-input);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            padding: 10px 14px;
-            border-radius: 6px;
-            outline: none;
-            font-size: 0.95rem;
+            background: var(--bg-input); color: var(--text-primary);
+            border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 6px; outline: none;
         }
         
-        button { cursor: pointer; font-weight: 500; transition: opacity 0.2s; }
-        button:hover { opacity: 0.9; }
+        button { cursor: pointer; font-weight: 500; }
         .danger-btn { background: var(--danger-accent); color: white; border: none; }
 
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 16px;
-            margin-bottom: 25px;
-        }
-
-        .card {
-            background: var(--bg-surface);
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            position: relative;
-        }
-
-        .badge {
-            position: absolute; top: 15px; right: 15px;
-            font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; font-weight: bold;
-        }
+        .metrics-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 25px; }
+        .card { background: var(--bg-surface); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); position: relative; }
+        .badge { position: absolute; top: 15px; right: 15px; font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; font-weight: bold; }
         .badge-good { background: rgba(15, 157, 88, 0.2); color: var(--success-accent); }
         .badge-warn { background: rgba(244, 180, 0, 0.2); color: var(--warning-accent); }
         .badge-danger { background: rgba(217, 83, 79, 0.2); color: var(--danger-accent); }
 
-        .sub-value { font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; }
-        .incomeText { color: var(--success-accent); }
-        .expenseText { color: var(--danger-accent); }
-
-        .workspace-layout {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-
-        .panel {
-            background: var(--bg-surface);
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 0px;
-        }
-
+        .workspace-layout { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .panel { background: var(--bg-surface); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); }
         .panel h3 { margin-top: 0; margin-bottom: 20px; font-size: 1.2rem; }
 
         .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
@@ -302,161 +127,128 @@
         .form-row-mixed { display: grid; grid-template-columns: 1fr; gap: 12px; }
         .checkbox-row { flex-direction: row; align-items: center; gap: 8px; margin-top: 8px; }
 
-        .categoryCard {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--bg-input);
-            padding: 10px 15px; border-radius: 6px; margin-bottom: 8px;
-        }
-
-        .filter-ribbon {
-            display: grid;
-            grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px;
-        }
+        .filter-ribbon { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; }
         .date-row { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 16px; }
-        .transaction-ledger { list-style: none; padding: 0; margin: 0; }
         
-        .status-badge { font-weight: bold; text-transform: uppercase; border-radius: 4px; padding: 2px 6px;}
+        /* Ledger List Items Layout */
+        .transaction-ledger { list-style: none; padding: 0; margin: 0; }
+        .transaction-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: var(--bg-surface);
+        }
+        .transaction-item:hover { background: var(--bg-input); }
+
+        /* Dynamic Status Utility Items */
+        .status-pill { 
+            font-weight: bold; text-transform: uppercase; border-radius: 4px; 
+            padding: 4px 8px; font-size: 0.75rem; cursor: pointer; border: 1px solid transparent;
+        }
+        .status-pill:hover { border-color: var(--text-primary); }
         .status-paid { background: rgba(15, 157, 88, 0.15); color: var(--success-accent); }
         .status-pending { background: rgba(244, 180, 0, 0.15); color: var(--warning-accent); }
 
-        /* Modal Overlay & Styling Content Updates */
+        /* Dialog/Modal Styling Structures */
         .modal-overlay {
             position: fixed; top:0; left:0; width:100%; height:100%;
             background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center;
             z-index: 1000; padding: 20px;
         }
-
         .modal-content {
             background: var(--bg-surface); padding: 30px; border-radius: 12px;
-            max-width: 450px; width: 100%; border: 1px solid var(--border-color);
-            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 450px; width: 100%; border: 1px solid var(--border-color); text-align: center;
         }
-        
-        .modal-icon-holder { font-size: 3rem; margin-bottom: 15px; }
-        .modal-inputs-wrapper input { width: 100%; margin-top: 15px; text-align: center; letter-spacing: 2px; font-weight: bold; }
+        .modal-inputs-wrapper input, .modal-inputs-wrapper select { width: 100%; margin-top: 15px; }
         .modal-buttons-wrapper { display: flex; gap: 12px; justify-content: center; margin-top: 25px; }
 
-        /* ==========================================
-           4. TABLET & DESKTOP RESPONSIVE MODIFIERS
-           ========================================== */
         @media (min-width: 768px) {
-            #app { padding: 20px; }
             header { flex-direction: row; justify-content: space-between; align-items: center; }
             .user-controls { width: auto; }
-            .user-controls select, .user-controls button { flex: none; width: auto; }
             .metrics-grid { grid-template-columns: repeat(2, 1fr); }
             .form-row-mixed { grid-template-columns: 1fr 1fr; }
             .filter-ribbon { grid-template-columns: 2fr 1fr; }
             .date-row { grid-template-columns: 1fr 1fr; }
         }
-
         @media (min-width: 992px) {
             .metrics-grid { grid-template-columns: repeat(4, 1fr); }
             .workspace-layout { grid-template-columns: repeat(12, 1fr); gap: 24px; }
             .col-left { grid-column: span 5; }
             .col-right { grid-column: span 7; }
-            .panel { padding: 24px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ==========================================
-         LOGIN PAGE WITH CUSTOM & SOCIAL AUTH
-         ========================================== -->
+    <!-- AUTHENTICATION SCREEN -->
     <div id="authScreen">
         <div class="auth-card">
-            <div class="auth-brand">
-                <i class="fa-solid fa-wallet"></i>
-                <h2 id="authTitle">FinanceOs</h2>
-            </div>
-            <p id="authSubtitle">
-                Sign in to manage and secure your transactions across all your devices instantly.
-            </p>
-
+            <div class="auth-brand"><h2>FinanceOs</h2></div>
             <form id="emailAuthForm" class="auth-form" onsubmit="return false;">
                 <div class="form-group">
-                    <label for="authEmail">Email Address</label>
+                    <label>Email Address</label>
                     <input type="email" id="authEmail" placeholder="Email" required>
                 </div>
                 <div class="form-group">
-                    <label for="authPassword">Password</label>
+                    <label>Password</label>
                     <input type="password" id="authPassword" placeholder="Password" required>
                 </div>
                 <button type="submit" id="customAuthBtn" class="auth-btn-primary">Sign In</button>
             </form>
-
-            <div class="auth-divider">or</div>
-
-            <button class="google-btn" id="googleBtn">
-                <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"/>
-                </svg>
-                Sign in with Google
-            </button>
+            <button class="google-btn" id="googleBtn" style="margin-top: 10px; width:100%;">Sign in with Google</button>
         </div>
     </div>
 
-    <!-- ==========================================
-         MAIN APPLICATION INTERFACE
-         ========================================== -->
+    <!-- MAIN APP INTERFACE -->
     <div id="app">
         <header>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fa-solid fa-wallet" style="font-size: 1.5rem; color: var(--primary-accent);"></i>
-                <h1 style="margin:0; font-size: 1.5rem;">FinanceOs</h1>
-            </div>
+            <h1>FinanceOs</h1>
             <div class="user-controls">
                 <select id="theme">
                     <option value="sakura">Cherry Blossom (Sakura)</option>
                     <option value="light-blue">Ocean Breeze (Light Blue)</option>
                 </select>
-                <button id="logoutBtn" style="background:transparent; border: 1px solid var(--border-color);"><i class="fa-solid fa-sign-out-alt"></i> Logout</button>
-                <button id="deleteAccountBtn" class="danger-btn" style="padding: 10px 14px;"><i class="fa-solid fa-user-xmark"></i> Delete Account</button>
+                <button id="logoutBtn">Logout</button>
+                <button id="deleteAccountBtn" class="danger-btn">Delete Account</button>
             </div>
         </header>
 
         <div class="metrics-grid">
             <div class="card">
-                <small style="color:var(--text-muted); font-weight:600; letter-spacing: 0.5px;">TOTAL BALANCE</small>
-                <h2 id="balance" style="margin: 6px 0 0 0; font-size: 1.7rem;">₹0</h2>
+                <small>TOTAL BALANCE</small><h2 id="balance">₹0</h2>
                 <span id="healthBadge" class="badge">Checking...</span>
             </div>
             <div class="card">
-                <small style="color:var(--text-muted); font-weight:600; letter-spacing: 0.5px;">INCOME</small>
-                <h2 id="income" class="incomeText" style="margin: 6px 0 0 0; font-size: 1.7rem;">₹0</h2>
-                <div id="pendingIncome" class="sub-value">Pending: ₹0</div>
+                <small>INCOME</small><h2 id="income" class="incomeText">₹0</h2>
+                <div id="pendingIncome" style="font-size:0.8rem;">Pending: ₹0</div>
             </div>
             <div class="card">
-                <small style="color:var(--text-muted); font-weight:600; letter-spacing: 0.5px;">EXPENSES</small>
-                <h2 id="expense" class="expenseText" style="margin: 6px 0 0 0; font-size: 1.7rem;">₹0</h2>
-                <div id="pendingExpense" class="sub-value">Pending: ₹0</div>
+                <small>EXPENSES</small><h2 id="expense" class="expenseText">₹0</h2>
+                <div id="pendingExpense" style="font-size:0.8rem;">Pending: ₹0</div>
             </div>
             <div class="card">
-                <small style="color:var(--text-muted); font-weight:600; letter-spacing: 0.5px;">NET SAVINGS</small>
-                <h2 id="saving" style="margin: 6px 0 0 0; font-size: 1.7rem;">0%</h2>
-                <div class="sub-value">Savings margin rate</div>
+                <small>NET SAVINGS</small><h2 id="saving">0%</h2>
             </div>
         </div>
 
         <div class="workspace-layout">
             <div class="col-left">
                 <div class="panel">
-                    <h3><i class="fa-solid fa-plus-circle" style="color:var(--primary-accent); margin-right:6px;"></i> Add Transaction</h3>
+                    <h3>Add Transaction</h3>
                     <div class="form-group">
                         <label>Description</label>
-                        <input type="text" id="title" placeholder="e.g., Office Rent, Salary, Grocery">
+                        <input type="text" id="title" placeholder="e.g., Office Rent, Salary">
                     </div>
+                    <!-- Added Date Option Input Row -->
                     <div class="form-row-mixed">
                         <div class="form-group">
                             <label>Amount (₹)</label>
                             <input type="number" id="amount" placeholder="0.00">
                         </div>
+                        <div class="form-group">
+                            <label>Transaction Date</label>
+                            <input type="date" id="transactionDate">
+                        </div>
+                    </div>
+                    <div class="form-row-mixed">
                         <div class="form-group">
                             <label>Type</label>
                             <select id="type">
@@ -464,91 +256,66 @@
                                 <option value="income">Income (+)</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="form-row-mixed">
                         <div class="form-group">
                             <label>Category</label>
                             <select id="category"></select>
                         </div>
-                        <div class="form-group">
-                            <label>Status</label>
-                            <select id="status">
-                                <option value="paid">Settled</option>
-                                <option value="pending">Pending</option>
-                            </select>
-                        </div>
                     </div>
-                    <div class="form-group checkbox-row">
-                        <input type="checkbox" id="isRecurring">
-                        <label for="isRecurring">Repeat monthly</label>
+                    <div class="form-group">
+                        <label>Initial Status</label>
+                        <select id="status">
+                            <option value="paid">Settled</option>
+                            <option value="pending">Pending</option>
+                        </select>
                     </div>
-                    <button id="addBtn" style="width:100%; background: var(--primary-accent); border:none; color:white; padding:12px; font-weight:bold; margin-top:8px;">
+                    <button id="addBtn" style="width:100%; background: var(--primary-accent); color:white; border:none; padding:12px; font-weight:bold;">
                         Save Transaction
                     </button>
-                </div>
-
-                <div class="panel">
-                    <h3><i class="fa-solid fa-tags" style="color:var(--primary-accent); margin-right:6px;"></i> Categories</h3>
-                    <div style="display:flex; gap:8px; margin-bottom: 16px;">
-                        <input type="text" id="newCategory" placeholder="New category name..." style="flex:1;">
-                        <button id="addCategory" style="background:var(--bg-input);"><i class="fa-solid fa-plus"></i></button>
-                    </div>
-                    <div id="categoryList"></div>
                 </div>
             </div>
 
             <div class="col-right">
                 <div class="panel">
-                    <h3><i class="fa-solid fa-list" style="color:var(--primary-accent); margin-right:6px;"></i> Transaction History</h3>
+                    <h3>Transaction History</h3>
                     <div class="filter-ribbon">
-                        <input type="text" id="search" placeholder="Search transactions...">
-                        <select id="filterCategory">
-                            <option value="all">All Categories</option>
-                        </select>
+                        <input type="text" id="search" placeholder="Search...">
+                        <select id="filterCategory"><option value="all">All Categories</option></select>
                     </div>
                     <div class="date-row">
-                        <input type="date" id="startDate" title="Start Date">
-                        <input type="date" id="endDate" title="End Date">
+                        <input type="date" id="startDate" title="Start">
+                        <input type="date" id="endDate" title="End">
                     </div>
-                    
                     <ul id="transactionList" class="transaction-ledger"></ul>
-
-                    <div style="display:flex; gap:10px; margin-top:20px;">
-                        <button id="exportBtn" style="flex:1; background:transparent; border: 1px solid var(--border-color);"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
-                        <button id="purgeCategoryBtn" class="danger-btn" style="flex:1;"><i class="fa-solid fa-trash-can"></i> Delete Filtered</button>
-                    </div>
-                </div>
-
-                <div class="panel">
-                    <h3><i class="fa-solid fa-chart-pie" style="color:var(--primary-accent); margin-right:6px;"></i> Expense Distribution</h3>
-                    <div style="max-width: 320px; margin: 0 auto; padding:10px;">
-                        <canvas id="analyticsChart"></canvas>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- SYSTEM PROMPT MODALS WITH CONFIRMATION INPUT -->
+    <!-- RECONFIGURABLE DIALOG OVERLAY SYSTEM -->
     <div class="modal-overlay" id="customModalOverlay">
         <div class="modal-content">
-            <div id="modalIconContainer" class="modal-icon-holder"></div>
-            <h3 id="modalTitle" style="margin-top:0; margin-bottom:10px;">Confirm Action</h3>
-            <p id="modalDescription" style="color:var(--text-muted); font-size:0.9rem; margin:0; line-height:1.4;"></p>
+            <h3 id="modalTitle">Confirm Action</h3>
+            <p id="modalDescription"></p>
             
-            <!-- Secure Text Input container inside the modal context -->
             <div id="modalInputsWrapper" class="modal-inputs-wrapper" style="display: none;">
-                <input type="text" id="deleteConfirmationInput" placeholder="Type CONFIRM to proceed">
+                <!-- Target Container for either confirmation strings or inline status toggles -->
+                <div id="dynamicStatusField" style="display:none; margin-top:15px; text-align:left;">
+                    <label style="font-size:0.85rem; font-weight:bold;">Update Status To:</label>
+                    <select id="updatedStatusDropdown" style="width:100%; margin-top:5px;">
+                        <option value="paid">Settled / Paid</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                </div>
+                <input type="text" id="deleteConfirmationInput" placeholder="Type CONFIRM to proceed" style="display:none;">
             </div>
 
             <div class="modal-buttons-wrapper">
-                <button id="modalCancelBtn" style="background:var(--bg-input);">Cancel</button>
+                <button id="modalCancelBtn">Cancel</button>
                 <button id="modalConfirmBtn" class="danger-btn">Confirm</button>
             </div>
         </div>
     </div>
 
-    <!-- FIREBASE MODULE DEPENDENCIES -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
