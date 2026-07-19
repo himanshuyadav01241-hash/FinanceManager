@@ -73,6 +73,9 @@ const modalIconContainer = document.getElementById('modalIconContainer');
 const modalConfirmBtn = document.getElementById('modalConfirmBtn');
 const modalCancelBtn = document.getElementById('modalCancelBtn');
 
+// Fix for Section 10: Declaring the missing DOM reference variable
+const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+
 // Global Application State Variables
 let currentUser = null;
 let transactions = [];
@@ -227,7 +230,11 @@ if (addBtn) {
     });
 }
 
+// Fixed Step: Simple inline confirm check prevents mistaken erasures immediately
 async function deleteTransaction(id) {
+    if (!confirm("Are you sure you want to delete this transaction?")) {
+        return; 
+    }
     try {
         await db.collection('users').doc(currentUser.uid).collection('transactions').doc(id).delete();
     } catch (error) {
@@ -281,6 +288,7 @@ if (addCategoryBtn) {
 }
 
 async function deleteCategory(categoryName) {
+    if (!confirm(`Are you sure you want to delete the category "${categoryName}"?`)) return;
     const updatedCategories = userCategories.filter(cat => cat !== categoryName);
     try {
         await db.collection('users').doc(currentUser.uid).update({ categories: updatedCategories });
@@ -382,7 +390,7 @@ function renderLedger() {
                     </div>
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <span class="${colorClass}" style="font-weight: bold;">${sign}₹${t.amount}</span>
-                        <button onclick="deleteTransaction('${t.id}')" style="background:transparent; border:none; color: var(--danger-accent);">
+                        <button onclick="deleteTransaction('${t.id}')" style="background:transparent; border:none; color: var(--danger-accent); cursor:pointer;">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
@@ -460,11 +468,10 @@ function renderAnalyticsChart() {
 // 9. UNIFIED DATA PIPELINE (IMPORT & EXPORT)
 // ==========================================
 
-// Morph Action Trigger Button Based on Selector Channel
 if (dataActionSelector && dataActionButton) {
     dataActionSelector.addEventListener('change', function() {
         const mode = this.value;
-        dataActionButton.className = ''; // Reset danger states
+        dataActionButton.className = ''; 
         
         if (mode === 'export-csv') {
             dataActionButton.innerHTML = `<i class="fa-solid fa-file-csv" style="margin-right:6px;"></i>Export CSV`;
@@ -480,7 +487,6 @@ if (dataActionSelector && dataActionButton) {
     });
 }
 
-// Route Central Click Events
 if (dataActionButton) {
     dataActionButton.addEventListener('click', () => {
         const currentMode = dataActionSelector ? dataActionSelector.value : 'export-csv';
@@ -495,7 +501,6 @@ if (dataActionButton) {
     });
 }
 
-// Data Export Core Logic
 function executeCSVExport() {
     if (transactions.length === 0) {
         alert("No transaction entries available for extraction.");
@@ -516,7 +521,6 @@ function executeCSVExport() {
     document.body.removeChild(link);
 }
 
-// File Import Processing Subsystem (Supports CSV, XLSX, XLS via SheetJS)
 if (importFileInputChannel) {
     importFileInputChannel.addEventListener('change', function(e) {
         const file = e.target.files[0];
@@ -531,7 +535,6 @@ if (importFileInputChannel) {
                 
                 if (ext === 'csv') {
                     const text = evt.target.result;
-                    // Robust simple parsing array split for standard CSV strings
                     rows = text.split('\n').map(row => row.split(',').map(cell => cell.replace(/^["']|["']$/g, '').trim()));
                 } else if (ext === 'xlsx' || ext === 'xls') {
                     const data = new Uint8Array(evt.target.result);
@@ -545,14 +548,12 @@ if (importFileInputChannel) {
                     return;
                 }
 
-                // Batch upload configuration targeting Firestore loops
                 const batch = db.batch();
                 let entriesCount = 0;
 
-                // Loop skips row index 0 (assumed metadata header row)
                 for (let i = 1; i < rows.length; i++) {
                     const row = rows[i];
-                    if (!row || row.length < 2 || !row[0]) continue; // Check for trailing empty rows
+                    if (!row || row.length < 2 || !row[0]) continue; 
 
                     const title = row[0];
                     const amount = parseFloat(row[1]);
@@ -592,7 +593,7 @@ if (importFileInputChannel) {
         } else {
             reader.readAsArrayBuffer(file);
         }
-        e.target.value = ''; // Flush pointer for re-uploads
+        e.target.value = ''; 
     });
 }
 
@@ -803,7 +804,6 @@ function toggleBlossomCanvas(show) {
     }
 }
 
-// Initial structural check when engine boots up
 document.addEventListener('DOMContentLoaded', () => {
     if (!currentUser) toggleBlossomCanvas(true);
     
