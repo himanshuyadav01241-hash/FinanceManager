@@ -2,22 +2,23 @@
 // 1. INITIALIZATION & FIREBASE CONFIGURATION
 // ==========================================
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY_HERE",
-    authDomain: "YOUR_AUTH_DOMAIN_HERE",
-    projectId: "YOUR_PROJECT_ID_HERE",
-    storageBucket: "YOUR_STORAGE_BUCKET_HERE",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID_HERE",
-    appId: "YOUR_APP_ID_HERE"
+  apiKey: "AIzaSyCCnwz-4HDj0baMMfhJ0oHWXfuhrFTvIr0",
+  authDomain: "financeos-6eaf2.firebaseapp.com",
+  projectId: "financeos-6eaf2",
+  storageBucket: "financeos-6eaf2.firebasestorage.app",
+  messagingSenderId: "503013740949",
+  appId: "1:503013740949:web:a18ef8f8433711a672e69c",
+  measurementId: "G-F769EYMHLJ"
 };
 
-// Initialize Firebase
+// Initialize Firebase Instance Safely
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Application Variables
+// Application Reactive State Variables
 let currentUser = null;
 let unsubscribeTransactions = null;
 let unsubscribeCategories = null;
@@ -26,7 +27,7 @@ let categories = ['Food', 'Utilities', 'Salary', 'Entertainment', 'Rent'];
 let chartInstance = null;
 let modalCallback = null;
 
-// DOM Elements
+// DOM Elements Selection Archetype
 const authScreen = document.getElementById('authScreen');
 const appScreen = document.getElementById('app');
 const emailAuthForm = document.getElementById('emailAuthForm');
@@ -90,7 +91,7 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// Custom Email/Password Login & Registration Hybrid Flow
+// Hybrid Email Flow: Automatic Account Login/Registration Setup
 customAuthBtn.addEventListener('click', async (e) => {
     e.preventDefault();
     const email = authEmail.value.trim();
@@ -99,10 +100,8 @@ customAuthBtn.addEventListener('click', async (e) => {
     if (!email || !password) return alert('Please enter both email and password.');
 
     try {
-        // Attempt login
         await auth.signInWithEmailAndPassword(email, password);
     } catch (loginError) {
-        // If user doesn't exist, create an account automatically
         if (loginError.code === 'auth/user-not-found') {
             try {
                 await auth.createUserWithEmailAndPassword(email, password);
@@ -115,7 +114,7 @@ customAuthBtn.addEventListener('click', async (e) => {
     }
 });
 
-// Google Provider Sign-In
+// Google Authentication Flow Provider
 googleBtn.addEventListener('click', async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
@@ -125,7 +124,7 @@ googleBtn.addEventListener('click', async () => {
     }
 });
 
-// Logout Operation
+// User Session Termination
 logoutBtn.addEventListener('click', () => {
     auth.signOut();
 });
@@ -136,19 +135,18 @@ logoutBtn.addEventListener('click', () => {
 function initializeDashboard() {
     setupThemeController();
     
-    // Listen for custom category updates
+    // Continuous User Document Streams (Custom Category Data Storage)
     unsubscribeCategories = db.collection('users').doc(currentUser.uid)
         .onSnapshot(doc => {
             if (doc.exists && doc.data().categories) {
                 categories = doc.data().categories;
             } else {
-                // Initialize default database categories for a fresh profile
                 db.collection('users').doc(currentUser.uid).set({ categories }, { merge: true });
             }
             renderCategoryUI();
         });
 
-    // Listen for live transactions
+    // Sub-Collection Streams (Dynamic Live Transactions Ledger)
     unsubscribeTransactions = db.collection('users').doc(currentUser.uid).collection('transactions')
         .orderBy('createdAt', 'desc')
         .onSnapshot(snapshot => {
@@ -157,7 +155,7 @@ function initializeDashboard() {
                 transactions.push({ id: doc.id, ...doc.data() });
             });
             processAndRenderDashboard();
-        }, error => console.error("Firestore subscription error:", error));
+        }, error => console.error("Firestore real-time error:", error));
 }
 
 function cleanupDashboardSubscriptions() {
@@ -167,7 +165,7 @@ function cleanupDashboardSubscriptions() {
 }
 
 // ==========================================
-// 4. TRANSACTION ENGINE & ENGINE ACTIONS
+// 4. TRANSACTION ENGINE & DATA RECORDING
 // ==========================================
 addBtn.addEventListener('click', async () => {
     const title = txTitle.value.trim();
@@ -193,7 +191,6 @@ addBtn.addEventListener('click', async () => {
 
     try {
         await db.collection('users').doc(currentUser.uid).collection('transactions').add(payload);
-        // Clear forms
         txTitle.value = '';
         txAmount.value = '';
         txIsRecurring.checked = false;
@@ -211,7 +208,7 @@ async function deleteTransaction(id) {
 }
 
 // ==========================================
-// 5. METRIC AGGREGATION & DATA PROCESSING
+// 5. METRIC AGGREGATION & DATA ANALYSIS
 // ==========================================
 function processAndRenderDashboard() {
     let settledIncome = 0;
@@ -231,13 +228,13 @@ function processAndRenderDashboard() {
 
     const netBalance = settledIncome - settledExpense;
     
-    // Calculate Savings Rate Margin Formula
+    // Savings Margin Percentage Calculation
     let savingsMargin = 0;
     if (settledIncome > 0) {
         savingsMargin = Math.round(((settledIncome - settledExpense) / settledIncome) * 100);
     }
 
-    // UI Updates
+    // UI Panel Values Interpolation
     balanceEl.textContent = `₹${netBalance.toLocaleString('en-IN')}`;
     incomeEl.textContent = `₹${settledIncome.toLocaleString('en-IN')}`;
     pendingIncomeEl.textContent = `Pending: ₹${pendingIncome.toLocaleString('en-IN')}`;
@@ -245,7 +242,7 @@ function processAndRenderDashboard() {
     pendingExpenseEl.textContent = `Pending: ₹${pendingExpense.toLocaleString('en-IN')}`;
     savingEl.textContent = `${savingsMargin}%`;
 
-    // Dynamic Balance Safety Badge Allocation
+    // Dynamic Financial Safety Health Badge Assignment
     healthBadge.className = 'badge';
     if (netBalance > settledExpense * 0.5) {
         healthBadge.textContent = 'Healthy';
@@ -263,7 +260,7 @@ function processAndRenderDashboard() {
 }
 
 // ==========================================
-// 6. LEDGER RENDERER & INTERACTIVE FILTERING
+// 6. LEDGER RENDERER & RUNTIME FILTERING
 // ==========================================
 function renderLedger() {
     transactionListEl.innerHTML = '';
@@ -272,7 +269,7 @@ function renderLedger() {
     const start = startDateInput.value ? new Date(startDateInput.value) : null;
     const end = endDateInput.value ? new Date(endDateInput.value) : null;
 
-    if (end) end.setHours(23, 59, 59, 999); // Inclusionary ceiling matching
+    if (end) end.setHours(23, 59, 59, 999);
 
     const filtered = transactions.filter(t => {
         const matchesSearch = t.title.toLowerCase().includes(query);
@@ -289,7 +286,7 @@ function renderLedger() {
     });
 
     if (filtered.length === 0) {
-        transactionListEl.innerHTML = `<li style="text-align:center; padding: 20px; color:var(--text-muted);">No logs match current metrics</li>`;
+        transactionListEl.innerHTML = `<li style="text-align:center; padding: 20px; color:var(--text-muted);">No records match current filters</li>`;
         return;
     }
 
@@ -320,19 +317,18 @@ function renderLedger() {
     });
 }
 
-// Global scope attachment for localized functional actions inside dynamic templates
+// Map transaction context globally for execution inside runtime elements
 window.deleteTransaction = deleteTransaction;
 
-// Live Keyed Reactive Dynamic Listeners
+// Set up event listeners for filters
 [searchInput, filterCategorySelect, startDateInput, endDateInput].forEach(elem => {
     elem.addEventListener('input', renderLedger);
 });
 
 // ==========================================
-// 7. CATEGORY CONTROLLER LOGIC
+// 7. CATEGORY MANAGEMENT SYSTEMS
 // ==========================================
 function renderCategoryUI() {
-    // Populate selectors safely maintaining references
     const priorAddSelection = txCategory.value;
     const priorFilterSelection = filterCategorySelect.value;
 
@@ -341,7 +337,6 @@ function renderCategoryUI() {
     categoryListEl.innerHTML = '';
 
     categories.forEach(cat => {
-        // Form selections
         const opt1 = document.createElement('option');
         opt1.value = cat; opt1.textContent = cat;
         txCategory.appendChild(opt1);
@@ -350,7 +345,6 @@ function renderCategoryUI() {
         opt2.value = cat; opt2.textContent = cat;
         filterCategorySelect.appendChild(opt2);
 
-        // Sidebar deletion management visual blocks
         const row = document.createElement('div');
         row.className = 'categoryCard';
         row.innerHTML = `
@@ -382,12 +376,11 @@ window.removeCategory = async function(targetCat) {
 };
 
 // ==========================================
-// 8. CHART.JS DATA GRAPHICAL ANALYTICS
+// 8. CANVAS GRAPHICS SYSTEM (CHART.JS)
 // ==========================================
 function renderAnalyticsChart() {
     const ctx = document.getElementById('analyticsChart').getContext('2d');
     
-    // Group only visual expenses dynamically
     const summary = {};
     transactions.filter(t => t.type === 'expense').forEach(t => {
         summary[t.category] = (summary[t.category] || 0) + t.amount;
@@ -401,12 +394,10 @@ function renderAnalyticsChart() {
     }
 
     if (labels.length === 0) {
-        // Fallback visual initialization when zero items appear
         ctx.clearRect(0, 0, 320, 320);
         return;
     }
 
-    // Dynamic variable extraction from system theme styles
     const computedStyle = getComputedStyle(document.body);
     const primaryText = computedStyle.getPropertyValue('--text-primary').trim();
     const inputBg = computedStyle.getPropertyValue('--bg-input').trim();
@@ -437,7 +428,7 @@ function renderAnalyticsChart() {
 }
 
 // ==========================================
-// 9. THEME MECHANICS ENGINE
+// 9. THEME ENGINE CONTROLLER
 // ==========================================
 function setupThemeController() {
     const storedTheme = localStorage.getItem('tracker-theme') || 'dark';
@@ -448,13 +439,12 @@ function setupThemeController() {
         const selectedTheme = e.target.value;
         document.documentElement.setAttribute('data-theme', selectedTheme);
         localStorage.setItem('tracker-theme', selectedTheme);
-        // Rerender analytics tracking colors accurately following change events
         renderAnalyticsChart();
     });
 }
 
 // ==========================================
-// 10. SYSTEM MODALS & DATA PURGE ACTIONS
+// 10. SYSTEM POP-UP MODALS & CLEANUP UTILS
 // ==========================================
 function triggerModal(title, description, iconClass, onConfirm) {
     modalTitle.textContent = title;
@@ -474,7 +464,7 @@ modalConfirmBtn.addEventListener('click', () => {
     customModalOverlay.style.display = 'none';
 });
 
-// Purge Targeted Filtered Selection Logs
+// Purge Targeted Records
 purgeCategoryBtn.addEventListener('click', () => {
     const targetCat = filterCategorySelect.value;
     const scopeMessage = targetCat === 'all' 
@@ -513,7 +503,7 @@ purgeCategoryBtn.addEventListener('click', () => {
     );
 });
 
-// Danger Zone: Global Profile Data Erasure Wipeout
+// Profile Data Reset Engine
 deleteAccountBtn.addEventListener('click', () => {
     triggerModal(
         "Wipe Out Ledger Profiles?",
@@ -521,15 +511,12 @@ deleteAccountBtn.addEventListener('click', () => {
         "fa-solid fa-radiation",
         async () => {
             try {
-                // 1. Delete all transactions
                 const snapshot = await db.collection('users').doc(currentUser.uid).collection('transactions').get();
                 const batch = db.batch();
                 snapshot.forEach(doc => batch.delete(doc.ref));
                 await batch.commit();
 
-                // 2. Delete user configuration
                 await db.collection('users').doc(currentUser.uid).delete();
-                
                 alert("Profile data wiped successfully.");
             } catch (err) {
                 alert("Error during structural wipeout: " + err.message);
@@ -539,7 +526,7 @@ deleteAccountBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// 11. EXPORT GENERATOR: FLAT ARCHIVE COMPILES
+// 11. FILE EXPORT: FLAT ARCHIVE COMPILES (CSV)
 // ==========================================
 exportBtn.addEventListener('click', () => {
     if (transactions.length === 0) return alert("No operational data targets present to pack.");
@@ -549,7 +536,6 @@ exportBtn.addEventListener('click', () => {
 
     transactions.forEach(t => {
         const dateStr = t.createdAt && t.createdAt.toDate ? t.createdAt.toDate().toISOString() : 'Pending';
-        // Clean textual definitions to ensure CSV column cell isolation
         const cleanTitle = t.title.replace(/,/g, '');
         const row = `${t.id},${cleanTitle},${t.amount},${t.type},${t.category},${t.status},${t.isRecurring},${dateStr}`;
         csvContent += row + "\r\n";
