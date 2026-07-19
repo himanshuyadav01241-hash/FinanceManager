@@ -37,7 +37,7 @@ const authSubtitle = document.getElementById('authSubtitle');
 
 const titleInput = document.getElementById('title');
 const amountInput = document.getElementById('amount');
-const transactionDateInput = document.getElementById('transactionDate'); // Captured custom date selector element
+const transactionDateInput = document.getElementById('transactionDate'); 
 const typeSelect = document.getElementById('type');
 const categorySelect = document.getElementById('category');
 const statusSelect = document.getElementById('status');
@@ -167,7 +167,6 @@ auth.onAuthStateChanged((user) => {
 // ==========================================
 
 function initializeUserWorkspace() {
-    // Default the date choice input field to today's system tracking parameters
     if (transactionDateInput) {
         transactionDateInput.value = new Date().toISOString().split('T')[0];
     }
@@ -181,10 +180,19 @@ function initializeUserWorkspace() {
         renderCategorySelectors();
     });
 
+    // Kept at createdAt query configuration to avoid silent console index tracking faults
     db.collection('users').doc(currentUser.uid).collection('transactions')
-        .orderBy('date', 'desc') // Modified ordering index properties to look for user custom payment dates
+        .orderBy('createdAt', 'desc')
         .onSnapshot(snapshot => {
             transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Client-side date evaluation fallback sort operation
+            transactions.sort((a, b) => {
+                const dateA = a.date || (a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().toISOString().split('T')[0] : '');
+                const dateB = b.date || (b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().toISOString().split('T')[0] : '');
+                return dateB.localeCompare(dateA);
+            });
+
             processCalculationsAndRender();
         }, error => {
             console.error("Firestore synchronizer crash: ", error);
@@ -205,7 +213,6 @@ if (addBtn) {
         const status = statusSelect.value;
         const isRecurring = isRecurringCheck.checked;
         
-        // Dynamic fallback checking if a user leaves custom date field blank
         let chosenDate = transactionDateInput && transactionDateInput.value ? transactionDateInput.value : new Date().toISOString().split('T')[0];
 
         if (!title || isNaN(amount) || amount <= 0) {
@@ -216,7 +223,7 @@ if (addBtn) {
         const payload = {
             title,
             amount,
-            date: chosenDate, // Custom designated transaction logging date string format (YYYY-MM-DD)
+            date: chosenDate, 
             type,
             category,
             status,
@@ -246,7 +253,6 @@ async function deleteTransaction(id) {
     }
 }
 
-// Open custom confirmation interface window tracking manual state selection inputs
 function openStatusChangeModal(transactionId, currentStatus) {
     const modalInputsWrapper = document.getElementById('modalInputsWrapper');
     const dynamicStatusField = document.getElementById('dynamicStatusField');
@@ -254,7 +260,6 @@ function openStatusChangeModal(transactionId, currentStatus) {
     const deleteConfirmationInput = document.getElementById('deleteConfirmationInput');
 
     if (!modalInputsWrapper || !dynamicStatusField || !updatedStatusDropdown) {
-        // Safe standard fallback in case matching HTML dynamic nodes aren't found
         const nextStatus = currentStatus === 'paid' ? 'pending' : 'paid';
         if (confirm(`Change status to ${nextStatus === 'paid' ? 'Settled' : 'Pending'}?`)) {
             db.collection('users').doc(currentUser.uid).collection('transactions').doc(transactionId).update({ status: nextStatus });
@@ -262,7 +267,6 @@ function openStatusChangeModal(transactionId, currentStatus) {
         return;
     }
 
-    // Explicit window configuration states targeting choice dropdown structures
     if (deleteConfirmationInput) deleteConfirmationInput.style.display = 'none';
     modalInputsWrapper.style.display = 'block';
     dynamicStatusField.style.display = 'block';
@@ -387,7 +391,6 @@ function renderLedger() {
     const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
     const catFilter = filterCategorySelect ? filterCategorySelect.value : 'all';
     
-    // Parse baseline strings out cleanly into timestamp numeric comparison states
     const startVal = startDateInput && startDateInput.value ? new Date(startDateInput.value + 'T00:00:00') : null;
     const endVal = endDateInput && endDateInput.value ? new Date(endDateInput.value + 'T23:59:59') : null;
 
@@ -396,8 +399,13 @@ function renderLedger() {
         const matchesCat = (catFilter === 'all') || (t.category === catFilter);
         
         let matchesDate = true;
-        if (t.date) {
-            const txDate = new Date(t.date + 'T00:00:00');
+        let txDateString = t.date;
+        if (!txDateString && t.createdAt && t.createdAt.toDate) {
+            txDateString = t.createdAt.toDate().toISOString().split('T')[0];
+        }
+
+        if (txDateString) {
+            const txDate = new Date(txDateString + 'T00:00:00');
             if (startVal && txDate < startVal) matchesDate = false;
             if (endVal && txDate > endVal) matchesDate = false;
         }
@@ -411,7 +419,7 @@ function renderLedger() {
             const colorClass = t.type === 'income' ? 'incomeText' : 'expenseText';
             const statusClass = t.status === 'paid' ? 'status-paid' : 'status-pending';
             const statusText = t.status === 'paid' ? 'Settled' : 'Pending';
-            const displayDate = t.date ? t.date : ''; 
+            const displayDate = t.date ? t.date : (t.createdAt && t.createdAt.toDate ? t.createdAt.toDate().toISOString().split('T')[0] : '');
             const repeatIcon = t.isRecurring ? `<i class="fa-solid fa-arrows-rotate" title="Recurring Event" style="margin-left:5px; font-size:0.8rem; opacity:0.6;"></i>` : '';
 
             return `
@@ -419,7 +427,7 @@ function renderLedger() {
                     <div>
                         <h3 style="margin: 0 0 4px 0; font-size: 1rem;">${t.title} ${repeatIcon}</h3>
                         <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
-                            <span class="status-pill ${statusClass}" onclick="openStatusChangeModal('${t.id}', '${t.status}')">${statusText}</span> · ${t.category} · <small>${displayDate}</small>
+                            <span class="status-pill ${statusClass}" style="cursor:pointer;" onclick="openStatusChangeModal('${t.id}', '${t.status}')">${statusText}</span> · ${t.category} · <small>${displayDate}</small>
                         </p>
                     </div>
                     <div style="display: flex; align-items: center; gap: 12px;">
@@ -511,7 +519,8 @@ if (exportBtn) {
 
         let csvContent = "data:text/csv;charset=utf-8,Description,Amount,Date,Type,Category,Status,Recurring\n";
         transactions.forEach(t => {
-            csvContent += `"${t.title.replace(/"/g, '""')}",${t.amount},${t.date || ''},${t.type},${t.category},${t.status},${t.isRecurring}\n`;
+            const displayDate = t.date ? t.date : (t.createdAt && t.createdAt.toDate ? t.createdAt.toDate().toISOString().split('T')[0] : '');
+            csvContent += `"${t.title.replace(/"/g, '""')}",${t.amount},${displayDate},${t.type},${t.category},${t.status},${t.isRecurring}\n`;
         });
 
         const encodedUri = encodeURI(csvContent);
@@ -540,7 +549,6 @@ if (modalCancelBtn) {
     modalCancelBtn.addEventListener('click', () => {
         if(modalOverlay) modalOverlay.style.display = 'none';
         
-        // Hide sub-input wraps upon dialog termination
         const modalInputsWrapper = document.getElementById('modalInputsWrapper');
         const dynamicStatusField = document.getElementById('dynamicStatusField');
         if (modalInputsWrapper) modalInputsWrapper.style.display = 'none';
@@ -557,7 +565,6 @@ if (modalConfirmBtn) {
         }
         if(modalOverlay) modalOverlay.style.display = 'none';
         
-        // Reset operational view containers cleanly
         const modalInputsWrapper = document.getElementById('modalInputsWrapper');
         const dynamicStatusField = document.getElementById('dynamicStatusField');
         if (modalInputsWrapper) modalInputsWrapper.style.display = 'none';
