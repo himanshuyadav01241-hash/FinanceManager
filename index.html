@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ==========================================
-           1. CORE DESIGN THEMES (5 THEMES)
+           1. CORE DESIGN THEMES (6 THEMES)
            ========================================== */
         :root, [data-theme="dark"] {
             --bg-main: #121212;
@@ -75,6 +75,19 @@
             --danger-accent: #e57373;
             --success-accent: #81c784;
             --warning-accent: #ffb74d;
+        }
+
+        [data-theme="red"] {
+            --bg-main: #1a0808;
+            --bg-surface: #2d1212;
+            --bg-input: #421b1b;
+            --text-primary: #ffcccc;
+            --text-muted: #b37373;
+            --border-color: rgba(255, 102, 102, 0.15);
+            --primary-accent: #ff3b30;
+            --danger-accent: #ff453a;
+            --success-accent: #34c759;
+            --warning-accent: #ff9500;
         }
 
         * { box-sizing: border-box; }
@@ -376,6 +389,7 @@
                     <option value="cyberpunk">Cyberpunk Neon</option>
                     <option value="emerald">Emerald Mint</option>
                     <option value="sakura">Cherry Blossom (Sakura)</option>
+                    <option value="red">Crimson Matrix (Red)</option>
                 </select>
                 <button id="logoutBtn" style="background:transparent; border: 1px solid var(--border-color);"><i class="fa-solid fa-sign-out-alt"></i> Logout</button>
             </div>
