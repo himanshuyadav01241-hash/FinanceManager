@@ -23,98 +23,6 @@
   --select-dropdown-text: #ffe3ec;
 }
 
-/* Base Built-in UI Themes */
-body[data-theme="light"] {
-  --bg: #f5f5f7;
-  --card: rgba(255, 255, 255, 0.8);
-  --border: rgba(0, 0, 0, 0.08);
-  --text: #1d1d1f;
-  --input-bg: rgba(0, 0, 0, 0.03);
-  --select-dropdown-bg: #ffffff;
-  --select-dropdown-text: #1d1d1f;
-}
-body[data-theme="red"] { 
-  --bg: #16090b; 
-  --card: rgba(255, 40, 40, .06); 
-  --border: rgba(255, 70, 70, .15); 
-  --text: #ffffff; 
-  --primary: #ff3030; 
-  --select-dropdown-bg: #2d1014; 
-  --select-dropdown-text: #ffffff; 
-}
-body[data-theme="blue"] { 
-  --bg: #07131f; 
-  --card: rgba(0, 170, 255, .06); 
-  --border: rgba(0, 170, 255, .15); 
-  --text: #ffffff; 
-  --primary: #00b7ff; 
-  --select-dropdown-bg: #0c233b; 
-  --select-dropdown-text: #ffffff; 
-}
-body[data-theme="purple"] { 
-  --bg: #12081d; 
-  --card: rgba(140, 82, 255, .06); 
-  --border: rgba(140, 82, 255, .15); 
-  --text: #ffffff; 
-  --primary: #8b5cf6; 
-  --select-dropdown-bg: #24113a; 
-  --select-dropdown-text: #ffffff; 
-}
-body[data-theme="sakura"] {
-  --bg: #1f0f13;
-  --card: rgba(45, 23, 29, 0.7);
-  --border: rgba(242, 181, 188, 0.25);
-  --text: #fcdad7;
-  --primary: #d67b88;
-  --input-bg: rgba(61, 32, 40, 0.45);
-  --select-dropdown-bg: #2b151a;
-  --select-dropdown-text: #fcdad7;
-}
-
-/* ==========================================
-   DYNAMIC ENVIRONMENTAL WEATHER/SEASON THEMES
-   ========================================== */
-body[data-weather="spring"] {
-  --bg: #1c1216;
-  --card: rgba(38, 25, 32, 0.65);
-  --border: rgba(255, 133, 162, 0.2);
-  --text: #ffe3ec;
-  --input-bg: rgba(54, 36, 45, 0.4);
-  --primary: #ff85a2; /* Cherry Blossom Pink */
-  --select-dropdown-bg: #261920;
-  --select-dropdown-text: #ffe3ec;
-}
-body[data-weather="summer"] {
-  --bg: #0b1a16;
-  --card: rgba(16, 38, 32, 0.65);
-  --border: rgba(46, 204, 113, 0.2);
-  --text: #e8f8f5;
-  --input-bg: rgba(23, 54, 45, 0.4);
-  --primary: #2ecc71; /* Lush Summer Foliage */
-  --select-dropdown-bg: #122621;
-  --select-dropdown-text: #e8f8f5;
-}
-body[data-weather="autumn"] {
-  --bg: #191410;
-  --card: rgba(36, 29, 23, 0.65);
-  --border: rgba(230, 126, 34, 0.2);
-  --text: #ffeacc;
-  --input-bg: rgba(54, 43, 34, 0.4);
-  --primary: #e67e22; /* Falling Autumn Leaves */
-  --select-dropdown-bg: #241d17;
-  --select-dropdown-text: #ffeacc;
-}
-body[data-weather="winter"] {
-  --bg: #0f1319;
-  --card: rgba(23, 29, 38, 0.65);
-  --border: rgba(52, 152, 219, 0.2);
-  --text: #e6f0fa;
-  --input-bg: rgba(35, 44, 58, 0.4);
-  --primary: #3498db; /* Frost Ice Blue */
-  --select-dropdown-bg: #171d26;
-  --select-dropdown-text: #e6f0fa;
-}
-
 /* Core Document & Dynamic Canvas Bindings */
 body {
   background: linear-gradient(135deg, #070707, var(--bg));
@@ -423,7 +331,7 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   text-align: center;
   animation: authCardFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) ease-out;
   position: relative;
-  z-index: 2; /* Stands clean above the floating backdrop particles */
+  z-index: 2;
 }
 
 @keyframes authCardFadeIn {
@@ -431,7 +339,6 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Floating Brand Assets */
 .authCard > i.fa-wallet {
   font-size: 4rem;
   background: linear-gradient(135deg, var(--primary) 0%, #bd0000 100%);
@@ -463,7 +370,6 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   margin-bottom: 35px;
 }
 
-/* Safe Google Social Layout Anchor Protection */
 .google-btn {
   background-color: #ffffff !important;
   color: #3c4043 !important;
@@ -489,7 +395,6 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
 }
 .google-btn:active { transform: translateY(0); }
 
-/* Absolute Layout Fix for Glitchy Images inside the Auth Button */
 .google-btn img {
   width: 20px !important;
   height: 20px !important;
