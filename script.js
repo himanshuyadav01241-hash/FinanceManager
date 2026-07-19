@@ -147,12 +147,14 @@ auth.onAuthStateChanged((user) => {
         currentUser = user;
         authScreen.style.display = 'none';
         appScreen.style.display = 'block';
+        toggleBlossomCanvas(false); // Disable animation inside the app dashboard
         initializeUserWorkspace();
     } else {
         currentUser = null;
         transactions = [];
         authScreen.style.display = 'flex';
         appScreen.style.display = 'none';
+        toggleBlossomCanvas(true); // Bring back falling petals on logout/login screens
         if(analyticsChart) analyticsChart.destroy();
     }
 });
@@ -407,7 +409,6 @@ function renderAnalyticsChart() {
         return;
     }
 
-    // Dynamic contrast color balancing for chart labels based on active dataset configs
     const computedStyles = getComputedStyle(document.body);
     const labelColor = computedStyles.getPropertyValue('--text').trim() || '#ffffff';
 
@@ -531,24 +532,131 @@ deleteAccountBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// 11. LAYOUT THEME & DYNAMIC WEATHER MANAGEMENT
+// 11. LAYOUT THEME MANAGEMENT
 // ==========================================
 
 themeSelect.addEventListener('change', (e) => {
     const chosenVal = e.target.value;
     
-    // Clear out clean layouts first
+    // Clear existing attributes
     document.body.removeAttribute('data-theme');
     document.body.removeAttribute('data-weather');
     
-    // Check if configuration maps to a custom layout theme or seasonal weather profile
-    if (['light', 'red', 'blue', 'purple'].includes(chosenVal)) {
+    // Apply appropriate attribute mapping (supporting custom structural classes and cherry blossom hooks)
+    if (['light', 'red', 'blue', 'purple', 'sakura'].includes(chosenVal)) {
         document.body.setAttribute('data-theme', chosenVal);
     } else {
-        // Fall back to weather attributes ('spring', 'summer', 'autumn', 'winter')
         document.body.setAttribute('data-weather', chosenVal);
     }
     
-    // Refresh chart to match up typography contrast properties
     renderAnalyticsChart();
+});
+
+// ==========================================
+// 12. CHERRY BLOSSOM CANVAS ENGINE
+// ==========================================
+let blossomCanvas = null;
+let blossomCtx = null;
+let animationFrameId = null;
+
+function initBlossomEngine() {
+    blossomCanvas = document.createElement('canvas');
+    blossomCtx = blossomCanvas.getContext('2d');
+    
+    blossomCanvas.style.position = 'fixed';
+    blossomCanvas.style.top = '0';
+    blossomCanvas.style.left = '0';
+    blossomCanvas.style.width = '100vw';
+    blossomCanvas.style.height = '100vh';
+    blossomCanvas.style.pointerEvents = 'none';
+    blossomCanvas.style.zIndex = '0'; // Behind containers, above body background
+    
+    document.body.prepend(blossomCanvas);
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    blossomCanvas.width = width;
+    blossomCanvas.height = height;
+
+    const maxPetals = 30; 
+    const petals = [];
+    const colors = ['#fde8e9', '#f9d7da', '#f5c6cb', '#f2b5bc'];
+
+    function random(min, max) { return Math.random() * (max - min) + min; }
+
+    for (let i = 0; i < maxPetals; i++) {
+        petals.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            size: random(6, 14),
+            color: colors[Math.floor(Math.random() * colors.length)],
+            speedX: random(-0.4, 0.4),
+            speedY: random(0.5, 1.2),
+            rotation: random(0, Math.PI * 2),
+            wobble: random(0, Math.PI * 2),
+            wobbleSpeed: random(0.01, 0.03)
+        });
+    }
+
+    function drawPetal(p) {
+        blossomCtx.save();
+        blossomCtx.translate(p.x, p.y);
+        blossomCtx.rotate(p.rotation);
+        blossomCtx.beginPath();
+        blossomCtx.moveTo(0, 0);
+        blossomCtx.bezierCurveTo(-p.size / 2, -p.size / 3, -p.size / 3, -p.size, 0, -p.size / 1.5);
+        blossomCtx.bezierCurveTo(p.size / 3, -p.size, p.size / 2, -p.size / 3, 0, 0);
+        blossomCtx.fillStyle = p.color;
+        blossomCtx.fill();
+        blossomCtx.restore();
+    }
+
+    function updateAnimation() {
+        blossomCtx.clearRect(0, 0, width, height);
+        
+        petals.forEach(p => {
+            p.x += p.speedX + Math.sin(p.wobble) * 0.2;
+            p.y += p.speedY;
+            p.rotation += 0.006;
+            p.wobble += p.wobbleSpeed;
+
+            if (p.x < -p.size) p.x = width + p.size;
+            if (p.x > width + p.size) p.x = -p.size;
+            if (p.y > height + p.size) p.y = -p.size;
+        });
+
+        petals.forEach(drawPetal);
+        animationFrameId = requestAnimationFrame(updateAnimation);
+    }
+
+    window.addEventListener('resize', () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        blossomCanvas.width = width;
+        blossomCanvas.height = height;
+    });
+
+    updateAnimation();
+}
+
+function toggleBlossomCanvas(show) {
+    if (show) {
+        if (!blossomCanvas) {
+            initBlossomEngine();
+        } else {
+            blossomCanvas.style.display = 'block';
+            if (!animationFrameId) initBlossomEngine();
+        }
+    } else {
+        if (blossomCanvas) {
+            blossomCanvas.style.display = 'none';
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+    }
+}
+
+// Instantiate engine configuration when structure loads up initially
+document.addEventListener('DOMContentLoaded', () => {
+    if (!currentUser) toggleBlossomCanvas(true);
 });
