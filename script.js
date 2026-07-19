@@ -565,13 +565,28 @@ if (deleteAccountBtn) {
 // 11. LAYOUT THEME MANAGEMENT
 // ==========================================
 
-if (themeSelect) {
-    themeSelect.addEventListener('change', (e) => {
-        const chosenVal = e.target.value;
-        document.documentElement.setAttribute('data-theme', chosenVal);
-        renderAnalyticsChart();
+// Global Theme Initializer and Sync Mechanism
+function configureApplicationTheme(themeValue) {
+    document.documentElement.setAttribute('data-theme', themeValue);
+    
+    // Synchronize all instances of selectors mapped across different pages/screens
+    const targetSelectors = document.querySelectorAll('#theme, .theme-select-context');
+    targetSelectors.forEach(selectElement => {
+        if (selectElement.value !== themeValue) {
+            selectElement.value = themeValue;
+        }
     });
+
+    // Update graphical elements based on newly processed theme variable mappings
+    renderAnalyticsChart();
 }
+
+// Initialize dynamic listeners across shared application components
+document.addEventListener('change', (e) => {
+    if (e.target && (e.target.id === 'theme' || e.target.classList.contains('theme-select-context'))) {
+        configureApplicationTheme(e.target.value);
+    }
+});
 
 // ==========================================
 // 12. CHERRY BLOSSOM CANVAS ENGINE
@@ -682,4 +697,10 @@ function toggleBlossomCanvas(show) {
 // Initial structural check when engine boots up
 document.addEventListener('DOMContentLoaded', () => {
     if (!currentUser) toggleBlossomCanvas(true);
+    
+    // Explicit initial parsing alignment matching HTML root baseline properties
+    const initialThemeSelection = document.getElementById('theme');
+    if (initialThemeSelection) {
+        configureApplicationTheme(initialThemeSelection.value);
+    }
 });
