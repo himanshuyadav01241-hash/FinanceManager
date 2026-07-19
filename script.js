@@ -2,7 +2,7 @@
 // 1. FIREBASE CONFIGURATION & INITIALIZATION
 // ==========================================
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
+    apiKey: "YOUR_API_KEY", // <-- Replace with your real Firebase Web API Key
     authDomain: "YOUR_AUTH_DOMAIN",
     projectId: "YOUR_PROJECT_ID",
     storageBucket: "YOUR_STORAGE_BUCKET",
@@ -79,11 +79,12 @@ let currentModalAction = null;
 let isLoginMode = true;
 
 // ==========================================
-// 3. AUTHENTICATION SERVICES (FIXED)
+// 3. AUTHENTICATION SERVICES
 // ==========================================
 
 // Toggle between Login and Sign Up UI states
-toggleAuthMode.addEventListener('click', () => {
+toggleAuthMode.addEventListener('click', (e) => {
+    e.preventDefault();
     isLoginMode = !isLoginMode;
     if (isLoginMode) {
         authTitle.textContent = "Welcome Back";
@@ -244,7 +245,7 @@ function renderCategorySelectors() {
     categoryListEl.innerHTML = userCategories.map(cat => `
         <div class="categoryCard">
             <span>${cat}</span>
-            <button onclick="deleteCategory('${cat}')" style="background:transparent; border:none; color:var(--danger-accent); padding:2px 6px;">
+            <button onclick="deleteCategory('${cat}')" style="background:transparent; border:none; color:var(--text); padding:2px 6px;">
                 <i class="fa-solid fa-trash-can"></i>
             </button>
         </div>
@@ -352,17 +353,17 @@ function renderLedger() {
         const repeatIcon = t.isRecurring ? `<i class="fa-solid fa-arrows-rotate" title="Recurring Event" style="margin-left:5px; font-size:0.8rem; opacity:0.6;"></i>` : '';
 
         return `
-            <li class="categoryCard" style="margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <strong style="font-size: 1rem;">${t.title}</strong> ${repeatIcon}
-                    <div style="font-size: 0.75rem; color:var(--text-muted); margin-top:4px;">
-                        <span class="status-badge ${statusClass}" style="cursor:pointer;" onclick="toggleStatus('${t.id}', '${t.status}')">${statusText}</span> · ${t.category}
-                    </div>
+            <li class="transaction">
+                <div class="leftSide">
+                    <h3>${t.title} ${repeatIcon}</h3>
+                    <p>
+                        <span class="status-badge ${statusClass}" onclick="toggleStatus('${t.id}', '${t.status}')">${statusText}</span> · ${t.category}
+                    </p>
                 </div>
-                <div style="display:flex; align-items:center; gap:15px;">
-                    <span class="${colorClass}" style="font-weight:bold; font-size:1.05rem;">${sign}₹${t.amount}</span>
-                    <button onclick="deleteTransaction('${t.id}')" style="background:transparent; border:none; color:var(--danger-accent); cursor:pointer;">
-                        <i class="fa-solid fa-trash-can"></i>
+                <div class="rightSide">
+                    <span class="amount ${colorClass}">${sign}₹${t.amount}</span>
+                    <button onclick="deleteTransaction('${t.id}')" class="actionBtn">
+                        <i class="fa-solid fa-trash-can" style="color: var(--expense)"></i>
                     </button>
                 </div>
             </li>
@@ -379,7 +380,10 @@ function renderLedger() {
 // ==========================================
 
 function renderAnalyticsChart() {
-    const ctx = document.getElementById('analyticsChart').getContext('2d');
+    const chartCanvas = document.getElementById('analyticsChart');
+    if (!chartCanvas) return;
+    
+    const ctx = chartCanvas.getContext('2d');
     const expenseDataMap = {};
     userCategories.forEach(c => expenseDataMap[c] = 0);
 
@@ -401,9 +405,9 @@ function renderAnalyticsChart() {
         return;
     }
 
-    // Dynamic contrast balancing for the 4 explicit themes
-    const activeTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-    const labelColor = (activeTheme === 'light' || activeTheme === 'emerald') ? '#333333' : '#ffffff';
+    // Dynamic contrast color balancing for chart labels based on active dataset configs
+    const computedStyles = getComputedStyle(document.body);
+    const labelColor = computedStyles.getPropertyValue('--text').trim() || '#ffffff';
 
     analyticsChart = new Chart(ctx, {
         type: 'doughnut',
@@ -412,11 +416,11 @@ function renderAnalyticsChart() {
             datasets: [{
                 data: data,
                 backgroundColor: [
-                    '#4285F4', '#EA4335', '#FBBC05', '#34A853', 
-                    '#8E44AD', '#34495E', '#16A085', '#D35400'
+                    '#ff85a2', '#ffb7c5', '#e67e22', '#3498db', 
+                    '#2ecc71', '#9b59b6', '#f1c40f', '#e74c3c'
                 ],
                 borderWidth: 1,
-                borderColor: 'var(--bg-surface)'
+                borderColor: computedStyles.getPropertyValue('--bg-surface').trim() || '#1c1216'
             }]
         },
         options: {
@@ -450,7 +454,7 @@ exportBtn.addEventListener('click', () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Finance_Export_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute("download", `Ledger_Export_${new Date().toISOString().slice(0,10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -525,11 +529,24 @@ deleteAccountBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// 11. LAYOUT THEME MANAGEMENT CONTROL SWITCH
+// 11. LAYOUT THEME & DYNAMIC WEATHER MANAGEMENT
 // ==========================================
 
 themeSelect.addEventListener('change', (e) => {
-    const selectedTheme = e.target.value;
-    document.documentElement.setAttribute('data-theme', selectedTheme);
+    const chosenVal = e.target.value;
+    
+    // Clear out clean layouts first
+    document.body.removeAttribute('data-theme');
+    document.body.removeAttribute('data-weather');
+    
+    // Check if configuration maps to a custom layout theme or seasonal weather profile
+    if (['light', 'red', 'blue', 'purple'].includes(chosenVal)) {
+        document.body.setAttribute('data-theme', chosenVal);
+    } else {
+        // Fall back to weather attributes ('spring', 'summer', 'autumn', 'winter')
+        document.body.setAttribute('data-weather', chosenVal);
+    }
+    
+    // Refresh chart to match up typography contrast properties
     renderAnalyticsChart();
 });
