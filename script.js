@@ -1,7 +1,6 @@
 // ==========================================
 // 1. FIREBASE CONFIGURATION & INITIALIZATION
 // ==========================================
-// TODO: Replace these placeholders with your actual Firebase project credentials
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_AUTH_DOMAIN",
@@ -11,7 +10,6 @@ const firebaseConfig = {
     appId: "YOUR_APP_ID"
 };
 
-// Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
@@ -28,7 +26,6 @@ const googleBtn = document.getElementById('googleBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const themeSelect = document.getElementById('theme');
 
-// Custom Auth Form Selectors
 const emailAuthForm = document.getElementById('emailAuthForm');
 const authEmail = document.getElementById('authEmail');
 const authPassword = document.getElementById('authPassword');
@@ -37,7 +34,6 @@ const toggleAuthMode = document.getElementById('toggleAuthMode');
 const authTitle = document.getElementById('authTitle');
 const authSubtitle = document.getElementById('authSubtitle');
 
-// Transaction Form Selectors
 const titleInput = document.getElementById('title');
 const amountInput = document.getElementById('amount');
 const typeSelect = document.getElementById('type');
@@ -46,7 +42,6 @@ const statusSelect = document.getElementById('status');
 const isRecurringCheck = document.getElementById('isRecurring');
 const addBtn = document.getElementById('addBtn');
 
-// Metrics Selectors
 const balanceEl = document.getElementById('balance');
 const healthBadgeEl = document.getElementById('healthBadge');
 const incomeEl = document.getElementById('income');
@@ -55,12 +50,10 @@ const expenseEl = document.getElementById('expense');
 const pendingExpenseEl = document.getElementById('pendingExpense');
 const savingEl = document.getElementById('saving');
 
-// Categories Selectors
 const newCategoryInput = document.getElementById('newCategory');
 const addCategoryBtn = document.getElementById('addCategory');
 const categoryListEl = document.getElementById('categoryList');
 
-// Filter & Ledger Selectors
 const searchInput = document.getElementById('search');
 const filterCategorySelect = document.getElementById('filterCategory');
 const startDateInput = document.getElementById('startDate');
@@ -70,7 +63,6 @@ const exportBtn = document.getElementById('exportBtn');
 const purgeCategoryBtn = document.getElementById('purgeCategoryBtn');
 const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 
-// Modal Elements
 const modalOverlay = document.getElementById('customModalOverlay');
 const modalTitle = document.getElementById('modalTitle');
 const modalDescription = document.getElementById('modalDescription');
@@ -90,7 +82,6 @@ let isLoginMode = true;
 // 3. AUTHENTICATION SERVICES
 // ==========================================
 
-// Toggle Custom Auth Forms UI
 toggleAuthMode.addEventListener('click', () => {
     isLoginMode = !isLoginMode;
     if (isLoginMode) {
@@ -106,7 +97,6 @@ toggleAuthMode.addEventListener('click', () => {
     }
 });
 
-// Custom Email / Password Authenticator
 customAuthBtn.addEventListener('click', async (e) => {
     e.preventDefault();
     const email = authEmail.value.trim();
@@ -130,7 +120,6 @@ customAuthBtn.addEventListener('click', async (e) => {
     }
 });
 
-// Google Authentication
 googleBtn.addEventListener('click', async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
@@ -140,12 +129,10 @@ googleBtn.addEventListener('click', async () => {
     }
 });
 
-// Logout User
 logoutBtn.addEventListener('click', () => {
     auth.signOut();
 });
 
-// Centralized Firebase Observer Auth State Router
 auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = user;
@@ -166,7 +153,6 @@ auth.onAuthStateChanged((user) => {
 // ==========================================
 
 function initializeUserWorkspace() {
-    // Sync custom categories metadata node
     db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
         if (doc.exists && doc.data().categories) {
             userCategories = doc.data().categories;
@@ -176,7 +162,6 @@ function initializeUserWorkspace() {
         renderCategorySelectors();
     });
 
-    // Real-time Ledger Stream Synchronizer
     db.collection('users').doc(currentUser.uid).collection('transactions')
         .orderBy('createdAt', 'desc')
         .onSnapshot(snapshot => {
@@ -191,7 +176,6 @@ function initializeUserWorkspace() {
 // 5. TRANSACTIONS & MANAGEMENT LOGIC
 // ==========================================
 
-// Add New Transaction
 addBtn.addEventListener('click', async () => {
     const title = titleInput.value.trim();
     const amount = parseFloat(amountInput.value);
@@ -201,7 +185,7 @@ addBtn.addEventListener('click', async () => {
     const isRecurring = isRecurringCheck.checked;
 
     if (!title || isNaN(amount) || amount <= 0) {
-        alert("Provide valid description structural markers and value quantities.");
+        alert("Provide valid description and amount quantities.");
         return;
     }
 
@@ -221,11 +205,10 @@ addBtn.addEventListener('click', async () => {
         amountInput.value = '';
         isRecurringCheck.checked = false;
     } catch (error) {
-        alert("Operation failed targeting network datastore pipeline.");
+        alert("Operation failed targeting data pipeline.");
     }
 });
 
-// Delete Transaction
 async function deleteTransaction(id) {
     try {
         await db.collection('users').doc(currentUser.uid).collection('transactions').doc(id).delete();
@@ -234,7 +217,6 @@ async function deleteTransaction(id) {
     }
 }
 
-// Toggle Transaction Status (Settled/Pending)
 async function toggleStatus(id, currentStatus) {
     const nextStatus = currentStatus === 'paid' ? 'pending' : 'paid';
     try {
@@ -242,7 +224,7 @@ async function toggleStatus(id, currentStatus) {
             status: nextStatus
         });
     } catch (error) {
-        console.error("Failed to alter field attribute payload status indicator.");
+        console.error("Failed to alter status indicator.");
     }
 }
 
@@ -251,14 +233,8 @@ async function toggleStatus(id, currentStatus) {
 // ==========================================
 
 function renderCategorySelectors() {
-    // Repopulate core form category drop-down array elements
     categorySelect.innerHTML = userCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-    
-    // Repopulate structural filter modules
-    filterCategorySelect.innerHTML = `<option value="all">All Categories</option>` + 
-        userCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-
-    // Populate Right Column management sub-panel
+    filterCategorySelect.innerHTML = `<option value="all">All Categories</option>` + userCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
     categoryListEl.innerHTML = userCategories.map(cat => `
         <div class="categoryCard">
             <span>${cat}</span>
@@ -287,7 +263,7 @@ async function deleteCategory(categoryName) {
     try {
         await db.collection('users').doc(currentUser.uid).update({ categories: updatedCategories });
     } catch (error) {
-        console.error("Failed modification routines structural categories lists mapping.");
+        console.error("Failed modification routines.");
     }
 }
 
@@ -314,14 +290,12 @@ function processCalculationsAndRender() {
 
     totalBalance = totalIncome - totalExpense;
 
-    // Output calculated string values directly to UI components
     balanceEl.textContent = `₹${totalBalance.toLocaleString()}`;
     incomeEl.textContent = `₹${totalIncome.toLocaleString()}`;
     expenseEl.textContent = `₹${totalExpense.toLocaleString()}`;
     pendingIncomeEl.textContent = `Pending: ₹${pendingIncome.toLocaleString()}`;
     pendingExpenseEl.textContent = `Pending: ₹${pendingExpense.toLocaleString()}`;
 
-    // Handle Health Badge
     if (totalBalance > 5000) {
         healthBadgeEl.textContent = "Healthy";
         healthBadgeEl.className = "badge badge-good";
@@ -333,7 +307,6 @@ function processCalculationsAndRender() {
         healthBadgeEl.className = "badge badge-danger";
     }
 
-    // Handle Net Savings Rate Percentage Formula
     if (totalIncome > 0) {
         const rate = ((totalIncome - totalExpense) / totalIncome) * 100;
         savingEl.textContent = `${Math.max(0, Math.round(rate))}%`;
@@ -345,14 +318,12 @@ function processCalculationsAndRender() {
     renderAnalyticsChart();
 }
 
-// Render dynamic Ledger with functional item event filters applied
 function renderLedger() {
     const searchVal = searchInput.value.toLowerCase();
     const catFilter = filterCategorySelect.value;
     const startVal = startDateInput.value ? new Date(startDateInput.value) : null;
     const endVal = endDateInput.value ? new Date(endDateInput.value) : null;
 
-    // Filter structural engine processing pipeline
     const filtered = transactions.filter(t => {
         const matchesSearch = t.title.toLowerCase().includes(searchVal);
         const matchesCat = (catFilter === 'all') || (t.category === catFilter);
@@ -378,7 +349,7 @@ function renderLedger() {
             <li class="categoryCard" style="margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
                 <div>
                     <strong style="font-size: 1rem;">${t.title}</strong> ${repeatIcon}
-                    <div style="font-size: 0.75rem; color:var(--text-muted); margin-top:2px;">
+                    <div style="font-size: 0.75rem; color:var(--text-muted); margin-top:4px;">
                         <span class="status-badge ${statusClass}" style="cursor:pointer;" onclick="toggleStatus('${t.id}', '${t.status}')">${statusText}</span> · ${t.category}
                     </div>
                 </div>
@@ -393,7 +364,6 @@ function renderLedger() {
     }).join('');
 }
 
-// Setup Ledger Input Filters Real-time System Listeners
 [searchInput, filterCategorySelect, startDateInput, endDateInput].forEach(el => {
     el.addEventListener('input', renderLedger);
 });
@@ -404,8 +374,6 @@ function renderLedger() {
 
 function renderAnalyticsChart() {
     const ctx = document.getElementById('analyticsChart').getContext('2d');
-    
-    // Parse expenses exclusively by operational category metrics
     const expenseDataMap = {};
     userCategories.forEach(c => expenseDataMap[c] = 0);
 
@@ -423,12 +391,13 @@ function renderAnalyticsChart() {
     }
 
     if (data.length === 0) {
-        if(ctx.canvas) {
-            // Render an empty structural state loop bypass metric representation cleanly
-            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        }
+        if(ctx.canvas) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         return;
     }
+
+    // Dynamic contrast balancing for the 4 explicit theme presets
+    const activeTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const labelColor = (activeTheme === 'light' || activeTheme === 'emerald') ? '#333333' : '#ffffff';
 
     analyticsChart = new Chart(ctx, {
         type: 'doughnut',
@@ -448,7 +417,7 @@ function renderAnalyticsChart() {
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { color: document.documentElement.getAttribute('data-theme') === 'light' ? '#333' : '#fff' }
+                    labels: { color: labelColor }
                 }
             },
             responsive: true,
@@ -463,7 +432,7 @@ function renderAnalyticsChart() {
 
 exportBtn.addEventListener('click', () => {
     if (transactions.length === 0) {
-        alert("No transaction entries available for file data extraction.");
+        alert("No transaction entries available for extraction.");
         return;
     }
 
@@ -482,7 +451,7 @@ exportBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// 10. INTERMITTENT INTERACTIVE MODAL INTERFACES
+// 10. PROMPT MODAL INTERFACES
 // ==========================================
 
 function displayModal(title, description, iconClass, confirmAction) {
@@ -505,17 +474,16 @@ modalConfirmBtn.addEventListener('click', () => {
     modalOverlay.style.display = 'none';
 });
 
-// Purge Categorized / Filtered Elements
 purgeCategoryBtn.addEventListener('click', () => {
     const targetCat = filterCategorySelect.value;
     const desc = targetCat === 'all' 
-        ? "This will delete every transaction history item logged in your cloud configuration."
+        ? "This will delete every transaction history item logged in your profile."
         : `This will completely wipe all ledger entries under the category: "${targetCat}".`;
 
     displayModal(
         "Purge Transaction Logs?",
         desc,
-        "fa-solid fa-triangle-exclamation text-color:var(--danger-accent)",
+        "fa-solid fa-triangle-exclamation",
         async () => {
             const batch = db.batch();
             transactions.forEach(t => {
@@ -529,7 +497,6 @@ purgeCategoryBtn.addEventListener('click', () => {
     );
 });
 
-// Complete Profile Account & Data Deletion Router Action
 deleteAccountBtn.addEventListener('click', () => {
     displayModal(
         "Permanently Wipe All Data?",
@@ -537,17 +504,14 @@ deleteAccountBtn.addEventListener('click', () => {
         "fa-solid fa-skull-crossbones",
         async () => {
             try {
-                // Delete user database records
                 const snapshot = await db.collection('users').doc(currentUser.uid).collection('transactions').get();
                 const batch = db.batch();
                 snapshot.docs.forEach(doc => batch.delete(doc.ref));
                 await batch.commit();
                 await db.collection('users').doc(currentUser.uid).delete();
-                
-                // Delete authentication account instance
                 await auth.currentUser.delete();
             } catch (error) {
-                alert("Account destruction failure. Logging out as a safety precaution. Error: " + error.message);
+                alert("Account destruction failure. Logging out as precaution. Error: " + error.message);
                 auth.signOut();
             }
         }
@@ -561,6 +525,5 @@ deleteAccountBtn.addEventListener('click', () => {
 themeSelect.addEventListener('change', (e) => {
     const selectedTheme = e.target.value;
     document.documentElement.setAttribute('data-theme', selectedTheme);
-    // Force re-render chart tracking dynamic legend text updates
     renderAnalyticsChart();
 });
