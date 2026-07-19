@@ -1,3 +1,6 @@
+/* ==========================================
+   BASE RESET & GLOBAL CONFIGURATION
+   ========================================== */
 * {
   margin: 0;
   padding: 0;
@@ -20,6 +23,7 @@
   --select-dropdown-text: #ffffff;
 }
 
+/* Base Built-in UI Themes */
 body[data-theme="light"] {
   --bg: #f4f4f4;
   --card: #ffffff;
@@ -29,23 +33,80 @@ body[data-theme="light"] {
   --select-dropdown-bg: #ffffff;
   --select-dropdown-text: #0f172a;
 }
-
 body[data-theme="red"] { --bg: #16090b; --card: rgba(255, 40, 40, .06); --border: rgba(255, 70, 70, .15); --text: #ffffff; --primary: #ff3030; --select-dropdown-bg: #2d1014; --select-dropdown-text: #ffffff; }
 body[data-theme="blue"] { --bg: #07131f; --card: rgba(0, 170, 255, .06); --border: rgba(0, 170, 255, .15); --text: #ffffff; --primary: #00b7ff; --select-dropdown-bg: #0c233b; --select-dropdown-text: #ffffff; }
 body[data-theme="purple"] { --bg: #12081d; --card: rgba(140, 82, 255, .06); --border: rgba(140, 82, 255, .15); --text: #ffffff; --primary: #8b5cf6; --select-dropdown-bg: #24113a; --select-dropdown-text: #ffffff; }
 
+/* ==========================================
+   DYNAMIC ENVIRONMENTAL WEATHER THEMES
+   ========================================== */
+[data-weather="spring"] {
+  --bg: #1c1216;
+  --card: rgba(38, 25, 32, 0.65);
+  --border: rgba(255, 133, 162, 0.2);
+  --text: #ffe3ec;
+  --input-bg: rgba(54, 36, 45, 0.4);
+  --primary: #ff85a2;
+  --select-dropdown-bg: #261920;
+  --select-dropdown-text: #ffe3ec;
+}
+[data-weather="autumn"] {
+  --bg: #191410;
+  --card: rgba(36, 29, 23, 0.65);
+  --border: rgba(230, 126, 34, 0.2);
+  --text: #ffeacc;
+  --input-bg: rgba(54, 43, 34, 0.4);
+  --primary: #e67e22;
+  --select-dropdown-bg: #241d17;
+  --select-dropdown-text: #ffeacc;
+}
+[data-weather="winter"] {
+  --bg: #0f1319;
+  --card: rgba(23, 29, 38, 0.65);
+  --border: rgba(52, 152, 219, 0.2);
+  --text: #e6f0fa;
+  --input-bg: rgba(35, 44, 58, 0.4);
+  --primary: #3498db;
+  --select-dropdown-bg: #171d26;
+  --select-dropdown-text: #e6f0fa;
+}
+
+/* Core Document & Dynamic Canvas Bindings */
 body {
   background: linear-gradient(135deg, #070707, var(--bg));
   color: var(--text);
   min-height: 100vh;
-  transition: background-color 0.3s ease;
+  position: relative;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+#bg-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Translucent layer frosting for panels to see tree art layers */
+.authCard, .card, .form, .transaction, .categoryCard {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ==========================================
+   LAYOUT MODULES & WORKSPACE PANELS
+   ========================================== */
 .container {
   width: 100%;
   max-width: 1200px;
   margin: auto;
   padding: 16px;
+  position: relative;
+  z-index: 2;
 }
 
 header {
@@ -60,10 +121,8 @@ header {
 .logo h1 { font-size: 22px; font-weight: 700; }
 .logo span { display: block; font-size: 11px; opacity: .7; }
 
-/* Selection Field Readability Controls Fixes */
-.themeBox select,
-.form select,
-.search-filters select {
+/* Global Selection Modifiers */
+.themeBox select, .form select, .search-filters select {
   padding: 12px;
   border: 2px solid var(--border);
   border-radius: 10px;
@@ -75,16 +134,21 @@ header {
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
+  transition: border-color 0.2s;
+}
+.themeBox select:focus, .form select:focus, .search-filters select:focus {
+  border-color: var(--primary);
 }
 
-/* Hard Dropdown List Fixes */
 select option {
   background-color: var(--select-dropdown-bg) !important;
   color: var(--select-dropdown-text) !important;
   padding: 12px;
 }
 
-/* KPI Dash Cards */
+/* ==========================================
+   KPI DASH METRICS CARDS
+   ========================================== */
 .cards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -97,6 +161,10 @@ select option {
   border: 1px solid var(--border);
   padding: 16px;
   border-radius: 16px;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.card:hover {
+  border-color: rgba(255,255,255,0.2);
 }
 
 .card h3 { font-size: 11px; opacity: .7; text-transform: uppercase; margin-bottom: 6px; }
@@ -115,7 +183,6 @@ select option {
   background: rgba(245, 158, 11, 0.05);
   border: 1px dashed #f59e0b;
 }
-
 .pending-split-metrics {
   display: flex;
   gap: 20px;
@@ -123,6 +190,7 @@ select option {
   font-size: 15px;
 }
 
+/* Badging Metrics */
 .badge {
   display: inline-block;
   margin-top: 6px;
@@ -135,7 +203,6 @@ select option {
 .badge-warn { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
 .badge-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 
-/* Status Badges for Entries */
 .status-badge {
   font-size: 10px;
   padding: 2px 8px;
@@ -149,7 +216,9 @@ select option {
 .status-paid { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid #22c55e; }
 .status-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b; }
 
-/* Dual Workspace Setup */
+/* ==========================================
+   FINANCE CORE WORKSPACE LOGIC
+   ========================================== */
 .finance-workspace {
   display: grid;
   grid-template-columns: 1fr;
@@ -163,12 +232,7 @@ select option {
   border: 1px solid var(--border);
   border-radius: 16px;
 }
-
-.form h2 {
-  margin-bottom: 14px;
-  font-size: 16px;
-  color: var(--primary);
-}
+.form h2 { margin-bottom: 14px; font-size: 16px; color: var(--primary); }
 
 .form input {
   width: 100%;
@@ -180,12 +244,10 @@ select option {
   color: var(--text);
   font-size: 14px;
   outline: none;
+  transition: border-color 0.2s;
 }
-
-.form select {
-  width: 100%;
-  margin-bottom: 12px;
-}
+.form input:focus { border-color: var(--primary); }
+.form select { width: 100%; margin-bottom: 12px; }
 
 .form button {
   width: 100%;
@@ -197,9 +259,11 @@ select option {
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+  transition: opacity 0.2s;
 }
+.form button:hover { opacity: 0.9; }
 
-/* Designed Custom Category Badges Area */
+/* Dynamic Tags Manager */
 .categoryManager { display: flex; gap: 8px; margin-bottom: 16px; }
 .categoryManager input { margin-bottom: 0; }
 .categoryManager button { width: 52px; padding: 12px; }
@@ -225,13 +289,7 @@ select option {
   gap: 12px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
-
-.categoryCard span {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--select-dropdown-text);
-}
-
+.categoryCard span { font-size: 13px; font-weight: 600; color: var(--select-dropdown-text); }
 .categoryCard div { display: flex; gap: 8px; }
 .categoryCard button {
   background: rgba(0, 0, 0, 0.05);
@@ -240,16 +298,18 @@ select option {
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 4px;
+  color: var(--text);
 }
 
-/* Filters & Search */
+/* ==========================================
+   FILTERS & TRANSACTION LOGS
+   ========================================== */
 .search-filters {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
   margin: 20px 0;
 }
-
 .search-box, .filter-box { position: relative; display: flex; align-items: center; }
 .search-box i, .filter-box i { position: absolute; left: 16px; opacity: 0.6; font-size: 14px; pointer-events: none; z-index: 2; }
 
@@ -262,14 +322,11 @@ select option {
   color: var(--text);
   font-size: 14px;
   outline: none;
+  transition: border-color 0.2s;
 }
+.search-filters input:focus { border-color: var(--primary); }
+.search-filters select { width: 100%; padding-left: 42px; }
 
-.search-filters select {
-  width: 100%;
-  padding-left: 42px;
-}
-
-/* LEDGER LOG */
 .ledger h2 { font-size: 18px; margin-bottom: 12px; }
 #transactionList { list-style: none; display: flex; flex-direction: column; gap: 8px; }
 
@@ -282,17 +339,175 @@ select option {
   border: 1px solid var(--border);
   border-radius: 12px;
 }
-
 .leftSide h3 { font-size: 14px; font-weight: 600; }
 .leftSide p { font-size: 11px; opacity: 0.6; }
 .rightSide { display: flex; align-items: center; gap: 12px; }
 .amount { font-size: 14px; font-weight: 700; }
 .incomeText { color: var(--income); }
 .expenseText { color: var(--expense); }
-.actionBtn { border: none; background: none; font-size: 14px; padding: 4px; }
+.actionBtn { border: none; background: none; font-size: 14px; padding: 4px; color: var(--text); cursor: pointer; }
 
 footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-size: 11px; }
 
+/* ==========================================
+   PREMIUM AUTHENTICATION LANDING MODULE
+   ========================================== */
+.authScreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.authCard {
+  background: rgba(26, 18, 19, 0.45) !important;
+  backdrop-filter: blur(20px) saturate(120%);
+  -webkit-backdrop-filter: blur(20px) saturate(120%);
+  border: 1px solid var(--border);
+  padding: 50px 35px;
+  width: 100%;
+  max-width: 420px;
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  text-align: center;
+  animation: authCardFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) ease-out;
+}
+
+@keyframes authCardFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Floating Brand Assets */
+.authCard > i.fa-wallet {
+  font-size: 4rem;
+  background: linear-gradient(135deg, var(--primary) 0%, #bd0000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 25px;
+  display: inline-block;
+  filter: drop-shadow(0 8px 16px rgba(255, 51, 51, 0.3));
+  animation: floatWallet 3.5s ease-in-out infinite;
+}
+
+@keyframes floatWallet {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+}
+
+.authCard h1 {
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin: 0 0 12px 0;
+}
+
+.authCard p {
+  color: var(--text-muted, #a68a8c);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 35px;
+}
+
+/* Safe Google Social Layout Anchor Protection */
+.google-btn {
+  background-color: #ffffff !important;
+  color: #3c4043 !important;
+  border: 1px solid #e0e0e0;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+.google-btn:hover {
+  background-color: #f8f9fa !important;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+  transform: translateY(-1px);
+}
+.google-btn:active { transform: translateY(0); }
+
+/* Layout explosion fix for images inside the auth button */
+.google-btn img {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.authCard input {
+  width: 100%;
+  padding: 14px 18px;
+  background: rgba(13, 8, 9, 0.5);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+  transition: all 0.25s ease;
+  outline: none;
+}
+.authCard input:focus {
+  border-color: var(--primary);
+  background: rgba(13, 8, 9, 0.8);
+  box-shadow: 0 0 0 4px rgba(255, 51, 51, 0.15);
+}
+.authCard input::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+.authCard button:not(.google-btn) {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 12px;
+  border: none;
+}
+
+#loginBtn {
+  background: linear-gradient(135deg, var(--primary) 0%, #bd0000 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
+}
+#loginBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 51, 51, 0.4);
+  filter: brightness(1.1);
+}
+#loginBtn:active { transform: translateY(0); }
+
+#signupBtn {
+  background: transparent;
+  color: #ffffff;
+  border: 1px solid var(--border);
+  margin-bottom: 0;
+}
+#signupBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--primary);
+}
+
+/* ==========================================
+   RESPONSIVE LAYOUT RESPONSIVENESS MEDIA QUERIES
+   ========================================== */
 @media (min-width: 768px) {
   .container { padding: 24px; }
   .cards { grid-template-columns: repeat(4, 1fr); }
@@ -301,153 +516,4 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
   .finance-workspace { grid-template-columns: 1fr 1fr; gap: 20px; }
   .search-filters { grid-template-columns: 2fr 1fr; gap: 12px; }
   .card h2 { font-size: 24px; }
-}
-/* ==========================================
-   INSANE HR FinanceOS Cloud - CYBERPUNK RED AUTH
-========================================== */
-
-/* Full screen wrapper overlay centering the card with an intense dark red radial aura */
-.authScreen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    background: radial-gradient(circle at 50% 50%, #251214 0%, #0a0506 100%);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    padding: 20px;
-    font-family: 'Poppins', sans-serif;
-}
-
-/* Premium Obsidian Glassmorphism Card Container with a subtle red border */
-.authCard {
-    background: rgba(26, 18, 19, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 68, 68, 0.12);
-    padding: 40px 30px;
-    width: 100%;
-    max-width: 400px;
-    border-radius: 24px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    text-align: center;
-    animation: authCardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) ease-out;
-}
-
-/* Animated structural fade entry */
-@keyframes authCardFadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Floating Crimson Glowing Wallet Icon */
-.authCard > i.fa-wallet {
-    font-size: 3.5rem;
-    background: linear-gradient(135deg, #ff4e50 0%, #f9d423 100%); /* Warm high-octane red to gold transition */
-    background: linear-gradient(135deg, #ff3333 0%, #a30000 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 20px;
-    display: inline-block;
-    filter: drop-shadow(0 8px 16px rgba(255, 51, 51, 0.4));
-    animation: floatWallet 3s ease-in-out infinite;
-}
-
-@keyframes floatWallet {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-}
-
-/* Typography Matrix */
-.authCard h1 {
-    color: #ffffff;
-    font-size: 2rem;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    margin: 0;
-    text-shadow: 0 0 10px rgba(255, 51, 51, 0.2);
-}
-
-.authCard p {
-    color: #a68a8c;
-    font-size: 0.95rem;
-    margin-top: 4px;
-    margin-bottom: 35px;
-    font-weight: 400;
-}
-
-/* Cyberpunk Crimson Form Inputs Fields */
-.authCard input {
-    width: 100%;
-    padding: 14px 18px;
-    background: rgba(13, 8, 9, 0.7);
-    border: 1px solid rgba(255, 68, 68, 0.15);
-    border-radius: 12px;
-    color: #ffffff;
-    font-size: 0.95rem;
-    font-family: inherit;
-    margin-bottom: 16px;
-    transition: all 0.25s ease;
-    outline: none;
-    box-sizing: border-box;
-}
-
-.authCard input:focus {
-    border-color: #ff3333;
-    background: rgba(13, 8, 9, 0.9);
-    box-shadow: 0 0 0 4px rgba(255, 51, 51, 0.2);
-}
-
-.authCard input::placeholder {
-    color: #664e50;
-}
-
-/* Action Control Buttons Elements Layout */
-.authCard button {
-    width: 100%;
-    padding: 14px;
-    font-size: 1rem;
-    font-weight: 600;
-    font-family: inherit;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin-bottom: 12px;
-    border: none;
-    box-sizing: border-box;
-}
-
-/* Main Login Button - High Energy Crimson Gradient */
-#loginBtn {
-    background: linear-gradient(135deg, #ff3333 0%, #bd0000 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.4);
-}
-
-#loginBtn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 51, 51, 0.6);
-    filter: brightness(1.15);
-}
-
-#loginBtn:active {
-    transform: translateY(0);
-}
-
-/* Ghost Create Account Button with subtle red edge */
-#signupBtn {
-    background: transparent;
-    color: #a68a8c;
-    border: 1px solid rgba(255, 68, 68, 0.2);
-    margin-bottom: 0;
-}
-
-#signupBtn:hover {
-    background: rgba(255, 51, 51, 0.06);
-    color: #ffffff;
-    border-color: rgba(255, 51, 51, 0.4);
 }
