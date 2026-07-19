@@ -83,7 +83,6 @@ let isLoginMode = true;
 // 3. AUTHENTICATION SERVICES
 // ==========================================
 
-// Toggle between Login and Sign Up UI states safely if element exists
 if (toggleAuthMode) {
     toggleAuthMode.addEventListener('click', (e) => {
         e.preventDefault();
@@ -102,7 +101,6 @@ if (toggleAuthMode) {
     });
 }
 
-// Primary Custom Auth pipeline
 if (emailAuthForm) {
     emailAuthForm.addEventListener('submit', async (e) => {
         e.preventDefault(); 
@@ -129,7 +127,6 @@ if (emailAuthForm) {
     });
 }
 
-// Google Authentication
 if (googleBtn) {
     googleBtn.addEventListener('click', async () => {
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -141,14 +138,12 @@ if (googleBtn) {
     });
 }
 
-// Logout User
 if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
         auth.signOut();
     });
 }
 
-// Application State Auth Router
 auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = user;
@@ -562,14 +557,14 @@ if (deleteAccountBtn) {
 }
 
 // ==========================================
-// 11. LAYOUT THEME MANAGEMENT
+// 11. LAYOUT THEME MANAGEMENT (WEATHER BASED)
 // ==========================================
+let currentWeather = 'sakura-breeze'; // Default weather state
 
 if (themeSelect) {
     themeSelect.addEventListener('change', (e) => {
-        const chosenVal = e.target.value;
-        // Fix: Update configuration attribute safely targeting HTML root element
-        document.documentElement.setAttribute('data-theme', chosenVal);
+        currentWeather = e.target.value;
+        document.documentElement.setAttribute('data-theme', currentWeather);
         renderAnalyticsChart();
     });
 }
@@ -602,7 +597,7 @@ function initBlossomEngine() {
     blossomCanvas.width = width;
     blossomCanvas.height = height;
 
-    const maxPetals = 30; 
+    const maxPetals = 45; 
     const petals = [];
     const colors = ['#fde8e9', '#f9d7da', '#f5c6cb', '#f2b5bc'];
 
@@ -622,6 +617,45 @@ function initBlossomEngine() {
         });
     }
 
+    // Render structural landscape silhouettes (Cherry Blossom Tree Background branches)
+    function drawTreeSilhouette() {
+        if (!blossomCtx) return;
+        
+        blossomCtx.save();
+        // Adjust tree style properties dynamically relative to selected weather theme configuration
+        if (currentWeather === 'sakura-mist') {
+            blossomCtx.strokeStyle = 'rgba(44, 27, 36, 0.25)';
+            blossomCtx.fillStyle = 'rgba(239, 174, 190, 0.2)';
+        } else {
+            blossomCtx.strokeStyle = 'rgba(56, 31, 40, 0.45)';
+            blossomCtx.fillStyle = 'rgba(255, 183, 197, 0.35)';
+        }
+        
+        // Main Trunk Structure positioning
+        blossomCtx.lineWidth = 14;
+        blossomCtx.lineCap = 'round';
+        blossomCtx.beginPath();
+        blossomCtx.moveTo(width * 0.88, height);
+        blossomCtx.quadraticCurveTo(width * 0.85, height * 0.65, width * 0.78, height * 0.45);
+        blossomCtx.stroke();
+
+        // Primary Branch Left
+        blossomCtx.lineWidth = 7;
+        blossomCtx.beginPath();
+        blossomCtx.moveTo(width * 0.81, height * 0.53);
+        blossomCtx.quadraticCurveTo(width * 0.65, height * 0.42, width * 0.58, height * 0.48);
+        blossomCtx.stroke();
+        
+        // Secondary Twig Nodes & Canopy Clusters
+        blossomCtx.beginPath();
+        blossomCtx.arc(width * 0.76, height * 0.42, 65, 0, Math.PI * 2);
+        blossomCtx.arc(width * 0.62, height * 0.46, 50, 0, Math.PI * 2);
+        blossomCtx.arc(width * 0.82, height * 0.38, 55, 0, Math.PI * 2);
+        blossomCtx.fill();
+        
+        blossomCtx.restore();
+    }
+
     function drawPetal(p) {
         blossomCtx.save();
         blossomCtx.translate(p.x, p.y);
@@ -639,9 +673,16 @@ function initBlossomEngine() {
         if (!blossomCtx) return;
         blossomCtx.clearRect(0, 0, width, height);
         
+        // Draw the background ecosystem trees on the login/landing viewports
+        drawTreeSilhouette();
+        
         petals.forEach(p => {
-            p.x += p.speedX + Math.sin(p.wobble) * 0.2;
-            p.y += p.speedY;
+            // Apply unique fall rates depending on the chosen context weather structure
+            let dynamicWind = currentWeather === 'sakura-mist' ? 0.08 : 0.22;
+            let dynamicDrop = currentWeather === 'sakura-mist' ? 0.65 : 1.05;
+
+            p.x += (p.speedX * dynamicWind) + Math.sin(p.wobble) * 0.25;
+            p.y += p.speedY * dynamicDrop;
             p.rotation += 0.006;
             p.wobble += p.wobbleSpeed;
 
@@ -680,7 +721,6 @@ function toggleBlossomCanvas(show) {
     }
 }
 
-// Initial structural check when engine boots up
 document.addEventListener('DOMContentLoaded', () => {
     if (!currentUser) toggleBlossomCanvas(true);
 });
