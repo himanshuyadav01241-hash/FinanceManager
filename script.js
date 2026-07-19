@@ -73,7 +73,6 @@ const modalIconContainer = document.getElementById('modalIconContainer');
 const modalConfirmBtn = document.getElementById('modalConfirmBtn');
 const modalCancelBtn = document.getElementById('modalCancelBtn');
 
-// Fix for Section 10: Declaring the missing DOM reference variable
 const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 
 // Global Application State Variables
@@ -114,7 +113,7 @@ if (emailAuthForm) {
         const password = authPassword.value;
 
         if (!email || !password) {
-            alert("Please complete all requested sign-in credentials.");
+            showAlertModal("Authentication", "Please complete all requested sign-in credentials.", "fa-solid fa-triangle-exclamation");
             return;
         }
 
@@ -127,7 +126,7 @@ if (emailAuthForm) {
             authEmail.value = "";
             authPassword.value = "";
         } catch (error) {
-            alert(error.message);
+            showAlertModal("Authentication Error", error.message, "fa-solid fa-circle-xmark");
         }
     });
 }
@@ -138,7 +137,7 @@ if (googleBtn) {
         try {
             await auth.signInWithPopup(provider);
         } catch (error) {
-            alert("Google Sign-In Failed: " + error.message);
+            showAlertModal("Google Sign-In Failed", error.message, "fa-solid fa-circle-xmark");
         }
     });
 }
@@ -205,7 +204,7 @@ if (addBtn) {
         const isRecurring = isRecurringCheck.checked;
 
         if (!title || isNaN(amount) || amount <= 0) {
-            alert("Provide valid description and amount quantities.");
+            showAlertModal("Validation Error", "Provide valid description and amount quantities.", "fa-solid fa-circle-exclamation");
             return;
         }
 
@@ -225,21 +224,26 @@ if (addBtn) {
             amountInput.value = '';
             isRecurringCheck.checked = false;
         } catch (error) {
-            alert("Operation failed targeting data pipeline.");
+            showAlertModal("Database Error", "Operation failed targeting data pipeline.", "fa-solid fa-circle-xmark");
         }
     });
 }
 
-// Fixed Step: Simple inline confirm check prevents mistaken erasures immediately
-async function deleteTransaction(id) {
-    if (!confirm("Are you sure you want to delete this transaction?")) {
-        return; 
-    }
-    try {
-        await db.collection('users').doc(currentUser.uid).collection('transactions').doc(id).delete();
-    } catch (error) {
-        alert("Failed to erase log segment.");
-    }
+// Custom Modal Implementation for Single Transaction Trashing
+function deleteTransaction(id) {
+    displayModal(
+        "Delete Transaction?",
+        "Are you sure you want to delete this transaction entry permanently?",
+        "fa-solid fa-trash-can",
+        async () => {
+            try {
+                await db.collection('users').doc(currentUser.uid).collection('transactions').doc(id).delete();
+            } catch (error) {
+                showAlertModal("Error", "Failed to erase log segment.", "fa-solid fa-circle-xmark");
+            }
+        },
+        false
+    );
 }
 
 async function toggleStatus(id, currentStatus) {
@@ -264,7 +268,7 @@ function renderCategorySelectors() {
         categoryListEl.innerHTML = userCategories.map(cat => `
             <div class="categoryCard">
                 <span>${cat}</span>
-                <button onclick="deleteCategory('${cat}')" style="background:transparent; border:none; color:var(--text-primary); padding:2px 6px;">
+                <button onclick="deleteCategory('${cat}')" style="background:transparent; border:none; color:var(--text-primary); padding:2px 6px; cursor:pointer;">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             </div>
@@ -282,19 +286,27 @@ if (addCategoryBtn) {
             await db.collection('users').doc(currentUser.uid).update({ categories: updatedCategories });
             newCategoryInput.value = '';
         } catch (error) {
-            alert("Failed to synchronize category collection metadata.");
+            showAlertModal("Database Error", "Failed to synchronize category collection metadata.", "fa-solid fa-circle-xmark");
         }
     });
 }
 
-async function deleteCategory(categoryName) {
-    if (!confirm(`Are you sure you want to delete the category "${categoryName}"?`)) return;
-    const updatedCategories = userCategories.filter(cat => cat !== categoryName);
-    try {
-        await db.collection('users').doc(currentUser.uid).update({ categories: updatedCategories });
-    } catch (error) {
-        console.error("Failed modification routines.");
-    }
+// Custom Modal Implementation for Category Deletion
+function deleteCategory(categoryName) {
+    displayModal(
+        "Delete Category?",
+        `Are you sure you want to delete the category "${categoryName}"?`,
+        "fa-solid fa-trash-can",
+        async () => {
+            const updatedCategories = userCategories.filter(cat => cat !== categoryName);
+            try {
+                await db.collection('users').doc(currentUser.uid).update({ categories: updatedCategories });
+            } catch (error) {
+                console.error("Failed modification routines.");
+            }
+        },
+        false
+    );
 }
 
 // ==========================================
@@ -503,7 +515,7 @@ if (dataActionButton) {
 
 function executeCSVExport() {
     if (transactions.length === 0) {
-        alert("No transaction entries available for extraction.");
+        showAlertModal("Export Failed", "No transaction entries available for extraction.", "fa-solid fa-circle-info");
         return;
     }
 
@@ -544,7 +556,7 @@ if (importFileInputChannel) {
                 }
 
                 if (rows.length <= 1) {
-                    alert("Import file is empty or missing data headers.");
+                    showAlertModal("Import Failed", "Import file is empty or missing data headers.", "fa-solid fa-circle-exclamation");
                     return;
                 }
 
@@ -579,12 +591,12 @@ if (importFileInputChannel) {
 
                 if (entriesCount > 0) {
                     await batch.commit();
-                    alert(`Successfully imported ${entriesCount} transactions!`);
+                    showAlertModal("Import Success", `Successfully imported ${entriesCount} transactions!`, "fa-solid fa-circle-check");
                 } else {
-                    alert("No valid numerical transaction logs discovered.");
+                    showAlertModal("Import Info", "No valid numerical transaction logs discovered.", "fa-solid fa-circle-info");
                 }
             } catch (err) {
-                alert("File corruption or mapping structure mismatch: " + err.message);
+                showAlertModal("File Error", "File corruption or mapping structure mismatch: " + err.message, "fa-solid fa-circle-xmark");
             }
         };
 
@@ -601,12 +613,23 @@ if (importFileInputChannel) {
 // 10. PROMPT MODAL INTERFACES
 // ==========================================
 
-function displayModal(title, description, iconClass, confirmAction) {
+// Core modal pipeline customized to support hiding cancel button for informational alerts
+function displayModal(title, description, iconClass, confirmAction, isAlertOnly = false) {
     if(modalTitle) modalTitle.textContent = title;
     if(modalDescription) modalDescription.textContent = description;
     if(modalIconContainer) modalIconContainer.innerHTML = `<i class="${iconClass}"></i>`;
+    
+    if (modalCancelBtn) {
+        modalCancelBtn.style.display = isAlertOnly ? 'none' : 'inline-block';
+    }
+    
     currentModalAction = confirmAction;
     if(modalOverlay) modalOverlay.style.display = 'flex';
+}
+
+// Global drop-in shortcut function replacing standard native alert()
+function showAlertModal(title, message, iconClass = "fa-solid fa-circle-info") {
+    displayModal(title, message, iconClass, null, true);
 }
 
 if (modalCancelBtn) {
@@ -644,7 +667,8 @@ function triggerPurgeModal() {
                 }
             });
             await batch.commit();
-        }
+        },
+        false
     );
 }
 
@@ -663,10 +687,11 @@ if (deleteAccountBtn) {
                     await db.collection('users').doc(currentUser.uid).delete();
                     await auth.currentUser.delete();
                 } catch (error) {
-                    alert("Account destruction failure. Logging out as precaution. Error: " + error.message);
+                    showAlertModal("Critical Error", "Account destruction failure. Logging out as precaution. Error: " + error.message, "fa-solid fa-circle-xmark");
                     auth.signOut();
                 }
-            }
+            },
+            false
         );
     });
 }
