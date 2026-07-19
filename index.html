@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ==========================================
-           1. CORE DESIGN THEMES (6 THEMES)
+           1. CORE DESIGN THEMES (DARK & LIGHT)
            ========================================== */
         :root, [data-theme="dark"] {
             --bg-main: #121212;
@@ -36,58 +36,6 @@
             --danger-accent: #d93025;
             --success-accent: #188038;
             --warning-accent: #e37400;
-        }
-
-        [data-theme="cyberpunk"] {
-            --bg-main: #000b19;
-            --bg-surface: #0a192f;
-            --bg-input: #172a45;
-            --text-primary: #64ffda;
-            --text-muted: #8892b0;
-            --border-color: #30f2c233;
-            --primary-accent: #f57dff;
-            --danger-accent: #ff5376;
-            --success-accent: #64ffda;
-            --warning-accent: #ffcb6b;
-        }
-
-        [data-theme="emerald"] {
-            --bg-main: #f0fdf4;
-            --bg-surface: #ffffff;
-            --bg-input: #e8f5e9;
-            --text-primary: #064e3b;
-            --text-muted: #047857;
-            --border-color: rgba(6, 78, 59, 0.1);
-            --primary-accent: #10b981;
-            --danger-accent: #ef4444;
-            --success-accent: #059669;
-            --warning-accent: #f59e0b;
-        }
-
-        [data-theme="sakura"] {
-            --bg-main: #ffebee;
-            --bg-surface: #ffffff;
-            --bg-input: #fff5f5;
-            --text-primary: #4a1525;
-            --text-muted: #9c4d66;
-            --border-color: rgba(156, 77, 102, 0.15);
-            --primary-accent: #ff8da1;
-            --danger-accent: #e57373;
-            --success-accent: #81c784;
-            --warning-accent: #ffb74d;
-        }
-
-        [data-theme="red"] {
-            --bg-main: #1a0808;
-            --bg-surface: #2d1212;
-            --bg-input: #421b1b;
-            --text-primary: #ffcccc;
-            --text-muted: #b37373;
-            --border-color: rgba(255, 102, 102, 0.15);
-            --primary-accent: #ff3b30;
-            --danger-accent: #ff453a;
-            --success-accent: #34c759;
-            --warning-accent: #ff9500;
         }
 
         * { box-sizing: border-box; }
@@ -386,10 +334,6 @@
                 <select id="theme">
                     <option value="dark">Dark Theme</option>
                     <option value="light">Light Theme</option>
-                    <option value="cyberpunk">Cyberpunk Neon</option>
-                    <option value="emerald">Emerald Mint</option>
-                    <option value="sakura">Cherry Blossom (Sakura)</option>
-                    <option value="red">Crimson Matrix (Red)</option>
                 </select>
                 <button id="logoutBtn" style="background:transparent; border: 1px solid var(--border-color);"><i class="fa-solid fa-sign-out-alt"></i> Logout</button>
             </div>
