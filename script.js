@@ -611,10 +611,9 @@ DOM.modalConfirmBtn.addEventListener('click', () => {
 // 9. PRODUCTION FIREBASE AUTH ENGINE PIPELINE
 // ==========================================
 DOM.googleBtn.addEventListener('click', () => {
-    // Force Firebase to store auth context entirely in memory to prevent auto-login loops on page-refresh
-    auth.setPersistence(firebase.auth.Auth.Persistence.NONE)
+    // LOCAL persistence works seamlessly on mobile configurations
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         .then(() => {
-            // Using signInWithRedirect instead of signInWithPopup to prevent mobile browser pop-up blocks
             return auth.signInWithRedirect(googleProvider);
         })
         .catch((error) => {
@@ -625,19 +624,22 @@ DOM.googleBtn.addEventListener('click', () => {
 
 DOM.logoutBtn.addEventListener('click', () => {
     auth.signOut()
+        .then(() => {
+            window.location.reload(); 
+        })
         .catch((error) => alert(`Sign Out Failed: ${error.message}`));
 });
 
-// Capture incoming redirect login results on app mount/load
+// Capture incoming redirect login results safely on load
 auth.getRedirectResult()
     .then((result) => {
-        if (result.user) {
+        if (result && result.user) {
             console.log("Redirect login successful for:", result.user.email);
         }
     })
     .catch((error) => {
         console.error("Error retrieving redirect result:", error);
-        alert(`Redirect Sign-in Failure: ${error.message}`);
+        alert(`Redirect Sign-in Failure: Make sure cookies are enabled and you aren't using an incubation/private tab.`);
     });
 
 auth.onAuthStateChanged((user) => {
