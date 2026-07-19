@@ -111,7 +111,8 @@ function loadStateFromStorage(userId) {
 // 4. DIALOGUE MODAL ENGINE SYSTEM (PROMPT ROUTING)
 // ==========================================
 function openModal({ icon, title, desc, type, onConfirm }) {
-    DOM.modalOverlay.style.style.display = 'flex';
+    DOM.modalOverlay.style.display = 'flex'; // Fixed double .style typo
+    DOM.modalConfirmBtn.style.display = 'inline-block'; // Reset display state for safety
     DOM.modalIcon.innerHTML = icon;
     DOM.modalTitle.textContent = title;
     DOM.modalDesc.textContent = desc;
@@ -628,18 +629,18 @@ DOM.modalConfirmBtn.addEventListener('click', () => {
 // 9. IDENTITY CONTROLLER & GOOGLE SIGN-IN INTERACTIVE MOCK
 // ==========================================
 DOM.googleBtn.addEventListener('click', () => {
-    // Injecting a clean, custom inline Google Account Selector directly into your custom modal frame
+    // Open the modal base canvas cleanly
     openModal({
         icon: '<i class="fa-brands fa-google" style="color:#4285F4; font-size: 2rem;"></i>',
         title: 'Sign in with Google',
         desc: 'Select a Google account to continue to your Personal Finance Workspace Sandbox:',
         type: 'standard',
         onConfirm: () => {
-            // Callback placeholder: execution routes through account chip interactions below
+            // Callback placeholder: handled contextually by individual profile buttons
         }
     });
 
-    // Remap custom modal content layout to simulate the classic Google Auth profile picker
+    // Populate profile selector markup structure dynamically inside description area
     DOM.modalDesc.innerHTML = `
         <p style="margin-bottom: 15px; font-size: 0.9rem; opacity: 0.8;">Choose a Gmail workspace account profile to isolate your transaction records database:</p>
         <div class="google-account-picker" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
@@ -670,10 +671,10 @@ DOM.googleBtn.addEventListener('click', () => {
         </div>
     `;
 
-    // Hide standard bottom confirmation layout button since the chips handle authorization execution
+    // Hide default footer action confirmation button as the chips handle validation lifecycle actions
     DOM.modalConfirmBtn.style.display = 'none';
 
-    // Hook click triggers to the simulated profile selector cards
+    // Apply interactive listener triggers to internal template chip components
     document.querySelectorAll('.g-account-chip').forEach(chip => {
         chip.addEventListener('click', (e) => {
             const chosenEmail = e.currentTarget.getAttribute('data-email');
@@ -681,7 +682,7 @@ DOM.googleBtn.addEventListener('click', () => {
         });
     });
 
-    // Handle "Use another account" custom entry logic flow inside the modal
+    // Custom secondary text option flow prompt binding strategy
     document.getElementById('addCustomGmailBtn').addEventListener('click', () => {
         const customEmail = prompt("Enter custom Gmail address identifier:", "yourname@gmail.com");
         if (customEmail && customEmail.trim() !== "") {
@@ -693,7 +694,7 @@ DOM.googleBtn.addEventListener('click', () => {
 function executeMockGoogleAuth(emailId) {
     loadStateFromStorage(emailId);
     saveStateToStorage();
-    DOM.modalConfirmBtn.style.display = 'inline-block'; // Restore base element layout state
+    DOM.modalConfirmBtn.style.display = 'inline-block'; // Restore visibility rules defaults
     closeModal();
     checkAuthSessionState();
 }
