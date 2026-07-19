@@ -1,6 +1,21 @@
 // ==========================================
-// 1. APPLICATION DATA STATE & INITIALIZATION
+// 1. FIREBASE & STATE INITIALIZATION
 // ==========================================
+// TODO: Replace with your actual project credentials from the Firebase Console
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+// Initialize Firebase Core & Auth instances
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+
 let state = {
     user: null,
     transactions: [],
@@ -13,10 +28,7 @@ let state = {
     theme: "light"
 };
 
-// Default structures for new users
 const DEFAULT_CATEGORIES = { "Food": 5000, "Utilities": 3000, "Entertainment": 2000, "Salary": 0 };
-
-// Chart.js Context Pointer
 let analyticsChart = null;
 let currentModalAction = null;
 
@@ -86,7 +98,6 @@ function saveStateToStorage() {
             theme: state.theme
         }));
     }
-    localStorage.setItem('finance_tracker_active_session', state.user);
 }
 
 function loadStateFromStorage(userId) {
@@ -103,7 +114,6 @@ function loadStateFromStorage(userId) {
         state.theme = "light";
     }
     
-    // Look ahead to process recurring automated balances due for the current calendar cycle
     checkAndProcessRecurringTransactions();
 }
 
@@ -111,13 +121,12 @@ function loadStateFromStorage(userId) {
 // 4. DIALOGUE MODAL ENGINE SYSTEM (PROMPT ROUTING)
 // ==========================================
 function openModal({ icon, title, desc, type, onConfirm }) {
-    DOM.modalOverlay.style.display = 'flex'; // Fixed double .style typo
-    DOM.modalConfirmBtn.style.display = 'inline-block'; // Reset display state for safety
+    DOM.modalOverlay.style.display = 'flex';
+    DOM.modalConfirmBtn.style.display = 'inline-block';
     DOM.modalIcon.innerHTML = icon;
     DOM.modalTitle.textContent = title;
     DOM.modalDesc.textContent = desc;
     
-    // Reset inputs
     DOM.modalInputConfirm.style.display = 'none';
     DOM.modalInputSecondary.style.display = 'none';
     DOM.modalInputBudget.style.display = 'none';
@@ -149,27 +158,23 @@ function checkAndProcessRecurringTransactions() {
     const currentMonthYear = `${today.getMonth()}-${today.getFullYear()}`;
     let stateMutated = false;
 
-    // Filter out historical recurring items to test if they need generation this month
     state.transactions.forEach(t => {
         if (t.isRecurring && t.lastGeneratedMonthYear !== currentMonthYear) {
             const lastGenDate = new Date(t.date);
-            // Check if we advanced into a new month boundary
             if (today.getMonth() !== lastGenDate.getMonth() || today.getFullYear() !== lastGenDate.getFullYear()) {
                 
-                // Clone instance item over to this month workspace records
                 const recurrenceClone = {
                     id: 'tx_' + Date.now() + Math.random().toString(36).substr(2, 4),
                     title: `[Auto-Repeat] ${t.title}`,
                     amount: t.amount,
                     type: t.type,
                     category: t.category,
-                    status: t.status, // Maintains standard paid/pending state flags
+                    status: t.status, 
                     date: today.toISOString().split('T')[0],
                     isRecurring: true,
                     lastGeneratedMonthYear: currentMonthYear
                 };
                 
-                // Seal historical parent object generation timestamps
                 t.lastGeneratedMonthYear = currentMonthYear;
                 state.transactions.push(recurrenceClone);
                 stateMutated = true;
@@ -181,11 +186,9 @@ function checkAndProcessRecurringTransactions() {
 }
 
 function updateApplicationUI() {
-    // 1. Theme Configuration Initialization
     document.documentElement.setAttribute('data-theme', state.theme);
     DOM.themeSelect.value = state.theme;
 
-    // 2. Compute Master Wallet Metrics Data
     let totalSettledIncome = 0;
     let totalPendingIncome = 0;
     let totalSettledExpense = 0;
@@ -204,21 +207,18 @@ function updateApplicationUI() {
 
     const absoluteWalletBalance = totalSettledIncome - totalSettledExpense;
     
-    // Render Card Targets
     DOM.balance.textContent = `₹${absoluteWalletBalance.toLocaleString('en-IN')}`;
     DOM.income.textContent = `₹${totalSettledIncome.toLocaleString('en-IN')}`;
     DOM.pendingIncome.textContent = `₹${totalPendingIncome.toLocaleString('en-IN')}`;
     DOM.expense.textContent = `₹${totalSettledExpense.toLocaleString('en-IN')}`;
     DOM.pendingExpense.textContent = `₹${totalPendingExpense.toLocaleString('en-IN')}`;
 
-    // Compute Savings Rate Metric Percentage Ratio
     let savingsRatePercentage = 0;
     if (totalSettledIncome > 0) {
         savingsRatePercentage = Math.round(((totalSettledIncome - totalSettledExpense) / totalSettledIncome) * 100);
     }
     DOM.savingRate.textContent = `${savingsRatePercentage < 0 ? 0 : savingsRatePercentage}%`;
 
-    // Health Assessment Logic
     DOM.healthBadge.className = 'badge';
     if (absoluteWalletBalance < 0) {
         DOM.healthBadge.textContent = "Deficit Danger";
@@ -231,21 +231,15 @@ function updateApplicationUI() {
         DOM.healthBadge.classList.add('badge-good');
     }
 
-    // 3. Render Ingestion Choice Dropdowns and Settings Panes
     populateCategorySelectors();
     renderCategorySettingsPanel(totalSettledExpense);
-
-    // 4. Refresh Ledger Items View lists
     renderLedgerTransactions();
-
-    // 5. Fire Chart Canvas Graph Re-draw Engine
     renderAnalyticsGraphs();
 }
 
 function populateCategorySelectors() {
     const currentFilterVal = DOM.filterCategory.value;
     
-    // Purge elements
     DOM.categorySelect.innerHTML = '';
     DOM.filterCategory.innerHTML = '<option value="all">All Categories</option>';
     
@@ -267,7 +261,6 @@ function populateCategorySelectors() {
 function renderCategorySettingsPanel(totalSettledExpense) {
     DOM.categoryList.innerHTML = '';
     
-    // Compute operational totals clustered into matching category groupings
     const spendingMap = {};
     state.transactions.forEach(t => {
         if (t.type === 'expense' && t.status === 'paid') {
@@ -301,14 +294,13 @@ function renderCategorySettingsPanel(totalSettledExpense) {
         DOM.categoryList.appendChild(card);
     });
 
-    // Wire up panel action lifecycle handles dynamically
     document.querySelectorAll('.editBudgetBtn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const cat = e.currentTarget.getAttribute('data-cat');
             openModal({
                 icon: '<i class="fa-solid fa-money-bill-trend-up" style="color:var(--warning-color)"></i>',
                 title: `Budget Setup: ${cat}`,
-                desc: `Establish or adjust a safe operational baseline spending threshold context parameters limit target values for this expense line item:`,
+                desc: `Adjust budget thresholds for this line item:`,
                 type: 'setBudget',
                 onConfirm: () => {
                     const budgetValue = parseFloat(DOM.modalInputBudget.value);
@@ -329,7 +321,7 @@ function renderCategorySettingsPanel(totalSettledExpense) {
             openModal({
                 icon: '<i class="fa-solid fa-triangle-exclamation" style="color:var(--danger-color)"></i>',
                 title: 'Delete Category?',
-                desc: `Are you sure you want to delete "${cat}"? Historical items bound within this scope classification logic schema will survive but will require reassignment.`,
+                desc: `Are you sure you want to delete "${cat}"?`,
                 type: 'standard',
                 onConfirm: () => {
                     delete state.categories[cat];
@@ -370,11 +362,10 @@ function renderLedgerTransactions() {
     const itemsToView = getFilteredTransactions();
 
     if (itemsToView.length === 0) {
-        DOM.transactionList.innerHTML = `<li style="padding:20px; text-align:center; opacity:0.5;">No historical ledger logs match current viewport window bounds.</li>`;
+        DOM.transactionList.innerHTML = `<li style="padding:20px; text-align:center; opacity:0.5;">No records match dynamic viewport bounds.</li>`;
         return;
     }
 
-    // Sort items newest first
     itemsToView.sort((a,b) => new Date(b.date) - new Date(a.date));
 
     itemsToView.forEach(t => {
@@ -395,7 +386,7 @@ function renderLedgerTransactions() {
             </div>
             <div class="rightSide">
                 <span class="amount ${colorClass}">${symbol}₹${parseFloat(t.amount).toLocaleString('en-IN')}</span>
-                <span class="status-badge ${statusBadgeClass}" data-id="${t.id}" title="Toggle Settlement State">${statusText}</span>
+                <span class="status-badge ${statusBadgeClass}" data-id="${t.id}">${statusText}</span>
             </div>
             <div>
                 <button class="actionBtn deleteTxBtn" data-id="${t.id}"><i class="fa-solid fa-circle-xmark" style="color:var(--danger-color)"></i></button>
@@ -404,7 +395,6 @@ function renderLedgerTransactions() {
         DOM.transactionList.appendChild(li);
     });
 
-    // Toggle Settle Status Implementation Flow
     document.querySelectorAll('.status-badge').forEach(badge => {
         badge.addEventListener('click', (e) => {
             const txId = e.currentTarget.getAttribute('data-id');
@@ -417,7 +407,6 @@ function renderLedgerTransactions() {
         });
     });
 
-    // Row Element Purge Binding Actions
     document.querySelectorAll('.deleteTxBtn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const txId = e.currentTarget.getAttribute('data-id');
@@ -434,7 +423,6 @@ function renderLedgerTransactions() {
 function renderAnalyticsGraphs() {
     const ctx = document.getElementById('analyticsChart').getContext('2d');
     
-    // Process cluster map aggregates
     const analyticsMap = {};
     state.transactions.forEach(t => {
         if (t.type === 'expense' && t.status === 'paid') {
@@ -445,12 +433,10 @@ function renderAnalyticsGraphs() {
     const labels = Object.keys(analyticsMap);
     const dataValues = Object.values(analyticsMap);
 
-    // If historical framework references exist, destroy them cleanly to prevent layout leaks
     if (analyticsChart) {
         analyticsChart.destroy();
     }
 
-    // Initialize New Chart Canvas Matrix instance options references
     analyticsChart = new Chart(ctx, {
         type: 'pie',
         data: {
@@ -481,8 +467,6 @@ function renderAnalyticsGraphs() {
 // ==========================================
 // 8. GLOBAL ACTION HANDLERS & REGISTRATION
 // ==========================================
-
-// Ingestion Form Submit Handler Event Listener Actions Flow Controls
 DOM.addTransactionBtn.addEventListener('click', () => {
     const title = DOM.titleInput.value.trim();
     const amount = parseFloat(DOM.amountInput.value);
@@ -492,7 +476,7 @@ DOM.addTransactionBtn.addEventListener('click', () => {
     const isRecurring = DOM.isRecurringCheckbox.checked;
 
     if (!title || isNaN(amount) || amount <= 0 || !category) {
-        alert("Please configure proper transactional metadata titles and baseline dynamic currency variables elements balances parameters values.");
+        alert("Please configure proper transactional titles and balance amounts.");
         return;
     }
 
@@ -515,19 +499,17 @@ DOM.addTransactionBtn.addEventListener('click', () => {
     saveStateToStorage();
     updateApplicationUI();
 
-    // Clear operational inputs fields
     DOM.titleInput.value = '';
     DOM.amountInput.value = '';
     DOM.isRecurringCheckbox.checked = false;
 });
 
-// Category Expansion Builder Execution Handling Block Actions Framework Options
 DOM.addCategoryBtn.addEventListener('click', () => {
     const rawCatName = DOM.newCategoryInput.value.trim();
     if (!rawCatName) return;
 
     if (state.categories[rawCatName]) {
-        alert("Target structural classification configuration scheme mapping indices records duplicate error.");
+        alert("Category already exists.");
         return;
     }
 
@@ -537,18 +519,16 @@ DOM.addCategoryBtn.addEventListener('click', () => {
     updateApplicationUI();
 });
 
-// Realtime Viewport Filter Query String Keydown Context Events Updates Pipeline Routing Engine
 [DOM.searchInput, DOM.filterCategory, DOM.startDateInput, DOM.endDateInput].forEach(elem => {
     elem.addEventListener('input', () => {
         renderLedgerTransactions();
     });
 });
 
-// CSV Data Export Matrix Pipeline Core Controller Strategy Module Output Block
 DOM.exportBtn.addEventListener('click', () => {
     const collection = getFilteredTransactions();
     if (collection.length === 0) {
-        alert("No target matching records isolated within historical ledger state parameters framework matrix nodes.");
+        alert("No target matching records found to export.");
         return;
     }
 
@@ -560,13 +540,12 @@ DOM.exportBtn.addEventListener('click', () => {
     const encodedUri = encodeURI(csvContent);
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", encodedUri);
-    downloadAnchorNode.setAttribute("download", `Ledger_Report_Workspace_Snapshot_${Date.now()}.csv`);
+    downloadAnchorNode.setAttribute("download", `Ledger_Report_${Date.now()}.csv`);
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
 });
 
-// Purge Active Target Matrix Viewport Ledger Row Entries Context Flow Routine
 DOM.purgeViewBtn.addEventListener('click', () => {
     const targetedViewSubsets = getFilteredTransactions();
     if (targetedViewSubsets.length === 0) return;
@@ -574,7 +553,7 @@ DOM.purgeViewBtn.addEventListener('click', () => {
     openModal({
         icon: '<i class="fa-solid fa-dumpster-fire" style="color:var(--danger-color)"></i>',
         title: 'Purge Filtered Rows?',
-        desc: `Warning: This configuration routine will instantly expunge all ${targetedViewSubsets.length} matching data records currently visible inside the live isolated viewport scope bounds schema filter criteria.`,
+        desc: `Warning: This configuration routine will instantly expunge all ${targetedViewSubsets.length} matching data records currently visible inside the live filter viewport.`,
         type: 'standard',
         onConfirm: () => {
             const targetIds = new Set(targetedViewSubsets.map(t => t.id));
@@ -586,38 +565,33 @@ DOM.purgeViewBtn.addEventListener('click', () => {
     });
 });
 
-// Account Workspace Deletion Flow Routines Operations Setup Lifecycle Hook
 DOM.deleteAccountBtn.addEventListener('click', () => {
     openModal({
         icon: '<i class="fa-solid fa-skull-crossbones" style="color:var(--danger-color)"></i>',
         title: 'Complete System Destruction',
-        desc: 'This is an absolute master reset routine option event execution logic sequence. It will fully wipe clean all client workspace nodes records structural maps data states context from this sandbox engine environment.',
+        desc: 'This will completely drop all client local states bound to this account identity mapping from this device configuration profile.',
         type: 'deleteAccount',
         onConfirm: () => {
             const validationPhrase = DOM.modalInputConfirm.value.trim();
             if (validationPhrase === 'DELETE') {
                 localStorage.removeItem(`finance_tracker_user_${state.user}`);
-                localStorage.removeItem('finance_tracker_active_session');
-                state.user = null;
                 state.transactions = [];
                 state.categories = { ...DEFAULT_CATEGORIES };
                 closeModal();
-                checkAuthSessionState();
+                auth.signOut(); // Triggers firebase lifecycle listener state shift automatically
             } else {
-                alert("Incorrect identity assertion validation confirmation verification strings parameters.");
+                alert("Incorrect validation confirmation value string.");
             }
         }
     });
 });
 
-// Interactive Theme Picker Switch Options Controls Change Engine Logic Elements Routing
 DOM.themeSelect.addEventListener('change', (e) => {
     state.theme = e.target.value;
     saveStateToStorage();
     updateApplicationUI();
 });
 
-// Dialogue Modal Interception Buttons Execution Action Listeners Wiring Maps Framework
 DOM.modalCancelBtn.addEventListener('click', closeModal);
 DOM.modalConfirmBtn.addEventListener('click', () => {
     if (typeof currentModalAction === 'function') {
@@ -626,101 +600,48 @@ DOM.modalConfirmBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// 9. IDENTITY CONTROLLER & GOOGLE SIGN-IN INTERACTIVE MOCK
+// 9. PRODUCTION FIREBASE AUTH ENGINE PIPELINE
 // ==========================================
 DOM.googleBtn.addEventListener('click', () => {
-    // Open the modal base canvas cleanly
-    openModal({
-        icon: '<i class="fa-brands fa-google" style="color:#4285F4; font-size: 2rem;"></i>',
-        title: 'Sign in with Google',
-        desc: 'Select a Google account to continue to your Personal Finance Workspace Sandbox:',
-        type: 'standard',
-        onConfirm: () => {
-            // Callback placeholder: handled contextually by individual profile buttons
-        }
-    });
-
-    // Populate profile selector markup structure dynamically inside description area
-    DOM.modalDesc.innerHTML = `
-        <p style="margin-bottom: 15px; font-size: 0.9rem; opacity: 0.8;">Choose a Gmail workspace account profile to isolate your transaction records database:</p>
-        <div class="google-account-picker" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-            <button class="g-account-chip" data-email="alpha_user@gmail.com" style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; text-align: left; font-family: inherit; width: 100%;">
-                <div style="background: #4285F4; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem;">A</div>
-                <div>
-                    <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-color);">Alpha Tester</div>
-                    <div style="font-size: 0.75rem; opacity: 0.6;">alpha_user@gmail.com</div>
-                </div>
-            </button>
-            <button class="g-account-chip" data-email="developer_sandbox@gmail.com" style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; text-align: left; font-family: inherit; width: 100%;">
-                <div style="background: #0F9D58; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem;">D</div>
-                <div>
-                    <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-color);">Dev Workspace</div>
-                    <div style="font-size: 0.75rem; opacity: 0.6;">developer_sandbox@gmail.com</div>
-                </div>
-            </button>
-            <button class="g-account-chip" data-email="beta_tester@gmail.com" style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; text-align: left; font-family: inherit; width: 100%;">
-                <div style="background: #DB4437; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem;">B</div>
-                <div>
-                    <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-color);">Beta Profile</div>
-                    <div style="font-size: 0.75rem; opacity: 0.6;">beta_tester@gmail.com</div>
-                </div>
-            </button>
-            <div style="border-top: 1px solid var(--border-color); margin-top: 4px; padding-top: 8px;">
-                <button id="addCustomGmailBtn" style="background: none; border: none; color: #4285F4; font-size: 0.8rem; cursor: pointer; padding: 4px; font-weight: 600; font-family: inherit;">+ Use another account</button>
-            </div>
-        </div>
-    `;
-
-    // Hide default footer action confirmation button as the chips handle validation lifecycle actions
-    DOM.modalConfirmBtn.style.display = 'none';
-
-    // Apply interactive listener triggers to internal template chip components
-    document.querySelectorAll('.g-account-chip').forEach(chip => {
-        chip.addEventListener('click', (e) => {
-            const chosenEmail = e.currentTarget.getAttribute('data-email');
-            executeMockGoogleAuth(chosenEmail);
+    // Fire Google OAuth Auth popup authentication flow channel
+    auth.signInWithPopup(googleProvider)
+        .then((result) => {
+            console.log("Firebase Auth Success:", result.user.email);
+            // State mutation handles are automatically caught by the global onAuthStateChanged listener below
+        })
+        .catch((error) => {
+            console.error("Firebase Auth Exception Error Context:", error);
+            alert(`Authentication Error: ${error.message}`);
         });
-    });
-
-    // Custom secondary text option flow prompt binding strategy
-    document.getElementById('addCustomGmailBtn').addEventListener('click', () => {
-        const customEmail = prompt("Enter custom Gmail address identifier:", "yourname@gmail.com");
-        if (customEmail && customEmail.trim() !== "") {
-            executeMockGoogleAuth(customEmail.trim().toLowerCase());
-        }
-    });
 });
-
-function executeMockGoogleAuth(emailId) {
-    loadStateFromStorage(emailId);
-    saveStateToStorage();
-    DOM.modalConfirmBtn.style.display = 'inline-block'; // Restore visibility rules defaults
-    closeModal();
-    checkAuthSessionState();
-}
 
 DOM.logoutBtn.addEventListener('click', () => {
-    state.user = null;
-    localStorage.removeItem('finance_tracker_active_session');
-    checkAuthSessionState();
+    auth.signOut()
+        .catch((error) => alert(`Sign Out Failed: ${error.message}`));
 });
 
-function checkAuthSessionState() {
-    const activeSessionId = localStorage.getItem('finance_tracker_active_session');
-    if (activeSessionId && activeSessionId !== 'null') {
-        loadStateFromStorage(activeSessionId);
+// Primary Firebase Authentication State Change Management Channel Hook
+auth.onAuthStateChanged((user) => {
+    if (user && user.email) {
+        // Sanitize email string key characters layout for safety
+        const userIdentityKey = user.email.trim().toLowerCase().replace(/[^a-z0-9@.]/g, '_');
+        
+        loadStateFromStorage(userIdentityKey);
         DOM.authScreen.style.display = 'none';
         DOM.app.style.display = 'block';
         updateApplicationUI();
     } else {
+        // Handle unauthenticated workspace initialization contexts cleanly
+        state.user = null;
+        state.transactions = [];
+        state.categories = { ...DEFAULT_CATEGORIES };
+        
         DOM.app.style.display = 'none';
         DOM.authScreen.style.display = 'flex';
+        
         if (analyticsChart) {
             analyticsChart.destroy();
             analyticsChart = null;
         }
     }
-}
-
-// Fire Session Assessment Routine Engine Instantly on Entry Bounds Loading Lifecycle Events Hook
-document.addEventListener('DOMContentLoaded', checkAuthSessionState);
+});
