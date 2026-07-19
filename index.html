@@ -9,8 +9,10 @@
     <!-- Chart.js for graphical analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Base Reset & Design Tokens */
-        :root {
+        /* ==========================================
+           1. CORE DESIGN THEMES (4 THEMES)
+           ========================================== */
+        :root, [data-theme="dark"] {
             --bg-main: #121212;
             --bg-surface: #1e1e1e;
             --bg-input: #2d2d2d;
@@ -31,6 +33,35 @@
             --text-muted: #666666;
             --border-color: rgba(0, 0, 0, 0.08);
             --primary-accent: #1a73e8;
+            --danger-accent: #d93025;
+            --success-accent: #188038;
+            --warning-accent: #e37400;
+        }
+
+        [data-theme="cyberpunk"] {
+            --bg-main: #000b19;
+            --bg-surface: #0a192f;
+            --bg-input: #172a45;
+            --text-primary: #64ffda;
+            --text-muted: #8892b0;
+            --border-color: #30f2c233;
+            --primary-accent: #f57dff;
+            --danger-accent: #ff5376;
+            --success-accent: #64ffda;
+            --warning-accent: #ffcb6b;
+        }
+
+        [data-theme="emerald"] {
+            --bg-main: #f0fdf4;
+            --bg-surface: #ffffff;
+            --bg-input: #e8f5e9;
+            --text-primary: #064e3b;
+            --text-muted: #047857;
+            --border-color: rgba(6, 78, 59, 0.1);
+            --primary-accent: #10b981;
+            --danger-accent: #ef4444;
+            --success-accent: #059669;
+            --warning-accent: #f59e0b;
         }
 
         * { box-sizing: border-box; }
@@ -44,7 +75,9 @@
             transition: background 0.3s, color 0.3s;
         }
 
-        /* Authentication Page Design */
+        /* ==========================================
+           2. AUTHENTICATION SCREENS & DESIGN
+           ========================================== */
         #authScreen {
             display: flex;
             align-items: center;
@@ -64,7 +97,6 @@
             text-align: center;
         }
 
-        /* Email / Password Form elements */
         .auth-form {
             margin-top: 24px;
             text-align: left;
@@ -72,6 +104,15 @@
 
         .auth-form .form-group {
             margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .auth-form label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
         }
 
         .auth-form input {
@@ -83,6 +124,7 @@
             border-radius: 6px;
             outline: none;
             font-size: 0.95rem;
+            transition: border-color 0.2s;
         }
 
         .auth-form input:focus {
@@ -100,23 +142,21 @@
             cursor: pointer;
             font-size: 1rem;
             transition: opacity 0.2s;
+            margin-top: 8px;
         }
 
-        .auth-btn-primary:hover {
-            opacity: 0.9;
-        }
+        .auth-btn-primary:hover { opacity: 0.9; }
 
         .auth-toggle-link {
             display: block;
             text-align: center;
-            margin-top: 14px;
+            margin-top: 16px;
             font-size: 0.85rem;
             color: var(--primary-accent);
             text-decoration: none;
             cursor: pointer;
         }
 
-        /* Form Separator */
         .auth-divider {
             display: flex;
             align-items: center;
@@ -132,8 +172,8 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        .auth-divider:not(:empty)::before { margin-right: .5em; }
-        .auth-divider:not(:empty)::after { margin-left: .5em; }
+        .auth-divider::before { margin-right: .5em; }
+        .auth-divider::after { margin-left: .5em; }
 
         .google-btn {
             background-color: #ffffff;
@@ -154,7 +194,9 @@
 
         .google-btn:hover { background-color: #f7f7f7; }
 
-        /* Main App Workspace Layout */
+        /* ==========================================
+           3. DASHBOARD WORKSPACE LAYOUT
+           ========================================== */
         #app { display: none; padding: 20px; max-width: 1300px; margin: 0 auto; }
         
         header {
@@ -182,7 +224,6 @@
         button:hover { opacity: 0.9; }
         .danger-btn { background: var(--danger-accent); color: white; border: none; }
 
-        /* Responsive Dashboard Summary Grid */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -210,7 +251,6 @@
         .incomeText { color: var(--success-accent); }
         .expenseText { color: var(--danger-accent); }
 
-        /* Advanced Adaptive PC / Mobile Content Grid Splitter */
         .workspace-layout {
             display: grid;
             grid-template-columns: repeat(12, 1fr);
@@ -224,7 +264,6 @@
             .col-left, .col-right { grid-column: span 12; }
         }
 
-        /* Box Panel Enclosures */
         .panel {
             background: var(--bg-surface);
             padding: 24px;
@@ -240,7 +279,6 @@
         .form-row-mixed { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .checkbox-row { flex-direction: row; align-items: center; gap: 8px; margin-top: 8px; }
 
-        /* Dynamic Categories Cards Setup */
         .categoryCard {
             display: flex;
             justify-content: space-between;
@@ -251,7 +289,6 @@
             margin-bottom: 8px;
         }
 
-        /* Filter Controls & Ledger Elements */
         .filter-ribbon {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -261,11 +298,10 @@
         .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
         .transaction-ledger { list-style: none; padding: 0; margin: 0; }
         
-        .status-badge { font-weight: bold; text-transform: uppercase; }
+        .status-badge { font-weight: bold; text-transform: uppercase; border-radius: 4px; padding: 2px 6px;}
         .status-paid { background: rgba(15, 157, 88, 0.15); color: var(--success-accent); }
         .status-pending { background: rgba(244, 180, 0, 0.15); color: var(--warning-accent); }
 
-        /* Custom Intermittent Dialogue Modals */
         .modal-overlay {
             position: fixed; top:0; left:0; width:100%; height:100%;
             background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center;
@@ -296,7 +332,6 @@
                 Sign in to manage and secure your transactions across all your devices instantly.
             </p>
 
-            <!-- Custom Firebase Email/Password Authentication Form -->
             <form id="emailAuthForm" class="auth-form" onsubmit="return false;">
                 <div class="form-group">
                     <label for="authEmail">Email Address</label>
@@ -328,15 +363,17 @@
                 <h1 style="margin:0; font-size: 1.5rem;">Dashboard</h1>
             </div>
             <div class="user-controls">
+                <!-- Dropdown array matching style config -->
                 <select id="theme">
-                    <option value="dark">Dark Mode</option>
-                    <option value="light">Light Mode</option>
+                    <option value="dark">Dark Theme</option>
+                    <option value="light">Light Theme</option>
+                    <option value="cyberpunk">Cyberpunk Neon</option>
+                    <option value="emerald">Emerald Mint</option>
                 </select>
                 <button id="logoutBtn" style="background:transparent; border: 1px solid var(--border-color);"><i class="fa-solid fa-sign-out-alt"></i> Logout</button>
             </div>
         </header>
 
-        <!-- Metrics Cards -->
         <div class="metrics-grid">
             <div class="card">
                 <small style="color:var(--text-muted); font-weight:600; letter-spacing: 0.5px;">TOTAL BALANCE</small>
@@ -361,9 +398,7 @@
         </div>
 
         <div class="workspace-layout">
-            <!-- LEFT COLUMN: Action Modules -->
             <div class="col-left">
-                <!-- Transaction Form -->
                 <div class="panel">
                     <h3><i class="fa-solid fa-plus-circle" style="color:var(--primary-accent); margin-right:6px;"></i> Add Transaction</h3>
                     <div class="form-group">
@@ -405,22 +440,17 @@
                     </button>
                 </div>
 
-                <!-- Custom Categories -->
                 <div class="panel">
                     <h3><i class="fa-solid fa-tags" style="color:var(--primary-accent); margin-right:6px;"></i> Categories</h3>
                     <div style="display:flex; gap:8px; margin-bottom: 16px;">
                         <input type="text" id="newCategory" placeholder="New category name..." style="flex:1;">
                         <button id="addCategory" style="background:var(--bg-input);"><i class="fa-solid fa-plus"></i></button>
                     </div>
-                    <div id="categoryList">
-                        <!-- Populated by script.js -->
-                    </div>
+                    <div id="categoryList"></div>
                 </div>
             </div>
 
-            <!-- RIGHT COLUMN: Data View Logs & Charts -->
             <div class="col-right">
-                <!-- History Logs -->
                 <div class="panel">
                     <h3><i class="fa-solid fa-list" style="color:var(--primary-accent); margin-right:6px;"></i> Transaction History</h3>
                     <div class="filter-ribbon">
@@ -434,9 +464,7 @@
                         <input type="date" id="endDate" title="End Date">
                     </div>
                     
-                    <ul id="transactionList" class="transaction-ledger">
-                        <!-- Populated by script.js -->
-                    </ul>
+                    <ul id="transactionList" class="transaction-ledger"></ul>
 
                     <div style="display:flex; gap:10px; margin-top:20px;">
                         <button id="exportBtn" style="flex:1; background:transparent; border: 1px solid var(--border-color);"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
@@ -444,7 +472,6 @@
                     </div>
                 </div>
 
-                <!-- Chart Canvas -->
                 <div class="panel">
                     <h3><i class="fa-solid fa-chart-pie" style="color:var(--primary-accent); margin-right:6px;"></i> Expense Distribution</h3>
                     <div style="max-width: 320px; margin: 0 auto; padding:10px;">
@@ -452,7 +479,6 @@
                     </div>
                 </div>
 
-                <!-- Danger Room -->
                 <div class="panel" style="border: 1px dashed var(--danger-accent); background: rgba(219,68,55, 0.02);">
                     <h4 style="color:var(--danger-accent); margin-top:0; margin-bottom:6px;">Danger Zone</h4>
                     <p style="font-size:0.85rem; margin:0 0 12px 0; opacity:0.8;">Permanently clear all transactional data linked to this profile.</p>
@@ -462,21 +488,12 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         OVERLAY SYSTEM PROMPT MODALS
-         ========================================== -->
+    <!-- SYSTEM PROMPT MODALS -->
     <div class="modal-overlay" id="customModalOverlay">
         <div class="modal-content">
             <div id="modalIconContainer" class="modal-icon-holder"></div>
             <h3 id="modalTitle" style="margin-top:0; margin-bottom:10px;">Confirm Action</h3>
             <p id="modalDescription" style="color:var(--text-muted); font-size:0.9rem; margin:0; line-height:1.4;"></p>
-            
-            <div class="modal-inputs-wrapper">
-                <input type="text" id="modalConfirmationInput" style="display:none;">
-                <input type="text" id="modalSecondaryInput" style="display:none;">
-                <input type="number" id="modalBudgetInput" style="display:none;">
-            </div>
-            
             <div class="modal-buttons-wrapper">
                 <button id="modalCancelBtn" style="background:var(--bg-input);">Cancel</button>
                 <button id="modalConfirmBtn" class="danger-btn">Confirm</button>
@@ -484,9 +501,7 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         FIREBASE FRAMEWORK DEPENDENCIES
-         ========================================== -->
+    <!-- FIREBASE MODULE DEPENDENCIES -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
