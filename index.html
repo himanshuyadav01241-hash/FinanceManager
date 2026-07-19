@@ -1,259 +1,403 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanceOS - Realtime Ledger Ecosystem</title>
+    <!-- FontAwesome for UI Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for graphical analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Reset & Variables */
+        :root {
+            --bg-main: #121212;
+            --bg-surface: #1e1e1e;
+            --bg-input: #2d2d2d;
+            --text-primary: #e0e0e0;
+            --text-muted: #aaaaaa;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary-accent: #4285F4;
+            --danger-accent: #d9534f;
+            --success-accent: #0F9D58;
+            --warning-accent: #F4B400;
+        }
 
-    <title>INSANE HR FinanceOS Cloud</title>
+        [data-theme="light"] {
+            --bg-main: #f5f5f7;
+            --bg-surface: #ffffff;
+            --bg-input: #f0f0f2;
+            --text-primary: #333333;
+            --text-muted: #666666;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --primary-accent: #1a73e8;
+        }
 
-    <link rel="stylesheet" href="style.css">
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            transition: background 0.3s, color 0.3s;
+        }
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+        /* Gateway Authentication Layout */
+        #authScreen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 20px;
+        }
 
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+        .auth-card {
+            background: var(--bg-surface);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .google-btn {
+            background-color: #ffffff;
+            color: #757575;
+            border: 1px solid #ddd;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+
+        .google-btn:hover { background-color: #f7f7f7; }
+
+        /* Core Application Workspace */
+        #app { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .user-controls { display: flex; align-items: center; gap: 15px; }
+        select, input, button {
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            outline: none;
+        }
+        
+        button { cursor: pointer; font-weight: 500; }
+        .danger-btn { background: var(--danger-accent); color: white; border: none; }
+
+        /* Dashboard Metrics Ribbon */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--bg-surface);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .badge {
+            position: absolute; top: 15px; right: 15px;
+            font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; font-weight: bold;
+        }
+        .badge-good { background: rgba(15, 157, 88, 0.2); color: var(--success-accent); }
+        .badge-warn { background: rgba(244, 180, 0, 0.2); color: var(--warning-accent); }
+        .badge-danger { background: rgba(217, 83, 79, 0.2); color: var(--danger-accent); }
+
+        .sub-value { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+        .incomeText { color: var(--success-accent); }
+        .expenseText { color: var(--danger-accent); }
+
+        /* Operational Application Panes */
+        .workspace-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .workspace-layout { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: var(--bg-surface);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        .form-row-mixed { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .checkbox-row { flex-direction: row; align-items: center; gap: 8px; }
+
+        /* Category Cards Setup */
+        .categoryCard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-input);
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        /* Ledger History Component Elements */
+        .filter-ribbon {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+
+        .transaction-ledger { list-style: none; padding: 0; margin: 0; }
+        
+        .status-badge { font-weight: bold; text-transform: uppercase; }
+        .status-paid { background: rgba(15, 157, 88, 0.15); color: var(--success-accent); }
+        .status-pending { background: rgba(244, 180, 0, 0.15); color: var(--warning-accent); }
+
+        /* Custom Dynamic Dialogue Overlays */
+        .modal-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center;
+            z-index: 1000; padding: 20px; box-sizing: border-box;
+        }
+
+        .modal-content {
+            background: var(--bg-surface); padding: 30px; border-radius: 12px;
+            max-width: 450px; width: 100%; border: 1px solid var(--border-color);
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .modal-icon-holder { font-size: 3rem; margin-bottom: 15px; }
+        .modal-inputs-wrapper input { width: 100%; margin-top: 15px; box-sizing: border-box; text-align: center; }
+        .modal-buttons-wrapper { display: flex; gap: 12px; justify-content: center; margin-top: 25px; }
+    </style>
 </head>
+<body>
 
-<body data-theme="dark">
-
-    <!-- RUNTIME MODULE ERROR OVERLAY (Replaces Boring Default Alert Box) -->
-    <div id="diagnosticErrorOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
-        <div style="background: #1e1e1e; color: #ffffff; border: 2px solid #d9534f; border-radius: 12px; width: 100%; max-width: 480px; box-shadow: 0 12px 40px rgba(0,0,0,0.7); padding: 28px; box-sizing: border-box; text-align: center;">
-            <div style="font-size: 3rem; margin-bottom: 16px; color: #d9534f;">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-            </div>
-            <h3 style="margin: 0 0 12px 0; font-size: 1.4rem; font-weight: 700; color: #d9534f; letter-spacing: -0.5px;">Module Initialization Fault</h3>
-            <p style="margin: 0 0 20px 0; font-size: 0.95rem; line-height: 1.6; opacity: 0.85; text-align: left; background: rgba(0,0,0,0.3); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); font-family: monospace; word-break: break-all;" id="diagnosticErrorDetails"></p>
-            <button onclick="window.location.reload()" style="padding: 12px 24px; font-size: 0.95rem; font-weight: 600; border-radius: 8px; border: none; background: #d9534f; color: white; cursor: pointer; transition: opacity 0.2s; width: 100%;">
-                <i class="fa-solid fa-rotate-right"></i> Hot-Reload Interface Engine
+    <!-- ==========================================
+         AUTHENTICATION IDENTITY SCREEN 
+         ========================================== -->
+    <div id="authScreen">
+        <div class="auth-card">
+            <i class="fa-solid fa-vault" style="font-size: 4rem; color: var(--primary-accent); margin-bottom: 20px;"></i>
+            <h2>FinanceOS Ecosystem</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;">
+                Sync your complete transaction portfolio metrics securely across active terminal configurations seamlessly.
+            </p>
+            <button class="google-btn" id="googleBtn">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google Logo" width="18">
+                Authenticate with Google
             </button>
         </div>
     </div>
 
-    <!-- LOGIN SCREEN -->
-    <div id="authScreen" class="authScreen">
-        <div class="authCard">
-            <i class="fa-solid fa-wallet"></i>
-            <h1>INSANE HR</h1>
-            <p>FinanceOS Cloud Edition</p>
-
-            <!-- Only Google Sign-In Active -->
-            <button id="googleBtn" style="background-color: #4285F4; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 20px; width: 100%; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">
-                <i class="fa-brands fa-google"></i> Continue with Google
-            </button>
-        </div>
-    </div>
-
-    <!-- MAIN APP -->
-    <div class="container" id="app" style="display:none;">
-
-        <header style="display: flex; flex-direction: column; gap: 16px; padding: 20px 16px; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1));">
-            <div class="logo" style="display: flex; align-items: center; gap: 12px;">
-                <i class="fa-solid fa-wallet" style="font-size: 1.6rem; color: #4285F4;"></i>
-                <div>
-                    <h1 style="margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.5px;">INSANE HR</h1>
-                    <span style="font-size: 0.8rem; opacity: 0.6; display: block; margin-top: 4px;">FinanceOS Cloud</span>
-                </div>
+    <!-- ==========================================
+         CORE APPLICATION WORKSPACE CONTAINER 
+         ========================================== -->
+    <div id="app">
+        <header>
+            <div>
+                <h1 style="margin:0; font-size: 1.6rem;">Workspace Portfolio</h1>
             </div>
-
-            <!-- Sleek, Balanced Control Panel -->
-            <div class="themeBox" style="display: flex; gap: 8px; width: 100%; box-sizing: border-box;">
-                <select id="theme" style="flex: 2; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: inherit; height: 42px; outline: none;">
-                    <option value="dark">🌙 Dark</option>
-                    <option value="light">☀️ Light</option>
-                    <option value="red">❤️ Red</option>
-                    <option value="blue">💙 Blue</option>
-                    <option value="purple">💜 Purple</option>
+            <div class="user-controls">
+                <select id="theme">
+                    <option value="dark">Dark Matrix</option>
+                    <option value="light">Light Slate</option>
                 </select>
-
-                <button id="logoutBtn" style="flex: 1; padding: 0 12px; font-size: 0.85rem; font-weight: 500; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: inherit; height: 42px; cursor: pointer; white-space: nowrap; transition: background 0.2s;">
-                    Logout
-                </button>
-
-                <button id="deleteAccountBtn" style="flex: 1; padding: 0 12px; font-size: 0.85rem; font-weight: 500; border-radius: 8px; border: 1px solid #d9534f; background: transparent; color: #d9534f; height: 42px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
-                    Delete
-                </button>
+                <button id="logoutBtn" style="background:transparent; border: 1px solid var(--border-color);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Exit</button>
             </div>
         </header>
 
-        <!-- DASHBOARD -->
-        <section class="cards">
+        <!-- Dynamic Financial Metrics Ribbon -->
+        <div class="metrics-grid">
             <div class="card">
-                <h3>Net Balance</h3>
-                <h2 id="balance">₹0</h2>
+                <small style="color:var(--text-muted); font-weight:600;">PORTFOLIO VALUE</small>
+                <h2 id="balance" style="margin: 8px 0 0 0; font-size: 1.8rem;">₹0</h2>
+                <span id="healthBadge" class="badge">Checking...</span>
             </div>
-
-            <div class="card income">
-                <h3>Total Income</h3>
-                <h2 id="income">₹0</h2>
+            <div class="card">
+                <small style="color:var(--text-muted); font-weight:600;">SETTLED INCOME</small>
+                <h2 id="income" class="incomeText" style="margin: 8px 0 0 0; font-size: 1.8rem;">₹0</h2>
+                <div id="pendingIncome" class="sub-value">Pending: ₹0</div>
             </div>
-
-            <div class="card expense">
-                <h3>Total Expense</h3>
-                <h2 id="expense">₹0</h2>
+            <div class="card">
+                <small style="color:var(--text-muted); font-weight:600;">SETTLED EXPENSES</small>
+                <h2 id="expense" class="expenseText" style="margin: 8px 0 0 0; font-size: 1.8rem;">₹0</h2>
+                <div id="pendingExpense" class="sub-value">Pending: ₹0</div>
             </div>
-
-            <div class="card saving">
-                <h3>Savings Rate</h3>
-                <h2 id="saving">0%</h2>
-                <div id="healthBadge" class="badge">Awaiting Data</div>
+            <div class="card">
+                <small style="color:var(--text-muted); font-weight:600;">SAVINGS COEFFICIENT</small>
+                <h2 id="saving" style="margin: 8px 0 0 0; font-size: 1.8rem;">0%</h2>
+                <div class="sub-value">Net margin efficiency</div>
             </div>
-
-            <div class="card pending-summary-card">
-                <h3>Pending Balance</h3>
-                <div class="pending-split-metrics">
-                    <span class="incomeText">
-                        In: <strong id="pendingIncome">₹0</strong>
-                    </span>
-                    <span class="expenseText">
-                        Out: <strong id="pendingExpense">₹0</strong>
-                    </span>
-                </div>
-            </div>
-        </section>
-
-        <!-- VISUAL ANALYTICS CONTAINER REQUIRED FOR CHART.JS -->
-        <section class="analytics-vault" style="padding: 16px;">
-            <div class="card" style="max-width: 400px; margin: 0 auto;">
-                <h3>Expense Allocations</h3>
-                <canvas id="analyticsChart"></canvas>
-            </div>
-        </section>
-
-        <!-- ENTRY FORMS -->
-        <div class="finance-workspace">
-            <section class="form">
-                <h2>Add Transaction</h2>
-                <input type="text" id="title" placeholder="Transaction Name">
-                <input type="number" id="amount" placeholder="Amount">
-
-                <select id="type">
-                    <option value="income">💰 Income</option>
-                    <option value="expense">💸 Expense</option>
-                </select>
-
-                <select id="category"></select>
-
-                <select id="status">
-                    <option value="paid">✅ Settled</option>
-                    <option value="pending">⏳ Pending</option>
-                </select>
-
-                <div style="display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 0.9rem;">
-                    <input type="checkbox" id="isRecurring">
-                    <label for="isRecurring">Auto-Repeat Monthly</label>
-                </div>
-
-                <button id="addBtn">
-                    <i class="fa-solid fa-circle-plus"></i> Add Transaction
-                </button>
-            </section>
-
-            <section class="form">
-                <h2>Categories</h2>
-                <div class="categoryManager">
-                    <input id="newCategory" placeholder="New Category">
-                    <button id="addCategory">+</button>
-                </div>
-                <div id="categoryList"></div>
-            </section>
         </div>
 
-        <!-- SEARCH, FILTERS & ACTION REGION -->
-        <section class="search-filters" style="display: flex; flex-wrap: wrap; gap: 12px; padding: 16px; width: 100%; box-sizing: border-box;">
-            
-            <!-- Search Control Box -->
-            <div class="search-box" style="flex: 1 1 200px; display: flex; align-items: center; position: relative;">
-                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; opacity: 0.5;"></i>
-                <input id="search" placeholder="Search" style="width: 100%; padding: 12px 12px 12px 36px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: inherit; outline: none;">
+        <div class="workspace-layout">
+            <!-- LEFT MODULE COLUMN -->
+            <div>
+                <!-- Transaction Ingestion Engine -->
+                <div class="panel">
+                    <h3 style="margin-top:0; margin-bottom: 20px;"><i class="fa-solid fa-receipt" style="color:var(--primary-accent); margin-right:8px;"></i> Ingest Transaction Node</h3>
+                    <div class="form-group">
+                        <label>Transaction Title Description</label>
+                        <input type="text" id="title" placeholder="e.g., Azure Enterprise Instance Deployment">
+                    </div>
+                    <div class="form-row-mixed">
+                        <div class="form-group">
+                            <label>Quantum Value Amount (₹)</label>
+                            <input type="number" id="amount" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Vector Direction</label>
+                            <select id="type">
+                                <option value="expense">Expense (-)</option>
+                                <option value="income">Income (+)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row-mixed">
+                        <div class="form-group">
+                            <label>Allocation Stream Category</label>
+                            <select id="category"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Settlement State</label>
+                            <select id="status">
+                                <option value="paid">Settled / Cleared</option>
+                                <option value="pending">Pending / Escrow</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group checkbox-row">
+                        <input type="checkbox" id="isRecurring">
+                        <label for="isRecurring">Deploy Automated Repetitive Interval Loop Rules (Monthly)</label>
+                    </div>
+                    <button id="addBtn" style="width:100%; background: var(--primary-accent); border:none; color:white; padding:12px; font-weight:bold; margin-top:10px;">
+                        Commit Node to Ledger
+                    </button>
+                </div>
+
+                <!-- Custom Allocation Category Node Settings Area -->
+                <div class="panel">
+                    <h3 style="margin-top:0; margin-bottom:15px;"><i class="fa-solid fa-tags" style="color:var(--primary-accent); margin-right:8px;"></i> System Category Directives</h3>
+                    <div style="display:flex; gap:10px; margin-bottom: 20px;">
+                        <input type="text" id="newCategory" placeholder="Instantiate New Category Profile..." style="flex:1;">
+                        <button id="addCategory" style="background:var(--bg-input);"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div id="categoryList">
+                        <!-- Content dynamic generated inside scripts panel execution -->
+                    </div>
+                </div>
             </div>
 
-            <!-- Viewport Category Filtering Box -->
-            <div class="filter-box" style="flex: 1 1 150px; display: flex; align-items: center; position: relative;">
-                <i class="fa-solid fa-filter" style="position: absolute; left: 12px; opacity: 0.5; z-index: 2;"></i>
-                <select id="filterCategory" style="width: 100%; padding: 12px 12px 12px 36px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: inherit; outline: none; appearance: none; -webkit-appearance: none; cursor: pointer;">
-                    <option value="all">All Categories</option>
-                </select>
-            </div>
+            <!-- RIGHT MODULE COLUMN -->
+            <div>
+                <!-- Ledger View Filters & Main Log Streams -->
+                <div class="panel">
+                    <h3 style="margin-top:0; margin-bottom:15px;"><i class="fa-solid fa-timeline" style="color:var(--primary-accent); margin-right:8px;"></i> Live Query Ledger Logs</h3>
+                    <div class="filter-ribbon">
+                        <input type="text" id="search" placeholder="Filter descriptions or metadata context strings...">
+                        <select id="filterCategory">
+                            <option value="all">All Categories</option>
+                        </select>
+                    </div>
+                    <div class="date-row">
+                        <input type="date" id="startDate" title="Lower Boundary Constraint Date">
+                        <input type="date" id="endDate" title="Upper Boundary Constraint Date">
+                    </div>
+                    
+                    <ul id="transactionList" class="transaction-ledger">
+                        <!-- Dynamic transaction row iterations injection target area -->
+                    </ul>
 
-            <!-- Hidden input hooks to map script.js date filters and avoid script faults -->
-            <input type="hidden" id="startDate">
-            <input type="hidden" id="endDate">
+                    <div style="display:flex; gap:10px; margin-top:20px;">
+                        <button id="exportBtn" style="flex:1; background:transparent; border: 1px solid var(--border-color);"><i class="fa-solid fa-file-csv"></i> Export CSV Dataset</button>
+                        <button id="purgeCategoryBtn" class="danger-btn" style="flex:1;"><i class="fa-solid fa-dumpster-fire"></i> Purge Filtered Rows</button>
+                    </div>
+                </div>
 
-            <!-- Action Controls Grouping Row -->
-            <div style="flex: 2 1 300px; display: flex; gap: 8px;">
-                <button id="exportBtn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 12px; font-size: 0.85rem; font-weight: 500; border-radius: 8px; border: 1px solid #4285F4; background: rgba(66, 133, 244, 0.1); color: #4285F4; cursor: pointer; white-space: nowrap; transition: all 0.2s; outline: none;">
-                    <i class="fa-solid fa-file-excel"></i> CSV Export
-                </button>
+                <!-- Analytics Visualization Module Canvas -->
+                <div class="panel">
+                    <h3 style="margin-top:0; margin-bottom:15px;"><i class="fa-solid fa-chart-pie" style="color:var(--primary-accent); margin-right:8px;"></i> Distribution Matrices</h3>
+                    <div style="max-width: 340px; margin: 0 auto; padding:10px;">
+                        <canvas id="analyticsChart"></canvas>
+                    </div>
+                </div>
 
-                <button id="purgeCategoryBtn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 12px; font-size: 0.85rem; font-weight: 500; border-radius: 8px; border: 1px solid #d9534f; background: rgba(217, 83, 79, 0.1); color: #d9534f; cursor: pointer; white-space: nowrap; transition: all 0.2s; outline: none;">
-                    <i class="fa-solid fa-trash-can"></i> Purge View
-                </button>
-            </div>
-            
-        </section>
-
-        <!-- TRANSACTION HISTORY -->
-        <section class="ledger">
-            <h2>Transactions History</h2>
-            <ul id="transactionList"></ul>
-        </section>
-
-        <footer>
-            Made with ❤️ by <strong>INSANE HR</strong>
-        </footer>
-
-    </div>
-
-    <!-- MODERN INTERACTIVE DIALOG MODAL SYSTEM -->
-    <div id="customModalOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
-        <div style="background: var(--card-bg, #1e1e1e); color: var(--text-color, #ffffff); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); padding: 24px; transform: scale(0.9); transition: transform 0.2s ease; box-sizing: border-box; text-align: center;">
-            <div id="modalIconContainer" style="font-size: 2.5rem; margin-bottom: 12px; color: #d9534f;">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-            </div>
-            <h3 id="modalTitle" style="margin: 0 0 10px 0; font-size: 1.25rem; font-weight: 600;">Confirm Action</h3>
-            <p id="modalDescription" style="margin: 0 0 24px 0; font-size: 0.9rem; line-height: 1.5; opacity: 0.8; word-wrap: break-word;"></p>
-            
-            <!-- Dual-Purpose Verification Text Input -->
-            <input id="modalConfirmationInput" type="text" placeholder="" style="display: none; width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: inherit; font-size: 0.95rem; outline: none; box-sizing: border-box; text-align: center;">
-            
-            <!-- Target Budget Value Input Field (Mapped to script DOM selectors) -->
-            <input id="modalBudgetInput" type="number" placeholder="Enter target..." style="display: none; width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: inherit; font-size: 0.95rem; outline: none; box-sizing: border-box; text-align: center;">
-            
-            <!-- Fallback input placeholder to bypass unmapped properties safely -->
-            <input id="modalSecondaryInput" type="hidden">
-            
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button id="modalCancelBtn" style="flex: 1; padding: 10px 16px; font-size: 0.9rem; font-weight: 500; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: inherit; cursor: pointer; transition: background 0.2s;">Cancel</button>
-                <button id="modalConfirmBtn" style="flex: 1; padding: 10px 16px; font-size: 0.9rem; font-weight: 500; border-radius: 6px; border: none; background: #d9534f; color: white; cursor: pointer; transition: opacity 0.2s;">Confirm</button>
+                <!-- System Purge / Destruction Access Blocks -->
+                <div class="panel" style="border: 1px dashed var(--danger-accent); background: rgba(219,68,55, 0.03);">
+                    <h4 style="color:var(--danger-accent); margin-top:0; margin-bottom:8px;">Danger Operations Room</h4>
+                    <p style="font-size:0.8rem; margin:0 0 12px 0; opacity:0.7;">Irreversibly delete cloud infrastructure clusters registered underneath your active token framework parameters.</p>
+                    <button id="deleteAccountBtn" class="danger-btn" style="font-size:0.8rem; padding:6px 12px;">Wipe Account Profiles Database</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- PREUI RUNTIME STAGED BOOTSTRAPPING -->
-    <script>
-        console.log("💥 SYSTEM CHECK 1: HTML execution engine is alive.");
-        window.onerror = function(message, source, lineno, colno, error) {
-            const overlay = document.getElementById("diagnosticErrorOverlay");
-            const details = document.getElementById("diagnosticErrorDetails");
-            if(overlay && details) {
-                details.innerText = "Message: " + message + "\nLine: " + lineno + "\nFile: " + source;
-                overlay.style.display = "flex";
-            }
-            return false;
-        };
-    </script>
+    <!-- ==========================================
+         CUSTOM MODAL FLOW VIEW CONTROLLERS 
+         ========================================== -->
+    <div class="modal-overlay" id="customModalOverlay">
+        <div class="modal-content">
+            <div id="modalIconContainer" class="modal-icon-holder"></div>
+            <h3 id="modalTitle" style="margin-top:0; margin-bottom:10px;">Modal Prompt Assertion</h3>
+            <p id="modalDescription" style="color:var(--text-muted); font-size:0.9rem; margin:0; line-height:1.4;"></p>
+            
+            <div class="modal-inputs-wrapper">
+                <input type="text" id="modalConfirmationInput" style="display:none;">
+                <input type="text" id="modalSecondaryInput" style="display:none;">
+                <input type="number" id="modalBudgetInput" style="display:none;">
+            </div>
+            
+            <div class="modal-buttons-wrapper">
+                <button id="modalCancelBtn" style="background:var(--bg-input);">Abort Action</button>
+                <button id="modalConfirmBtn" class="danger-btn">Confirm Structural Override</button>
+            </div>
+        </div>
+    </div>
 
-    <!-- DEPENDENCY GRAPH CORE INJECTIONS (ChartJS + Firebase Native Ecosystem Integrations) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <!-- ==========================================
+         FIREBASE CORE BACKEND MODULE CONNECTIONS
+         ========================================== -->
+    <!-- 1. Core Base Script Configuration -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    
+    <!-- 2. Cryptographic Security Authentication Modules Bundle -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    
+    <!-- 3. Realtime Enterprise Cloud Storage Database Infrastructure Engines Module -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- Finance Logic Engine Integration Layer -->
+    <!-- App functional controller state tracking operations loops script file -->
     <script src="script.js"></script>
-
 </body>
 </html>
