@@ -611,7 +611,11 @@ DOM.modalConfirmBtn.addEventListener('click', () => {
 // 9. PRODUCTION FIREBASE AUTH ENGINE PIPELINE
 // ==========================================
 DOM.googleBtn.addEventListener('click', () => {
-    auth.signInWithPopup(googleProvider)
+    // Force Firebase to store auth context entirely in memory to prevent auto-login loops on page-refresh
+    auth.setPersistence(firebase.auth.Auth.Persistence.NONE)
+        .then(() => {
+            return auth.signInWithPopup(googleProvider);
+        })
         .then((result) => {
             console.log("Firebase Auth Success:", result.user.email);
         })
