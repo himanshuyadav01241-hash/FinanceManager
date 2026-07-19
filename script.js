@@ -1,64 +1,64 @@
 // ==========================================
-// 1. FIREBASE CONFIGURATION & INITIALIZATION
+// 1. INITIALIZATION & FIREBASE CONFIGURATION
 // ==========================================
 const firebaseConfig = {
-  apiKey: "AIzaSyCCnwz-4HDj0baMMfhJ0oHWXfuhrFTvIr0",
-  authDomain: "financeos-6eaf2.firebaseapp.com",
-  projectId: "financeos-6eaf2",
-  storageBucket: "financeos-6eaf2.firebasestorage.app",
-  messagingSenderId: "503013740949",
-  appId: "1:503013740949:web:a18ef8f8433711a672e69c",
-  measurementId: "G-F769EYMHLJ"
+    apiKey: "YOUR_API_KEY_HERE",
+    authDomain: "YOUR_AUTH_DOMAIN_HERE",
+    projectId: "YOUR_PROJECT_ID_HERE",
+    storageBucket: "YOUR_STORAGE_BUCKET_HERE",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID_HERE",
+    appId: "YOUR_APP_ID_HERE"
 };
 
+// Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
-
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ==========================================
-// 2. DOM ELEMENT SELECTORS
-// ==========================================
+// Application Variables
+let currentUser = null;
+let unsubscribeTransactions = null;
+let unsubscribeCategories = null;
+let transactions = [];
+let categories = ['Food', 'Utilities', 'Salary', 'Entertainment', 'Rent'];
+let chartInstance = null;
+let modalCallback = null;
+
+// DOM Elements
 const authScreen = document.getElementById('authScreen');
 const appScreen = document.getElementById('app');
-const googleBtn = document.getElementById('googleBtn');
-const logoutBtn = document.getElementById('logoutBtn');
-
-// Looks for any theme dropdowns across both screens
-const themeSelectors = document.querySelectorAll('.theme-select');
-
 const emailAuthForm = document.getElementById('emailAuthForm');
 const authEmail = document.getElementById('authEmail');
 const authPassword = document.getElementById('authPassword');
 const customAuthBtn = document.getElementById('customAuthBtn');
-const toggleAuthMode = document.getElementById('toggleAuthMode');
-const authTitle = document.getElementById('authTitle');
-const authSubtitle = document.getElementById('authSubtitle');
-
-const titleInput = document.getElementById('title');
-const amountInput = document.getElementById('amount');
-const typeSelect = document.getElementById('type');
-const categorySelect = document.getElementById('category');
-const statusSelect = document.getElementById('status');
-const isRecurringCheck = document.getElementById('isRecurring');
-const addBtn = document.getElementById('addBtn');
+const googleBtn = document.getElementById('googleBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const themeSelect = document.getElementById('theme');
 
 const balanceEl = document.getElementById('balance');
-const healthBadgeEl = document.getElementById('healthBadge');
+const healthBadge = document.getElementById('healthBadge');
 const incomeEl = document.getElementById('income');
 const pendingIncomeEl = document.getElementById('pendingIncome');
 const expenseEl = document.getElementById('expense');
 const pendingExpenseEl = document.getElementById('pendingExpense');
 const savingEl = document.getElementById('saving');
 
+const txTitle = document.getElementById('title');
+const txAmount = document.getElementById('amount');
+const txType = document.getElementById('type');
+const txCategory = document.getElementById('category');
+const txStatus = document.getElementById('status');
+const txIsRecurring = document.getElementById('isRecurring');
+const addBtn = document.getElementById('addBtn');
+
 const newCategoryInput = document.getElementById('newCategory');
 const addCategoryBtn = document.getElementById('addCategory');
 const categoryListEl = document.getElementById('categoryList');
+const filterCategorySelect = document.getElementById('filterCategory');
 
 const searchInput = document.getElementById('search');
-const filterCategorySelect = document.getElementById('filterCategory');
 const startDateInput = document.getElementById('startDate');
 const endDateInput = document.getElementById('endDate');
 const transactionListEl = document.getElementById('transactionList');
@@ -66,635 +66,500 @@ const exportBtn = document.getElementById('exportBtn');
 const purgeCategoryBtn = document.getElementById('purgeCategoryBtn');
 const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 
-const modalOverlay = document.getElementById('customModalOverlay');
+const customModalOverlay = document.getElementById('customModalOverlay');
+const modalIconContainer = document.getElementById('modalIconContainer');
 const modalTitle = document.getElementById('modalTitle');
 const modalDescription = document.getElementById('modalDescription');
-const modalIconContainer = document.getElementById('modalIconContainer');
-const modalConfirmBtn = document.getElementById('modalConfirmBtn');
 const modalCancelBtn = document.getElementById('modalCancelBtn');
-
-// Global Application State Variables
-let currentUser = null;
-let transactions = [];
-let userCategories = ["Salary", "Food", "Rent", "Utilities", "Entertainment"];
-let analyticsChart = null;
-let currentModalAction = null;
-let isLoginMode = true;
+const modalConfirmBtn = document.getElementById('modalConfirmBtn');
 
 // ==========================================
-// 3. AUTHENTICATION SERVICES
+// 2. AUTHENTICATION & ROUTING CONTROLLERS
 // ==========================================
-
-if (toggleAuthMode) {
-    toggleAuthMode.addEventListener('click', (e) => {
-        e.preventDefault();
-        isLoginMode = !isLoginMode;
-        if (isLoginMode) {
-            authTitle.textContent = "Welcome Back";
-            authSubtitle.textContent = "Sign in to manage and secure your transactions across all your devices instantly.";
-            customAuthBtn.textContent = "Sign In";
-            toggleAuthMode.textContent = "Don't have an account? Sign Up";
-        } else {
-            authTitle.textContent = "Create Account";
-            authSubtitle.textContent = "Sign up now to start tracking your finances across devices seamlessly.";
-            customAuthBtn.textContent = "Sign Up";
-            toggleAuthMode.textContent = "Already have an account? Sign In";
-        }
-    });
-}
-
-if (emailAuthForm) {
-    emailAuthForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); 
-        
-        const email = authEmail.value.trim();
-        const password = authPassword.value;
-
-        if (!email || !password) {
-            alert("Please complete all requested sign-in credentials.");
-            return;
-        }
-
-        try {
-            if (isLoginMode) {
-                await auth.signInWithEmailAndPassword(email, password);
-            } else {
-                await auth.createUserWithEmailAndPassword(email, password);
-            }
-            authEmail.value = "";
-            authPassword.value = "";
-        } catch (error) {
-            alert(error.message);
-        }
-    });
-}
-
-if (googleBtn) {
-    googleBtn.addEventListener('click', async () => {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        try {
-            await auth.signInWithPopup(provider);
-        } catch (error) {
-            alert("Google Sign-In Failed: " + error.message);
-        }
-    });
-}
-
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-        auth.signOut();
-    });
-}
-
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged(user => {
     if (user) {
         currentUser = user;
-        if(authScreen) authScreen.style.display = 'none';
-        if(appScreen) appScreen.style.display = 'block';
-        toggleBlossomCanvas(false); 
-        initializeUserWorkspace();
+        authScreen.style.display = 'none';
+        appScreen.style.display = 'block';
+        initializeDashboard();
     } else {
         currentUser = null;
-        transactions = [];
-        if(authScreen) authScreen.style.display = 'flex';
-        if(appScreen) appScreen.style.display = 'none';
-        toggleBlossomCanvas(true); 
-        if(analyticsChart) analyticsChart.destroy();
+        authScreen.style.display = 'flex';
+        appScreen.style.display = 'none';
+        cleanupDashboardSubscriptions();
     }
 });
 
-// ==========================================
-// 4. DATA ENGINE & DATABASE WORKSPACE
-// ==========================================
+// Custom Email/Password Login & Registration Hybrid Flow
+customAuthBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = authEmail.value.trim();
+    const password = authPassword.value;
 
-function initializeUserWorkspace() {
-    db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
-        if (doc.exists && doc.data().categories) {
-            userCategories = doc.data().categories;
+    if (!email || !password) return alert('Please enter both email and password.');
+
+    try {
+        // Attempt login
+        await auth.signInWithEmailAndPassword(email, password);
+    } catch (loginError) {
+        // If user doesn't exist, create an account automatically
+        if (loginError.code === 'auth/user-not-found') {
+            try {
+                await auth.createUserWithEmailAndPassword(email, password);
+            } catch (createError) {
+                alert(createError.message);
+            }
         } else {
-            db.collection('users').doc(currentUser.uid).set({ categories: userCategories });
+            alert(loginError.message);
         }
-        renderCategorySelectors();
-    });
+    }
+});
 
-    db.collection('users').doc(currentUser.uid).collection('transactions')
+// Google Provider Sign-In
+googleBtn.addEventListener('click', async () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+        await auth.signInWithPopup(provider);
+    } catch (error) {
+        alert(error.message);
+    }
+});
+
+// Logout Operation
+logoutBtn.addEventListener('click', () => {
+    auth.signOut();
+});
+
+// ==========================================
+// 3. LIFECYCLE MANAGEMENT & REAL-TIME DATA
+// ==========================================
+function initializeDashboard() {
+    setupThemeController();
+    
+    // Listen for custom category updates
+    unsubscribeCategories = db.collection('users').doc(currentUser.uid)
+        .onSnapshot(doc => {
+            if (doc.exists && doc.data().categories) {
+                categories = doc.data().categories;
+            } else {
+                // Initialize default database categories for a fresh profile
+                db.collection('users').doc(currentUser.uid).set({ categories }, { merge: true });
+            }
+            renderCategoryUI();
+        });
+
+    // Listen for live transactions
+    unsubscribeTransactions = db.collection('users').doc(currentUser.uid).collection('transactions')
         .orderBy('createdAt', 'desc')
         .onSnapshot(snapshot => {
-            transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            processCalculationsAndRender();
-        }, error => {
-            console.error("Firestore synchronizer crash: ", error);
-        });
+            transactions = [];
+            snapshot.forEach(doc => {
+                transactions.push({ id: doc.id, ...doc.data() });
+            });
+            processAndRenderDashboard();
+        }, error => console.error("Firestore subscription error:", error));
+}
+
+function cleanupDashboardSubscriptions() {
+    if (unsubscribeTransactions) unsubscribeTransactions();
+    if (unsubscribeCategories) unsubscribeCategories();
+    transactions = [];
 }
 
 // ==========================================
-// 5. TRANSACTIONS & MANAGEMENT LOGIC
+// 4. TRANSACTION ENGINE & ENGINE ACTIONS
 // ==========================================
+addBtn.addEventListener('click', async () => {
+    const title = txTitle.value.trim();
+    const amount = parseFloat(txAmount.value);
+    const type = txType.value;
+    const category = txCategory.value;
+    const status = txStatus.value;
+    const isRecurring = txIsRecurring.checked;
 
-if (addBtn) {
-    addBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const title = titleInput.value.trim();
-        const amount = parseFloat(amountInput.value);
-        const type = typeSelect.value;
-        const category = categorySelect.value;
-        const status = statusSelect.value;
-        const isRecurring = isRecurringCheck.checked;
+    if (!title || isNaN(amount) || amount <= 0) {
+        return alert('Please fill in a valid transaction name and numerical amount.');
+    }
 
-        if (!title || isNaN(amount) || amount <= 0) {
-            alert("Provide valid description and amount quantities.");
-            return;
-        }
+    const payload = {
+        title,
+        amount,
+        type,
+        category,
+        status,
+        isRecurring,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
 
-        const payload = {
-            title,
-            amount,
-            type,
-            category,
-            status,
-            isRecurring,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        try {
-            await db.collection('users').doc(currentUser.uid).collection('transactions').add(payload);
-            titleInput.value = '';
-            amountInput.value = '';
-            isRecurringCheck.checked = false;
-        } catch (error) {
-            alert("Operation failed targeting data pipeline.");
-        }
-    });
-}
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('transactions').add(payload);
+        // Clear forms
+        txTitle.value = '';
+        txAmount.value = '';
+        txIsRecurring.checked = false;
+    } catch (error) {
+        alert('Error saving record: ' + error.message);
+    }
+});
 
 async function deleteTransaction(id) {
     try {
         await db.collection('users').doc(currentUser.uid).collection('transactions').doc(id).delete();
     } catch (error) {
-        alert("Failed to erase log segment.");
-    }
-}
-
-async function toggleStatus(id, currentStatus) {
-    const nextStatus = currentStatus === 'paid' ? 'pending' : 'paid';
-    try {
-        await db.collection('users').doc(currentUser.uid).collection('transactions').doc(id).update({
-            status: nextStatus
-        });
-    } catch (error) {
-        console.error("Failed to alter status indicator.");
+        alert('Deletion error: ' + error.message);
     }
 }
 
 // ==========================================
-// 6. CATEGORIES ENGINE MODULES
+// 5. METRIC AGGREGATION & DATA PROCESSING
 // ==========================================
-
-function renderCategorySelectors() {
-    if(categorySelect) categorySelect.innerHTML = userCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-    if(filterCategorySelect) filterCategorySelect.innerHTML = `<option value="all">All Categories</option>` + userCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-    if(categoryListEl) {
-        categoryListEl.innerHTML = userCategories.map(cat => `
-            <div class="categoryCard">
-                <span>${cat}</span>
-                <button onclick="deleteCategory('${cat}')" style="background:transparent; border:none; color:var(--text-primary); padding:2px 6px;">
-                    <i class="fa-solid fa-trash-can"></i>
-                </button>
-            </div>
-        `).join('');
-    }
-}
-
-if (addCategoryBtn) {
-    addCategoryBtn.addEventListener('click', async () => {
-        const newCat = newCategoryInput.value.trim();
-        if (!newCat || userCategories.includes(newCat)) return;
-
-        const updatedCategories = [...userCategories, newCat];
-        try {
-            await db.collection('users').doc(currentUser.uid).update({ categories: updatedCategories });
-            newCategoryInput.value = '';
-        } catch (error) {
-            alert("Failed to synchronize category collection metadata.");
-        }
-    });
-}
-
-async function deleteCategory(categoryName) {
-    const updatedCategories = userCategories.filter(cat => cat !== categoryName);
-    try {
-        await db.collection('users').doc(currentUser.uid).update({ categories: updatedCategories });
-    } catch (error) {
-        console.error("Failed modification routines.");
-    }
-}
-
-// ==========================================
-// 7. MATH CALCULATIONS & UI RENDERING
-// ==========================================
-
-function processCalculationsAndRender() {
-    let totalBalance = 0;
-    let totalIncome = 0;
-    let totalExpense = 0;
+function processAndRenderDashboard() {
+    let settledIncome = 0;
     let pendingIncome = 0;
+    let settledExpense = 0;
     let pendingExpense = 0;
 
     transactions.forEach(t => {
         if (t.type === 'income') {
-            if (t.status === 'paid') totalIncome += t.amount;
+            if (t.status === 'paid') settledIncome += t.amount;
             else pendingIncome += t.amount;
         } else {
-            if (t.status === 'paid') totalExpense += t.amount;
+            if (t.status === 'paid') settledExpense += t.amount;
             else pendingExpense += t.amount;
         }
     });
 
-    totalBalance = totalIncome - totalExpense;
-
-    if(balanceEl) balanceEl.textContent = `₹${totalBalance.toLocaleString()}`;
-    if(incomeEl) incomeEl.textContent = `₹${totalIncome.toLocaleString()}`;
-    if(expenseEl) expenseEl.textContent = `₹${totalExpense.toLocaleString()}`;
-    if(pendingIncomeEl) pendingIncomeEl.textContent = `Pending: ₹${pendingIncome.toLocaleString()}`;
-    if(pendingExpenseEl) pendingExpenseEl.textContent = `Pending: ₹${pendingExpense.toLocaleString()}`;
-
-    if (healthBadgeEl) {
-        if (totalBalance > 5000) {
-            healthBadgeEl.textContent = "Healthy";
-            healthBadgeEl.className = "badge badge-good";
-        } else if (totalBalance >= 0) {
-            healthBadgeEl.textContent = "Warning";
-            healthBadgeEl.className = "badge badge-warn";
-        } else {
-            healthBadgeEl.textContent = "Deficit";
-            healthBadgeEl.className = "badge badge-danger";
-        }
+    const netBalance = settledIncome - settledExpense;
+    
+    // Calculate Savings Rate Margin Formula
+    let savingsMargin = 0;
+    if (settledIncome > 0) {
+        savingsMargin = Math.round(((settledIncome - settledExpense) / settledIncome) * 100);
     }
 
-    if (savingEl) {
-        if (totalIncome > 0) {
-            const rate = ((totalIncome - totalExpense) / totalIncome) * 100;
-            savingEl.textContent = `${Math.max(0, Math.round(rate))}%`;
-        } else {
-            savingEl.textContent = "0%";
-        }
+    // UI Updates
+    balanceEl.textContent = `₹${netBalance.toLocaleString('en-IN')}`;
+    incomeEl.textContent = `₹${settledIncome.toLocaleString('en-IN')}`;
+    pendingIncomeEl.textContent = `Pending: ₹${pendingIncome.toLocaleString('en-IN')}`;
+    expenseEl.textContent = `₹${settledExpense.toLocaleString('en-IN')}`;
+    pendingExpenseEl.textContent = `Pending: ₹${pendingExpense.toLocaleString('en-IN')}`;
+    savingEl.textContent = `${savingsMargin}%`;
+
+    // Dynamic Balance Safety Badge Allocation
+    healthBadge.className = 'badge';
+    if (netBalance > settledExpense * 0.5) {
+        healthBadge.textContent = 'Healthy';
+        healthBadge.classList.add('badge-good');
+    } else if (netBalance >= 0) {
+        healthBadge.textContent = 'Warning';
+        healthBadge.classList.add('badge-warn');
+    } else {
+        healthBadge.textContent = 'Critical';
+        healthBadge.classList.add('badge-danger');
     }
 
     renderLedger();
     renderAnalyticsChart();
 }
 
+// ==========================================
+// 6. LEDGER RENDERER & INTERACTIVE FILTERING
+// ==========================================
 function renderLedger() {
-    const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
-    const catFilter = filterCategorySelect ? filterCategorySelect.value : 'all';
-    const startVal = startDateInput && startDateInput.value ? new Date(startDateInput.value) : null;
-    const endVal = endDateInput && endDateInput.value ? new Date(endDateInput.value) : null;
+    transactionListEl.innerHTML = '';
+    const query = searchInput.value.toLowerCase();
+    const selectedCat = filterCategorySelect.value;
+    const start = startDateInput.value ? new Date(startDateInput.value) : null;
+    const end = endDateInput.value ? new Date(endDateInput.value) : null;
+
+    if (end) end.setHours(23, 59, 59, 999); // Inclusionary ceiling matching
 
     const filtered = transactions.filter(t => {
-        const matchesSearch = t.title ? t.title.toLowerCase().includes(searchVal) : false;
-        const matchesCat = (catFilter === 'all') || (t.category === catFilter);
+        const matchesSearch = t.title.toLowerCase().includes(query);
+        const matchesCategory = selectedCat === 'all' || t.category === selectedCat;
         
         let matchesDate = true;
         if (t.createdAt && t.createdAt.toDate) {
-            const txDate = t.createdAt.toDate();
-            if (startVal && txDate < startVal) matchesDate = false;
-            if (endVal && txDate > endVal) matchesDate = false;
+            const dateObj = t.createdAt.toDate();
+            if (start && dateObj < start) matchesDate = false;
+            if (end && dateObj > end) matchesDate = false;
         }
-        
-        return matchesSearch && matchesCat && matchesDate;
+
+        return matchesSearch && matchesCategory && matchesDate;
     });
 
-    if (transactionListEl) {
-        transactionListEl.innerHTML = filtered.map(t => {
-            const sign = t.type === 'income' ? '+' : '-';
-            const colorClass = t.type === 'income' ? 'incomeText' : 'expenseText';
-            const statusClass = t.status === 'paid' ? 'status-paid' : 'status-pending';
-            const statusText = t.status === 'paid' ? 'Settled' : 'Pending';
-            const repeatIcon = t.isRecurring ? `<i class="fa-solid fa-arrows-rotate" title="Recurring Event" style="margin-left:5px; font-size:0.8rem; opacity:0.6;"></i>` : '';
-
-            return `
-                <li class="categoryCard" style="margin-bottom: 10px;">
-                    <div>
-                        <h3 style="margin: 0 0 4px 0; font-size: 1rem;">${t.title} ${repeatIcon}</h3>
-                        <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
-                            <span class="status-badge ${statusClass}" style="cursor:pointer;" onclick="toggleStatus('${t.id}', '${t.status}')">${statusText}</span> · ${t.category}
-                        </p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <span class="${colorClass}" style="font-weight: bold;">${sign}₹${t.amount}</span>
-                        <button onclick="deleteTransaction('${t.id}')" style="background:transparent; border:none; color: var(--danger-accent);">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                </li>
-            `;
-        }).join('');
-    }
-}
-
-[searchInput, filterCategorySelect, startDateInput, endDateInput].forEach(el => {
-    if(el) el.addEventListener('input', renderLedger);
-});
-
-// ==========================================
-// 8. GRAPHICAL ANALYTICS COMPONENT
-// ==========================================
-
-function renderAnalyticsChart() {
-    const chartCanvas = document.getElementById('analyticsChart');
-    if (!chartCanvas) return;
-    
-    const ctx = chartCanvas.getContext('2d');
-    const expenseDataMap = {};
-    userCategories.forEach(c => expenseDataMap[c] = 0);
-
-    transactions.forEach(t => {
-        if (t.type === 'expense' && t.status === 'paid' && expenseDataMap[t.category] !== undefined) {
-            expenseDataMap[t.category] += t.amount;
-        }
-    });
-
-    const labels = Object.keys(expenseDataMap).filter(c => expenseDataMap[c] > 0);
-    const data = labels.map(c => expenseDataMap[c]);
-
-    if (analyticsChart) {
-        analyticsChart.destroy();
-    }
-
-    if (data.length === 0) {
-        if(ctx.canvas) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    if (filtered.length === 0) {
+        transactionListEl.innerHTML = `<li style="text-align:center; padding: 20px; color:var(--text-muted);">No logs match current metrics</li>`;
         return;
     }
 
-    const computedStyles = getComputedStyle(document.documentElement);
-    const labelColor = computedStyles.getPropertyValue('--text-primary').trim() || '#ffffff';
+    filtered.forEach(t => {
+        const li = document.createElement('li');
+        li.className = 'categoryCard';
+        li.style.borderLeft = `4px solid ${t.type === 'income' ? 'var(--success-accent)' : 'var(--danger-accent)'}`;
+        
+        const timestamp = t.createdAt && t.createdAt.toDate ? t.createdAt.toDate().toLocaleDateString('en-IN') : 'Syncing...';
+        const recurringTag = t.isRecurring ? ' <i class="fa-solid fa-arrows-spin" title="Monthly Recurring"></i>' : '';
 
-    analyticsChart = new Chart(ctx, {
+        li.innerHTML = `
+            <div>
+                <strong style="display:block;">${t.title}${recurringTag}</strong>
+                <small style="color:var(--text-muted);">${t.category} • ${timestamp}</small>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span class="status-badge ${t.status === 'paid' ? 'status-paid' : 'status-pending'}">
+                    ${t.status === 'paid' ? 'Settled' : 'Pending'}
+                </span>
+                <span style="font-weight:bold;">${t.type === 'income' ? '+' : '-'}₹${t.amount}</span>
+                <button onclick="deleteTransaction('${t.id}')" style="background:transparent; border:none; color:var(--danger-accent); cursor:pointer;">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `;
+        transactionListEl.appendChild(li);
+    });
+}
+
+// Global scope attachment for localized functional actions inside dynamic templates
+window.deleteTransaction = deleteTransaction;
+
+// Live Keyed Reactive Dynamic Listeners
+[searchInput, filterCategorySelect, startDateInput, endDateInput].forEach(elem => {
+    elem.addEventListener('input', renderLedger);
+});
+
+// ==========================================
+// 7. CATEGORY CONTROLLER LOGIC
+// ==========================================
+function renderCategoryUI() {
+    // Populate selectors safely maintaining references
+    const priorAddSelection = txCategory.value;
+    const priorFilterSelection = filterCategorySelect.value;
+
+    txCategory.innerHTML = '';
+    filterCategorySelect.innerHTML = '<option value="all">All Categories</option>';
+    categoryListEl.innerHTML = '';
+
+    categories.forEach(cat => {
+        // Form selections
+        const opt1 = document.createElement('option');
+        opt1.value = cat; opt1.textContent = cat;
+        txCategory.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = cat; opt2.textContent = cat;
+        filterCategorySelect.appendChild(opt2);
+
+        // Sidebar deletion management visual blocks
+        const row = document.createElement('div');
+        row.className = 'categoryCard';
+        row.innerHTML = `
+            <span>${cat}</span>
+            <button onclick="removeCategory('${cat}')" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        `;
+        categoryListEl.appendChild(row);
+    });
+
+    if (categories.includes(priorAddSelection)) txCategory.value = priorAddSelection;
+    if (categories.includes(priorFilterSelection)) filterCategorySelect.value = priorFilterSelection;
+}
+
+addCategoryBtn.addEventListener('click', async () => {
+    const freshCat = newCategoryInput.value.trim();
+    if (!freshCat || categories.includes(freshCat)) return;
+    
+    categories.push(freshCat);
+    newCategoryInput.value = '';
+    
+    await db.collection('users').doc(currentUser.uid).set({ categories }, { merge: true });
+});
+
+window.removeCategory = async function(targetCat) {
+    const updated = categories.filter(c => c !== targetCat);
+    await db.collection('users').doc(currentUser.uid).set({ categories: updated }, { merge: true });
+};
+
+// ==========================================
+// 8. CHART.JS DATA GRAPHICAL ANALYTICS
+// ==========================================
+function renderAnalyticsChart() {
+    const ctx = document.getElementById('analyticsChart').getContext('2d');
+    
+    // Group only visual expenses dynamically
+    const summary = {};
+    transactions.filter(t => t.type === 'expense').forEach(t => {
+        summary[t.category] = (summary[t.category] || 0) + t.amount;
+    });
+
+    const labels = Object.keys(summary);
+    const data = Object.values(summary);
+
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    if (labels.length === 0) {
+        // Fallback visual initialization when zero items appear
+        ctx.clearRect(0, 0, 320, 320);
+        return;
+    }
+
+    // Dynamic variable extraction from system theme styles
+    const computedStyle = getComputedStyle(document.body);
+    const primaryText = computedStyle.getPropertyValue('--text-primary').trim();
+    const inputBg = computedStyle.getPropertyValue('--bg-input').trim();
+
+    chartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: labels,
             datasets: [{
                 data: data,
                 backgroundColor: [
-                    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', 
-                    '#8b5cf6', '#06b6d4', '#f97316', '#2563eb'
+                    '#4285F4', '#0F9D58', '#F4B400', '#db4437', '#9c27b0', '#00bcd4', '#ff5722'
                 ],
-                borderWidth: 1,
-                borderColor: computedStyles.getPropertyValue('--bg-surface').trim() || '#1e1e1e'
+                borderWidth: 2,
+                borderColor: inputBg
             }]
         },
         options: {
+            responsive: true,
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { color: labelColor }
+                    labels: { color: primaryText, font: { family: 'sans-serif', size: 11 } }
                 }
-            },
-            responsive: true,
-            maintainAspectRatio: false
+            }
         }
     });
 }
 
 // ==========================================
-// 9. DATA CONVERSION EXPORT MODULES (CSV)
+// 9. THEME MECHANICS ENGINE
 // ==========================================
+function setupThemeController() {
+    const storedTheme = localStorage.getItem('tracker-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', storedTheme);
+    themeSelect.value = storedTheme;
 
-if (exportBtn) {
-    exportBtn.addEventListener('click', () => {
-        if (transactions.length === 0) {
-            alert("No transaction entries available for extraction.");
-            return;
+    themeSelect.addEventListener('change', (e) => {
+        const selectedTheme = e.target.value;
+        document.documentElement.setAttribute('data-theme', selectedTheme);
+        localStorage.setItem('tracker-theme', selectedTheme);
+        // Rerender analytics tracking colors accurately following change events
+        renderAnalyticsChart();
+    });
+}
+
+// ==========================================
+// 10. SYSTEM MODALS & DATA PURGE ACTIONS
+// ==========================================
+function triggerModal(title, description, iconClass, onConfirm) {
+    modalTitle.textContent = title;
+    modalDescription.textContent = description;
+    modalIconContainer.innerHTML = `<i class="${iconClass}"></i>`;
+    customModalOverlay.style.display = 'flex';
+    modalCallback = onConfirm;
+}
+
+modalCancelBtn.addEventListener('click', () => {
+    customModalOverlay.style.display = 'none';
+    modalCallback = null;
+});
+
+modalConfirmBtn.addEventListener('click', () => {
+    if (modalCallback) modalCallback();
+    customModalOverlay.style.display = 'none';
+});
+
+// Purge Targeted Filtered Selection Logs
+purgeCategoryBtn.addEventListener('click', () => {
+    const targetCat = filterCategorySelect.value;
+    const scopeMessage = targetCat === 'all' 
+        ? "all transactional logs currently saved inside this account profile" 
+        : `all logs mapped under the "${targetCat}" category matching your workspace setup`;
+
+    triggerModal(
+        "Purge Records?",
+        `Are you sure you want to permanently clear ${scopeMessage}? This change cannot be reverted.`,
+        "fa-solid fa-triangle-exclamation",
+        async () => {
+            const batch = db.batch();
+            const query = searchInput.value.toLowerCase();
+            const start = startDateInput.value ? new Date(startDateInput.value) : null;
+            const end = endDateInput.value ? new Date(endDateInput.value) : null;
+            if (end) end.setHours(23, 59, 59, 999);
+
+            transactions.forEach(t => {
+                const matchesSearch = t.title.toLowerCase().includes(query);
+                const matchesCategory = targetCat === 'all' || t.category === targetCat;
+                let matchesDate = true;
+                if (t.createdAt && t.createdAt.toDate) {
+                    const dateObj = t.createdAt.toDate();
+                    if (start && dateObj < start) matchesDate = false;
+                    if (end && dateObj > end) matchesDate = false;
+                }
+
+                if (matchesSearch && matchesCategory && matchesDate) {
+                    const ref = db.collection('users').doc(currentUser.uid).collection('transactions').doc(t.id);
+                    batch.delete(ref);
+                }
+            });
+
+            await batch.commit();
         }
+    );
+});
 
-        let csvContent = "data:text/csv;charset=utf-8,Description,Amount,Type,Category,Status,Recurring\n";
-        transactions.forEach(t => {
-            csvContent += `"${t.title.replace(/"/g, '""')}",${t.amount},${t.type},${t.category},${t.status},${t.isRecurring}\n`;
-        });
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Ledger_Export_${new Date().toISOString().slice(0,10)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    });
-}
-
-// ==========================================
-// 10. PROMPT MODAL INTERFACES
-// ==========================================
-
-function displayModal(title, description, iconClass, confirmAction) {
-    if(modalTitle) modalTitle.textContent = title;
-    if(modalDescription) modalDescription.textContent = description;
-    if(modalIconContainer) modalIconContainer.innerHTML = `<i class="${iconClass}"></i>`;
-    currentModalAction = confirmAction;
-    if(modalOverlay) modalOverlay.style.display = 'flex';
-}
-
-if (modalCancelBtn) {
-    modalCancelBtn.addEventListener('click', () => {
-        if(modalOverlay) modalOverlay.style.display = 'none';
-        currentModalAction = null;
-    });
-}
-
-if (modalConfirmBtn) {
-    modalConfirmBtn.addEventListener('click', () => {
-        if (typeof currentModalAction === 'function') {
-            currentModalAction();
-        }
-        if(modalOverlay) modalOverlay.style.display = 'none';
-    });
-}
-
-if (purgeCategoryBtn) {
-    purgeCategoryBtn.addEventListener('click', () => {
-        const targetCat = filterCategorySelect ? filterCategorySelect.value : 'all';
-        const desc = targetCat === 'all' 
-            ? "This will delete every transaction history item logged in your profile."
-            : `This will completely wipe all ledger entries under the category: "${targetCat}".`;
-
-        displayModal(
-            "Purge Transaction Logs?",
-            desc,
-            "fa-solid fa-triangle-exclamation",
-            async () => {
+// Danger Zone: Global Profile Data Erasure Wipeout
+deleteAccountBtn.addEventListener('click', () => {
+    triggerModal(
+        "Wipe Out Ledger Profiles?",
+        "CRITICAL WARNING: This completely deletes all custom categories and structural transaction instances permanently.",
+        "fa-solid fa-radiation",
+        async () => {
+            try {
+                // 1. Delete all transactions
+                const snapshot = await db.collection('users').doc(currentUser.uid).collection('transactions').get();
                 const batch = db.batch();
-                transactions.forEach(t => {
-                    if (targetCat === 'all' || t.category === targetCat) {
-                        const ref = db.collection('users').doc(currentUser.uid).collection('transactions').doc(t.id);
-                        batch.delete(ref);
-                    }
-                });
+                snapshot.forEach(doc => batch.delete(doc.ref));
                 await batch.commit();
+
+                // 2. Delete user configuration
+                await db.collection('users').doc(currentUser.uid).delete();
+                
+                alert("Profile data wiped successfully.");
+            } catch (err) {
+                alert("Error during structural wipeout: " + err.message);
             }
-        );
-    });
-}
-
-if (deleteAccountBtn) {
-    deleteAccountBtn.addEventListener('click', () => {
-        displayModal(
-            "Permanently Wipe All Data?",
-            "Warning: This action completely empties all cloud records. You will log out immediately and this process cannot be undone.",
-            "fa-solid fa-skull-crossbones",
-            async () => {
-                try {
-                    const snapshot = await db.collection('users').doc(currentUser.uid).collection('transactions').get();
-                    const batch = db.batch();
-                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
-                    await batch.commit();
-                    await db.collection('users').doc(currentUser.uid).delete();
-                    await auth.currentUser.delete();
-                } catch (error) {
-                    alert("Account destruction failure. Logging out as precaution. Error: " + error.message);
-                    auth.signOut();
-                }
-            }
-        );
-    });
-}
-
-// ==========================================
-// 11. LAYOUT THEME MANAGEMENT
-// ==========================================
-
-function configureApplicationTheme(themeValue) {
-    document.documentElement.setAttribute('data-theme', themeValue);
-    
-    // Syncs both selectors across screens if they exist
-    themeSelectors.forEach(selectElement => {
-        if (selectElement.value !== themeValue) {
-            selectElement.value = themeValue;
         }
-    });
-
-    renderAnalyticsChart();
-}
-
-// Global delegated change listener for theme controls
-document.addEventListener('change', (e) => {
-    if (e.target && e.target.classList.contains('theme-select')) {
-        configureApplicationTheme(e.target.value);
-    }
+    );
 });
 
 // ==========================================
-// 12. CHERRY BLOSSOM CANVAS ENGINE
+// 11. EXPORT GENERATOR: FLAT ARCHIVE COMPILES
 // ==========================================
-let blossomCanvas = null;
-let blossomCtx = null;
-let animationFrameId = null;
+exportBtn.addEventListener('click', () => {
+    if (transactions.length === 0) return alert("No operational data targets present to pack.");
 
-function initBlossomEngine() {
-    if(blossomCanvas) return; 
-    
-    blossomCanvas = document.createElement('canvas');
-    blossomCtx = blossomCanvas.getContext('2d');
-    
-    blossomCanvas.style.position = 'fixed';
-    blossomCanvas.style.top = '0';
-    blossomCanvas.style.left = '0';
-    blossomCanvas.style.width = '100vw';
-    blossomCanvas.style.height = '100vh';
-    blossomCanvas.style.pointerEvents = 'none';
-    blossomCanvas.style.zIndex = '0'; 
-    
-    document.body.prepend(blossomCanvas);
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "ID,Description,Amount,Type,Category,Status,Recurring,Date\r\n";
 
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    blossomCanvas.width = width;
-    blossomCanvas.height = height;
-
-    const maxPetals = 30; 
-    const petals = [];
-    const colors = ['#fde8e9', '#f9d7da', '#f5c6cb', '#f2b5bc'];
-
-    function random(min, max) { return Math.random() * (max - min) + min; }
-
-    for (let i = 0; i < maxPetals; i++) {
-        petals.push({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            size: random(6, 14),
-            color: colors[Math.floor(Math.random() * colors.length)],
-            speedX: random(-0.4, 0.4),
-            speedY: random(0.5, 1.2),
-            rotation: random(0, Math.PI * 2),
-            wobble: random(0, Math.PI * 2),
-            wobbleSpeed: random(0.01, 0.03)
-        });
-    }
-
-    function drawPetal(p) {
-        blossomCtx.save();
-        blossomCtx.translate(p.x, p.y);
-        blossomCtx.rotate(p.rotation);
-        blossomCtx.beginPath();
-        blossomCtx.moveTo(0, 0);
-        blossomCtx.bezierCurveTo(-p.size / 2, -p.size / 3, -p.size / 3, -p.size / 1.5, 0, -p.size / 1.2);
-        blossomCtx.bezierCurveTo(p.size / 3, -p.size / 1.5, p.size / 2, -p.size / 3, 0, 0);
-        blossomCtx.fillStyle = p.color;
-        blossomCtx.fill();
-        blossomCtx.restore();
-    }
-
-    function updateAnimation() {
-        if (!blossomCtx) return;
-        blossomCtx.clearRect(0, 0, width, height);
-        
-        petals.forEach(p => {
-            p.x += p.speedX + Math.sin(p.wobble) * 0.2;
-            p.y += p.speedY;
-            p.rotation += 0.006;
-            p.wobble += p.wobbleSpeed;
-
-            if (p.x < -p.size) p.x = width + p.size;
-            if (p.x > width + p.size) p.x = -p.size;
-            if (p.y > height + p.size) p.y = -p.size;
-        });
-
-        petals.forEach(drawPetal);
-        animationFrameId = requestAnimationFrame(updateAnimation);
-    }
-
-    window.addEventListener('resize', () => {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        if(blossomCanvas) {
-            blossomCanvas.width = width;
-            blossomCanvas.height = height;
-        }
+    transactions.forEach(t => {
+        const dateStr = t.createdAt && t.createdAt.toDate ? t.createdAt.toDate().toISOString() : 'Pending';
+        // Clean textual definitions to ensure CSV column cell isolation
+        const cleanTitle = t.title.replace(/,/g, '');
+        const row = `${t.id},${cleanTitle},${t.amount},${t.type},${t.category},${t.status},${t.isRecurring},${dateStr}`;
+        csvContent += row + "\r\n";
     });
 
-    updateAnimation();
-}
-
-function toggleBlossomCanvas(show) {
-    if (show) {
-        if (!blossomCanvas) {
-            initBlossomEngine();
-        } else {
-            blossomCanvas.style.display = 'block';
-        }
-    } else {
-        if (blossomCanvas) {
-            blossomCanvas.style.display = 'none';
-        }
-    }
-}
-
-// Initial structural check when engine boots up
-document.addEventListener('DOMContentLoaded', () => {
-    if (!currentUser) toggleBlossomCanvas(true);
-    
-    // Ensure the initial layout sync matches whatever selector is present
-    const primaryThemeNode = document.querySelector('.theme-select');
-    if (primaryThemeNode) {
-        configureApplicationTheme(primaryThemeNode.value);
-    }
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Finance_Export_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 });
