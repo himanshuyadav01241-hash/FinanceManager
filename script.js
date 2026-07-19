@@ -37,7 +37,6 @@ const authSubtitle = document.getElementById('authSubtitle');
 
 const titleInput = document.getElementById('title');
 const amountInput = document.getElementById('amount');
-const transactionDateInput = document.getElementById('transactionDate'); 
 const typeSelect = document.getElementById('type');
 const categorySelect = document.getElementById('category');
 const statusSelect = document.getElementById('status');
@@ -61,9 +60,11 @@ const filterCategorySelect = document.getElementById('filterCategory');
 const startDateInput = document.getElementById('startDate');
 const endDateInput = document.getElementById('endDate');
 const transactionListEl = document.getElementById('transactionList');
-const exportBtn = document.getElementById('exportBtn');
-const purgeCategoryBtn = document.getElementById('purgeCategoryBtn');
-const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+
+// Integrated Unified Action Pipelines
+const dataActionSelector = document.getElementById('dataActionSelector');
+const dataActionButton = document.getElementById('dataActionButton');
+const importFileInputChannel = document.getElementById('importFileInputChannel');
 
 const modalOverlay = document.getElementById('customModalOverlay');
 const modalTitle = document.getElementById('modalTitle');
@@ -167,10 +168,6 @@ auth.onAuthStateChanged((user) => {
 // ==========================================
 
 function initializeUserWorkspace() {
-    if (transactionDateInput) {
-        transactionDateInput.value = new Date().toISOString().split('T')[0];
-    }
-
     db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
         if (doc.exists && doc.data().categories) {
             userCategories = doc.data().categories;
@@ -180,19 +177,10 @@ function initializeUserWorkspace() {
         renderCategorySelectors();
     });
 
-    // Kept at createdAt query configuration to avoid silent console index tracking faults
     db.collection('users').doc(currentUser.uid).collection('transactions')
         .orderBy('createdAt', 'desc')
         .onSnapshot(snapshot => {
             transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            // Client-side date evaluation fallback sort operation
-            transactions.sort((a, b) => {
-                const dateA = a.date || (a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().toISOString().split('T')[0] : '');
-                const dateB = b.date || (b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().toISOString().split('T')[0] : '');
-                return dateB.localeCompare(dateA);
-            });
-
             processCalculationsAndRender();
         }, error => {
             console.error("Firestore synchronizer crash: ", error);
@@ -212,8 +200,6 @@ if (addBtn) {
         const category = categorySelect.value;
         const status = statusSelect.value;
         const isRecurring = isRecurringCheck.checked;
-        
-        let chosenDate = transactionDateInput && transactionDateInput.value ? transactionDateInput.value : new Date().toISOString().split('T')[0];
 
         if (!title || isNaN(amount) || amount <= 0) {
             alert("Provide valid description and amount quantities.");
@@ -223,7 +209,6 @@ if (addBtn) {
         const payload = {
             title,
             amount,
-            date: chosenDate, 
             type,
             category,
             status,
@@ -236,9 +221,6 @@ if (addBtn) {
             titleInput.value = '';
             amountInput.value = '';
             isRecurringCheck.checked = false;
-            if (transactionDateInput) {
-                transactionDateInput.value = new Date().toISOString().split('T')[0];
-            }
         } catch (error) {
             alert("Operation failed targeting data pipeline.");
         }
@@ -253,40 +235,15 @@ async function deleteTransaction(id) {
     }
 }
 
-function openStatusChangeModal(transactionId, currentStatus) {
-    const modalInputsWrapper = document.getElementById('modalInputsWrapper');
-    const dynamicStatusField = document.getElementById('dynamicStatusField');
-    const updatedStatusDropdown = document.getElementById('updatedStatusDropdown');
-    const deleteConfirmationInput = document.getElementById('deleteConfirmationInput');
-
-    if (!modalInputsWrapper || !dynamicStatusField || !updatedStatusDropdown) {
-        const nextStatus = currentStatus === 'paid' ? 'pending' : 'paid';
-        if (confirm(`Change status to ${nextStatus === 'paid' ? 'Settled' : 'Pending'}?`)) {
-            db.collection('users').doc(currentUser.uid).collection('transactions').doc(transactionId).update({ status: nextStatus });
-        }
-        return;
+async function toggleStatus(id, currentStatus) {
+    const nextStatus = currentStatus === 'paid' ? 'pending' : 'paid';
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('transactions').doc(id).update({
+            status: nextStatus
+        });
+    } catch (error) {
+        console.error("Failed to alter status indicator.");
     }
-
-    if (deleteConfirmationInput) deleteConfirmationInput.style.display = 'none';
-    modalInputsWrapper.style.display = 'block';
-    dynamicStatusField.style.display = 'block';
-    updatedStatusDropdown.value = currentStatus;
-
-    displayModal(
-        "Update Payment Status",
-        "Select the updated accounting log tracking state for this record below:",
-        "fa-solid fa-file-invoice-dollar",
-        async () => {
-            const selectedStatusValue = updatedStatusDropdown.value;
-            try {
-                await db.collection('users').doc(currentUser.uid).collection('transactions').doc(transactionId).update({
-                    status: selectedStatusValue
-                });
-            } catch (error) {
-                alert("Failed to modify transaction state parameters.");
-            }
-        }
-    );
 }
 
 // ==========================================
@@ -390,22 +347,16 @@ function processCalculationsAndRender() {
 function renderLedger() {
     const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
     const catFilter = filterCategorySelect ? filterCategorySelect.value : 'all';
-    
-    const startVal = startDateInput && startDateInput.value ? new Date(startDateInput.value + 'T00:00:00') : null;
-    const endVal = endDateInput && endDateInput.value ? new Date(endDateInput.value + 'T23:59:59') : null;
+    const startVal = startDateInput && startDateInput.value ? new Date(startDateInput.value) : null;
+    const endVal = endDateInput && endDateInput.value ? new Date(endDateInput.value) : null;
 
     const filtered = transactions.filter(t => {
         const matchesSearch = t.title ? t.title.toLowerCase().includes(searchVal) : false;
         const matchesCat = (catFilter === 'all') || (t.category === catFilter);
         
         let matchesDate = true;
-        let txDateString = t.date;
-        if (!txDateString && t.createdAt && t.createdAt.toDate) {
-            txDateString = t.createdAt.toDate().toISOString().split('T')[0];
-        }
-
-        if (txDateString) {
-            const txDate = new Date(txDateString + 'T00:00:00');
+        if (t.createdAt && t.createdAt.toDate) {
+            const txDate = t.createdAt.toDate();
             if (startVal && txDate < startVal) matchesDate = false;
             if (endVal && txDate > endVal) matchesDate = false;
         }
@@ -419,7 +370,6 @@ function renderLedger() {
             const colorClass = t.type === 'income' ? 'incomeText' : 'expenseText';
             const statusClass = t.status === 'paid' ? 'status-paid' : 'status-pending';
             const statusText = t.status === 'paid' ? 'Settled' : 'Pending';
-            const displayDate = t.date ? t.date : (t.createdAt && t.createdAt.toDate ? t.createdAt.toDate().toISOString().split('T')[0] : '');
             const repeatIcon = t.isRecurring ? `<i class="fa-solid fa-arrows-rotate" title="Recurring Event" style="margin-left:5px; font-size:0.8rem; opacity:0.6;"></i>` : '';
 
             return `
@@ -427,7 +377,7 @@ function renderLedger() {
                     <div>
                         <h3 style="margin: 0 0 4px 0; font-size: 1rem;">${t.title} ${repeatIcon}</h3>
                         <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
-                            <span class="status-pill ${statusClass}" style="cursor:pointer;" onclick="openStatusChangeModal('${t.id}', '${t.status}')">${statusText}</span> · ${t.category} · <small>${displayDate}</small>
+                            <span class="status-badge ${statusClass}" style="cursor:pointer;" onclick="toggleStatus('${t.id}', '${t.status}')">${statusText}</span> · ${t.category}
                         </p>
                     </div>
                     <div style="display: flex; align-items: center; gap: 12px;">
@@ -507,29 +457,142 @@ function renderAnalyticsChart() {
 }
 
 // ==========================================
-// 9. DATA CONVERSION EXPORT MODULES (CSV)
+// 9. UNIFIED DATA PIPELINE (IMPORT & EXPORT)
 // ==========================================
 
-if (exportBtn) {
-    exportBtn.addEventListener('click', () => {
-        if (transactions.length === 0) {
-            alert("No transaction entries available for extraction.");
-            return;
+// Morph Action Trigger Button Based on Selector Channel
+if (dataActionSelector && dataActionButton) {
+    dataActionSelector.addEventListener('change', function() {
+        const mode = this.value;
+        dataActionButton.className = ''; // Reset danger states
+        
+        if (mode === 'export-csv') {
+            dataActionButton.innerHTML = `<i class="fa-solid fa-file-csv" style="margin-right:6px;"></i>Export CSV`;
+            dataActionButton.style.cssText = "width: 100%; background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);";
+        } else if (mode === 'import-file') {
+            dataActionButton.innerHTML = `<i class="fa-solid fa-file-import" style="margin-right:6px;"></i>Import File`;
+            dataActionButton.style.cssText = "width: 100%; background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);";
+        } else if (mode === 'purge-filtered') {
+            dataActionButton.innerHTML = `<i class="fa-solid fa-trash-can" style="margin-right:6px;"></i>Delete Filtered`;
+            dataActionButton.classList.add('danger-btn');
+            dataActionButton.style.width = "100%";
         }
+    });
+}
 
-        let csvContent = "data:text/csv;charset=utf-8,Description,Amount,Date,Type,Category,Status,Recurring\n";
-        transactions.forEach(t => {
-            const displayDate = t.date ? t.date : (t.createdAt && t.createdAt.toDate ? t.createdAt.toDate().toISOString().split('T')[0] : '');
-            csvContent += `"${t.title.replace(/"/g, '""')}",${t.amount},${displayDate},${t.type},${t.category},${t.status},${t.isRecurring}\n`;
-        });
+// Route Central Click Events
+if (dataActionButton) {
+    dataActionButton.addEventListener('click', () => {
+        const currentMode = dataActionSelector ? dataActionSelector.value : 'export-csv';
+        
+        if (currentMode === 'export-csv') {
+            executeCSVExport();
+        } else if (currentMode === 'import-file') {
+            if (importFileInputChannel) importFileInputChannel.click();
+        } else if (currentMode === 'purge-filtered') {
+            triggerPurgeModal();
+        }
+    });
+}
 
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Ledger_Export_${new Date().toISOString().slice(0,10)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+// Data Export Core Logic
+function executeCSVExport() {
+    if (transactions.length === 0) {
+        alert("No transaction entries available for extraction.");
+        return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,Description,Amount,Type,Category,Status,Recurring\n";
+    transactions.forEach(t => {
+        csvContent += `"${t.title.replace(/"/g, '""')}",${t.amount},${t.type},${t.category},${t.status},${t.isRecurring}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Ledger_Export_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// File Import Processing Subsystem (Supports CSV, XLSX, XLS via SheetJS)
+if (importFileInputChannel) {
+    importFileInputChannel.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        const ext = file.name.split('.').pop().toLowerCase();
+
+        reader.onload = async function(evt) {
+            try {
+                let rows = [];
+                
+                if (ext === 'csv') {
+                    const text = evt.target.result;
+                    // Robust simple parsing array split for standard CSV strings
+                    rows = text.split('\n').map(row => row.split(',').map(cell => cell.replace(/^["']|["']$/g, '').trim()));
+                } else if (ext === 'xlsx' || ext === 'xls') {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                }
+
+                if (rows.length <= 1) {
+                    alert("Import file is empty or missing data headers.");
+                    return;
+                }
+
+                // Batch upload configuration targeting Firestore loops
+                const batch = db.batch();
+                let entriesCount = 0;
+
+                // Loop skips row index 0 (assumed metadata header row)
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row || row.length < 2 || !row[0]) continue; // Check for trailing empty rows
+
+                    const title = row[0];
+                    const amount = parseFloat(row[1]);
+                    const type = (row[2] || 'expense').toLowerCase();
+                    const category = row[3] || 'Utilities';
+                    const status = (row[4] || 'paid').toLowerCase();
+                    const isRecurring = String(row[5]).toLowerCase() === 'true';
+
+                    if (isNaN(amount)) continue;
+
+                    const ref = db.collection('users').doc(currentUser.uid).collection('transactions').doc();
+                    batch.set(ref, {
+                        title,
+                        amount,
+                        type: type.includes('inc') ? 'income' : 'expense',
+                        category,
+                        status: status.includes('pend') ? 'pending' : 'paid',
+                        isRecurring,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    entriesCount++;
+                }
+
+                if (entriesCount > 0) {
+                    await batch.commit();
+                    alert(`Successfully imported ${entriesCount} transactions!`);
+                } else {
+                    alert("No valid numerical transaction logs discovered.");
+                }
+            } catch (err) {
+                alert("File corruption or mapping structure mismatch: " + err.message);
+            }
+        };
+
+        if (ext === 'csv') {
+            reader.readAsText(file);
+        } else {
+            reader.readAsArrayBuffer(file);
+        }
+        e.target.value = ''; // Flush pointer for re-uploads
     });
 }
 
@@ -548,12 +611,6 @@ function displayModal(title, description, iconClass, confirmAction) {
 if (modalCancelBtn) {
     modalCancelBtn.addEventListener('click', () => {
         if(modalOverlay) modalOverlay.style.display = 'none';
-        
-        const modalInputsWrapper = document.getElementById('modalInputsWrapper');
-        const dynamicStatusField = document.getElementById('dynamicStatusField');
-        if (modalInputsWrapper) modalInputsWrapper.style.display = 'none';
-        if (dynamicStatusField) dynamicStatusField.style.display = 'none';
-        
         currentModalAction = null;
     });
 }
@@ -564,37 +621,30 @@ if (modalConfirmBtn) {
             currentModalAction();
         }
         if(modalOverlay) modalOverlay.style.display = 'none';
-        
-        const modalInputsWrapper = document.getElementById('modalInputsWrapper');
-        const dynamicStatusField = document.getElementById('dynamicStatusField');
-        if (modalInputsWrapper) modalInputsWrapper.style.display = 'none';
-        if (dynamicStatusField) dynamicStatusField.style.display = 'none';
     });
 }
 
-if (purgeCategoryBtn) {
-    purgeCategoryBtn.addEventListener('click', () => {
-        const targetCat = filterCategorySelect ? filterCategorySelect.value : 'all';
-        const desc = targetCat === 'all' 
-            ? "This will delete every transaction history item logged in your profile."
-            : `This will completely wipe all ledger entries under the category: "${targetCat}".`;
+function triggerPurgeModal() {
+    const targetCat = filterCategorySelect ? filterCategorySelect.value : 'all';
+    const desc = targetCat === 'all' 
+        ? "This will delete every transaction history item logged in your profile."
+        : `This will completely wipe all ledger entries under the category: "${targetCat}".`;
 
-        displayModal(
-            "Purge Transaction Logs?",
-            desc,
-            "fa-solid fa-triangle-exclamation",
-            async () => {
-                const batch = db.batch();
-                transactions.forEach(t => {
-                    if (targetCat === 'all' || t.category === targetCat) {
-                        const ref = db.collection('users').doc(currentUser.uid).collection('transactions').doc(t.id);
-                        batch.delete(ref);
-                    }
-                });
-                await batch.commit();
-            }
-        );
-    });
+    displayModal(
+        "Purge Transaction Logs?",
+        desc,
+        "fa-solid fa-triangle-exclamation",
+        async () => {
+            const batch = db.batch();
+            transactions.forEach(t => {
+                if (targetCat === 'all' || t.category === targetCat) {
+                    const ref = db.collection('users').doc(currentUser.uid).collection('transactions').doc(t.id);
+                    batch.delete(ref);
+                }
+            });
+            await batch.commit();
+        }
+    );
 }
 
 if (deleteAccountBtn) {
@@ -708,16 +758,7 @@ function initBlossomEngine() {
         if (!blossomCtx) return;
         blossomCtx.clearRect(0, 0, width, height);
         
-        petals.forEach(p => {
-            p.x += p.speedX + Math.sin(p.wobble) * 0.2;
-            p.y += p.speedY;
-            p.rotation += 0.006;
-            p.wobble += p.wobbleSpeed;
-
-            if (p.x < -p.size) p.x = width + p.size;
-            if (p.x > width + p.size) p.x = -p.size;
-            if (p.y > height + p.size) p.y = -p.size;
-        });
+        boxPetalsLoop(petals, width, height);
 
         petals.forEach(drawPetal);
         animationFrameId = requestAnimationFrame(updateAnimation);
@@ -735,6 +776,19 @@ function initBlossomEngine() {
     updateAnimation();
 }
 
+function boxPetalsLoop(petals, width, height) {
+    petals.forEach(p => {
+        p.x += p.speedX + Math.sin(p.wobble) * 0.2;
+        p.y += p.speedY;
+        p.rotation += 0.006;
+        p.wobble += p.wobbleSpeed;
+
+        if (p.x < -p.size) p.x = width + p.size;
+        if (p.x > width + p.size) p.x = -p.size;
+        if (p.y > height + p.size) p.y = -p.size;
+    });
+}
+
 function toggleBlossomCanvas(show) {
     if (show) {
         if (!blossomCanvas) {
@@ -749,6 +803,7 @@ function toggleBlossomCanvas(show) {
     }
 }
 
+// Initial structural check when engine boots up
 document.addEventListener('DOMContentLoaded', () => {
     if (!currentUser) toggleBlossomCanvas(true);
     
