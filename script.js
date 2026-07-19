@@ -608,27 +608,35 @@ DOM.modalConfirmBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// 9. ROBUST HYBRID AUTH ENGINE PIPELINE (MOBILE OPTIMIZED)
+// 9. HIGH-COMPATIBILITY AUTH ENGINE PIPELINE (UNIVERSAL FIX)
 // ==========================================
 DOM.googleBtn.addEventListener('click', () => {
-    // Detect mobile/tablet screen environment profiles
-    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
-
+    // Set explicit localized persistence matrix
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         .then(() => {
-            if (isMobileDevice) {
-                // High compatibility fallback routine for isolated mobile environments
-                // Forces the provider to handle sign-in through a top-level window layout instead of a partitioned frame.
-                googleProvider.setCustomParameters({ prompt: 'select_account' });
-                return auth.signInWithRedirect(googleProvider);
-            } else {
-                // Native popups operate smoothly on desktop instances
-                return auth.signInWithPopup(googleProvider);
+            // Force select_account parameter to reset stuck session loops
+            googleProvider.setCustomParameters({ prompt: 'select_account' });
+            
+            // Popups are significantly more stable on modern mobile devices 
+            // than Redirects, which lose token state due to cookie partitioning.
+            return auth.signInWithPopup(googleProvider);
+        })
+        .then((result) => {
+            if (result && result.user) {
+                console.log("Popup login successful:", result.user.email);
+                handleUserSessionRouting(result.user);
             }
         })
         .catch((error) => {
             console.error("Firebase Auth Exception Error Context:", error);
-            alert(`Authentication Error: ${error.message}`);
+            
+            // Fallback to redirect ONLY if the mobile device completely blocks popups
+            if (error.code === 'auth/popup-blocked') {
+                console.log("Popup blocked. Engaging mobile redirect fallback strategy...");
+                return auth.signInWithRedirect(googleProvider);
+            } else {
+                alert(`Authentication Error: ${error.message}`);
+            }
         });
 });
 
@@ -640,36 +648,42 @@ DOM.logoutBtn.addEventListener('click', () => {
         .catch((error) => alert(`Sign Out Failed: ${error.message}`));
 });
 
-// Capture any incoming tokens returning from mobile redirect pipelines safely on initialization mount
+// Standalone UI routing controller to prevent white-screen/same-page loops
+function handleUserSessionRouting(user) {
+    if (user && user.email) {
+        const userIdentityKey = user.email.trim().toLowerCase().replace(/[^a-z0-9@.]/g, '_');
+        loadStateFromStorage(userIdentityKey);
+        
+        // Safety checks to mutate interface visibility state safely
+        if (DOM.authScreen) DOM.authScreen.style.display = 'none';
+        if (DOM.app) DOM.app.style.display = 'block';
+        
+        updateApplicationUI();
+    }
+}
+
+// Safely catch any lingering redirect operations fallback states
 auth.getRedirectResult()
     .then((result) => {
         if (result && result.user) {
-            console.log("Redirect routine successfully connected identity profiling for:", result.user.email);
+            handleUserSessionRouting(result.user);
         }
     })
     .catch((error) => {
-        console.error("Error processing mobile authentication routing callback:", error);
-        // Silently bypass expected cross-origin iframe storage restrictions
-        if (error.code !== 'auth/web-storage-unsupported') {
-            alert(`Mobile Sign-in Routing Notice: ${error.message}`);
-        }
+        console.error("Error processing authentication redirect loop callback:", error);
     });
 
+// Global authentication lifecycle state observer loop
 auth.onAuthStateChanged((user) => {
-    if (user && user.email) {
-        const userIdentityKey = user.email.trim().toLowerCase().replace(/[^a-z0-9@.]/g, '_');
-        
-        loadStateFromStorage(userIdentityKey);
-        DOM.authScreen.style.display = 'none';
-        DOM.app.style.display = 'block';
-        updateApplicationUI();
+    if (user) {
+        handleUserSessionRouting(user);
     } else {
         state.user = null;
         state.transactions = [];
         state.categories = { ...DEFAULT_CATEGORIES };
         
-        DOM.app.style.display = 'none';
-        DOM.authScreen.style.display = 'flex';
+        if (DOM.app) DOM.app.style.display = 'none';
+        if (DOM.authScreen) DOM.authScreen.style.display = 'flex';
         
         if (analyticsChart) {
             analyticsChart.destroy();
