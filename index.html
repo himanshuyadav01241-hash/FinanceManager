@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance Tracker</title>
+    <title>FinanceOs</title>
     <!-- FontAwesome for UI Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js for graphical analytics -->
@@ -126,19 +126,30 @@
             text-align: center;
         }
 
-        /* Enhanced explicit visibility overrides for the Auth Card text elements */
-        .auth-card h2 {
+        .auth-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .auth-brand i {
+            font-size: 1.8rem;
+            color: #ff6b84;
+        }
+
+        .auth-brand h2 {
             color: #2d0c16 !important;
             font-size: 1.8rem;
             font-weight: 700;
-            margin: 12px 0 8px 0;
+            margin: 0;
         }
 
         .auth-card p {
             color: #5c3a43 !important;
             font-size: 0.95rem;
             line-height: 1.5;
-            margin: 0 0 24px 0;
+            margin: 4px 0 24px 0;
         }
 
         .auth-form {
@@ -178,7 +189,7 @@
 
         .auth-btn-primary {
             width: 100%;
-            background: #ff6b84; /* Vibrant pink-red accent for higher login prominence */
+            background: #ff6b84;
             color: white;
             border: none;
             padding: 14px;
@@ -364,8 +375,10 @@
          ========================================== -->
     <div id="authScreen">
         <div class="auth-card">
-            <i class="fa-solid fa-wallet" style="font-size: 3.2rem; color: #ff6b84; margin-bottom: 10px;"></i>
-            <h2 id="authTitle">Welcome Back</h2>
+            <div class="auth-brand">
+                <i class="fa-solid fa-wallet"></i>
+                <h2 id="authTitle">FinanceOs</h2>
+            </div>
             <p id="authSubtitle">
                 Sign in to manage and secure your transactions across all your devices instantly.
             </p>
@@ -401,8 +414,9 @@
          ========================================== -->
     <div id="app">
         <header>
-            <div>
-                <h1 style="margin:0; font-size: 1.5rem;">Dashboard</h1>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-wallet" style="font-size: 1.5rem; color: var(--primary-accent);"></i>
+                <h1 style="margin:0; font-size: 1.5rem;">FinanceOs</h1>
             </div>
             <div class="user-controls">
                 <select id="theme">
