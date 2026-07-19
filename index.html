@@ -321,6 +321,7 @@
         .status-paid { background: rgba(15, 157, 88, 0.15); color: var(--success-accent); }
         .status-pending { background: rgba(244, 180, 0, 0.15); color: var(--warning-accent); }
 
+        /* Modal Overlay & Styling Content Updates */
         .modal-overlay {
             position: fixed; top:0; left:0; width:100%; height:100%;
             background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center;
@@ -334,7 +335,7 @@
         }
         
         .modal-icon-holder { font-size: 3rem; margin-bottom: 15px; }
-        .modal-inputs-wrapper input { width: 100%; margin-top: 15px; text-align: center; }
+        .modal-inputs-wrapper input { width: 100%; margin-top: 15px; text-align: center; letter-spacing: 2px; font-weight: bold; }
         .modal-buttons-wrapper { display: flex; gap: 12px; justify-content: center; margin-top: 25px; }
 
         /* ==========================================
@@ -528,12 +529,18 @@
         </div>
     </div>
 
-    <!-- SYSTEM PROMPT MODALS -->
+    <!-- SYSTEM PROMPT MODALS WITH CONFIRMATION INPUT -->
     <div class="modal-overlay" id="customModalOverlay">
         <div class="modal-content">
             <div id="modalIconContainer" class="modal-icon-holder"></div>
             <h3 id="modalTitle" style="margin-top:0; margin-bottom:10px;">Confirm Action</h3>
             <p id="modalDescription" style="color:var(--text-muted); font-size:0.9rem; margin:0; line-height:1.4;"></p>
+            
+            <!-- Secure Text Input container inside the modal context -->
+            <div id="modalInputsWrapper" class="modal-inputs-wrapper" style="display: none;">
+                <input type="text" id="deleteConfirmationInput" placeholder="Type CONFIRM to proceed">
+            </div>
+
             <div class="modal-buttons-wrapper">
                 <button id="modalCancelBtn" style="background:var(--bg-input);">Cancel</button>
                 <button id="modalConfirmBtn" class="danger-btn">Confirm</button>
