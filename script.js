@@ -1,729 +1,566 @@
 // ==========================================
-// 1. FIREBASE & STATE INITIALIZATION
+// 1. FIREBASE CONFIGURATION & INITIALIZATION
 // ==========================================
+// TODO: Replace these placeholders with your actual Firebase project credentials
 const firebaseConfig = {
-    apiKey: "AIzaSyCCnwz-4HDj0baMMfhJ0oHWXfuhrFTvIr0",
-    authDomain: "financeos-6eaf2.firebaseapp.com",
-    projectId: "financeos-6eaf2",
-    storageBucket: "financeos-6eaf2.firebasestorage.app",
-    messagingSenderId: "503013740949",
-    appId: "1:503013740949:web:a18ef8f8433711a672e69c",
-    measurementId: "G-F769EYMHLJ"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
-// Initialize Firebase Core, Auth, and Firestore Cloud Database
-firebase.initializeApp(firebaseConfig);
+// Initialize Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
 const auth = firebase.auth();
-const db = firebase.firestore(); // Added Cloud Database instance
-const googleProvider = new firebase.auth.GoogleAuthProvider();
-
-let state = {
-    user: null,
-    transactions: [],
-    categories: {
-        "Food": 5000,
-        "Utilities": 3000,
-        "Entertainment": 2000,
-        "Salary": 0
-    },
-    theme: "dark"
-};
-
-const DEFAULT_CATEGORIES = { "Food": 5000, "Utilities": 3000, "Entertainment": 2000, "Salary": 0 };
-let analyticsChart = null;
-let currentModalAction = null;
+const db = firebase.firestore();
 
 // ==========================================
 // 2. DOM ELEMENT SELECTORS
 // ==========================================
-const DOM = {
-    authScreen: document.getElementById('authScreen'),
-    app: document.getElementById('app'),
-    googleBtn: document.getElementById('googleBtn'),
-    logoutBtn: document.getElementById('logoutBtn'),
-    themeSelect: document.getElementById('theme'),
-    
-    // Summary Cards
-    balance: document.getElementById('balance'),
-    healthBadge: document.getElementById('healthBadge'),
-    income: document.getElementById('income'),
-    pendingIncome: document.getElementById('pendingIncome'),
-    expense: document.getElementById('expense'),
-    pendingExpense: document.getElementById('pendingExpense'),
-    savingRate: document.getElementById('saving'),
-    
-    // Ingestion Forms
-    titleInput: document.getElementById('title'),
-    amountInput: document.getElementById('amount'),
-    typeSelect: document.getElementById('type'),
-    categorySelect: document.getElementById('category'),
-    statusSelect: document.getElementById('status'),
-    isRecurringCheckbox: document.getElementById('isRecurring'),
-    addTransactionBtn: document.getElementById('addBtn'),
-    
-    // Category Management
-    newCategoryInput: document.getElementById('newCategory'),
-    addCategoryBtn: document.getElementById('addCategory'),
-    categoryList: document.getElementById('categoryList'),
-    filterCategory: document.getElementById('filterCategory'),
-    
-    // Ledger History & Global Workspace Actions
-    transactionList: document.getElementById('transactionList'),
-    searchInput: document.getElementById('search'),
-    startDateInput: document.getElementById('startDate'),
-    endDateInput: document.getElementById('endDate'),
-    exportBtn: document.getElementById('exportBtn'),
-    purgeViewBtn: document.getElementById('purgeCategoryBtn'),
-    deleteAccountBtn: document.getElementById('deleteAccountBtn'),
-    
-    // Custom Dialogue Engine Core Elements
-    modalOverlay: document.getElementById('customModalOverlay'),
-    modalIcon: document.getElementById('modalIconContainer'),
-    modalTitle: document.getElementById('modalTitle'),
-    modalDesc: document.getElementById('modalDescription'),
-    modalInputConfirm: document.getElementById('modalConfirmationInput'),
-    modalInputSecondary: document.getElementById('modalSecondaryInput'),
-    modalInputBudget: document.getElementById('modalBudgetInput'),
-    modalCancelBtn: document.getElementById('modalCancelBtn'),
-    modalConfirmBtn: document.getElementById('modalConfirmBtn')
-};
+const authScreen = document.getElementById('authScreen');
+const appScreen = document.getElementById('app');
+const googleBtn = document.getElementById('googleBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const themeSelect = document.getElementById('theme');
+
+// Custom Auth Form Selectors
+const emailAuthForm = document.getElementById('emailAuthForm');
+const authEmail = document.getElementById('authEmail');
+const authPassword = document.getElementById('authPassword');
+const customAuthBtn = document.getElementById('customAuthBtn');
+const toggleAuthMode = document.getElementById('toggleAuthMode');
+const authTitle = document.getElementById('authTitle');
+const authSubtitle = document.getElementById('authSubtitle');
+
+// Transaction Form Selectors
+const titleInput = document.getElementById('title');
+const amountInput = document.getElementById('amount');
+const typeSelect = document.getElementById('type');
+const categorySelect = document.getElementById('category');
+const statusSelect = document.getElementById('status');
+const isRecurringCheck = document.getElementById('isRecurring');
+const addBtn = document.getElementById('addBtn');
+
+// Metrics Selectors
+const balanceEl = document.getElementById('balance');
+const healthBadgeEl = document.getElementById('healthBadge');
+const incomeEl = document.getElementById('income');
+const pendingIncomeEl = document.getElementById('pendingIncome');
+const expenseEl = document.getElementById('expense');
+const pendingExpenseEl = document.getElementById('pendingExpense');
+const savingEl = document.getElementById('saving');
+
+// Categories Selectors
+const newCategoryInput = document.getElementById('newCategory');
+const addCategoryBtn = document.getElementById('addCategory');
+const categoryListEl = document.getElementById('categoryList');
+
+// Filter & Ledger Selectors
+const searchInput = document.getElementById('search');
+const filterCategorySelect = document.getElementById('filterCategory');
+const startDateInput = document.getElementById('startDate');
+const endDateInput = document.getElementById('endDate');
+const transactionListEl = document.getElementById('transactionList');
+const exportBtn = document.getElementById('exportBtn');
+const purgeCategoryBtn = document.getElementById('purgeCategoryBtn');
+const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+
+// Modal Elements
+const modalOverlay = document.getElementById('customModalOverlay');
+const modalTitle = document.getElementById('modalTitle');
+const modalDescription = document.getElementById('modalDescription');
+const modalIconContainer = document.getElementById('modalIconContainer');
+const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+// Global Application State Variables
+let currentUser = null;
+let transactions = [];
+let userCategories = ["Salary", "Food", "Rent", "Utilities", "Entertainment"];
+let analyticsChart = null;
+let currentModalAction = null;
+let isLoginMode = true;
 
 // ==========================================
-// 3. CLOUD STORAGE & STATE PERSISTENCE CONTROLLERS
+// 3. AUTHENTICATION SERVICES
 // ==========================================
-function saveStateToStorage() {
-    if (state.user) {
-        // Pushes state modifications to Firebase Cloud Firestore immediately
-        db.collection("users").doc(state.user).set({
-            transactions: state.transactions,
-            categories: state.categories,
-            theme: state.theme
-        })
-        .then(() => console.log("Cloud database synchronized successfully."))
-        .catch((error) => console.error("Cloud database synchronization failed: ", error));
-    }
-}
 
-function loadStateFromStorage(userId) {
-    state.user = userId;
-    
-    // Pulls state dynamically down from Cloud Firestore infrastructure
-    db.collection("users").doc(userId).get()
-        .then((doc) => {
-            if (doc.exists) {
-                const parsed = doc.data();
-                state.transactions = parsed.transactions || [];
-                state.categories = parsed.categories || DEFAULT_CATEGORIES;
-                state.theme = parsed.theme || "dark";
-            } else {
-                // If it's a completely brand new user layout structure, deploy baseline setup rules
-                state.transactions = [];
-                state.categories = { ...DEFAULT_CATEGORIES };
-                state.theme = "dark";
-            }
-            
-            checkAndProcessRecurringTransactions();
-            updateApplicationUI();
-        })
-        .catch((error) => {
-            console.error("Failed to read user data profile records from Cloud storage: ", error);
-        });
-}
-
-// ==========================================
-// 4. DIALOGUE MODAL ENGINE SYSTEM (PROMPT ROUTING)
-// ==========================================
-function openModal({ icon, title, desc, type, onConfirm }) {
-    DOM.modalOverlay.style.display = 'flex';
-    DOM.modalConfirmBtn.style.display = 'inline-block';
-    DOM.modalIcon.innerHTML = icon;
-    DOM.modalTitle.textContent = title;
-    DOM.modalDesc.textContent = desc;
-    
-    DOM.modalInputConfirm.style.display = 'none';
-    DOM.modalInputSecondary.style.display = 'none';
-    DOM.modalInputBudget.style.display = 'none';
-    DOM.modalInputConfirm.value = '';
-    DOM.modalInputSecondary.value = '';
-    DOM.modalInputBudget.value = '';
-
-    if (type === 'deleteAccount') {
-        DOM.modalInputConfirm.style.display = 'block';
-        DOM.modalInputConfirm.placeholder = 'Type "DELETE" to confirm';
-    } else if (type === 'setBudget') {
-        DOM.modalInputBudget.style.display = 'block';
-        DOM.modalInputBudget.placeholder = 'Monthly Target (₹)';
-    }
-
-    currentModalAction = onConfirm;
-}
-
-function closeModal() {
-    DOM.modalOverlay.style.display = 'none';
-    currentModalAction = null;
-}
-
-// ==========================================
-// 5. CORE TRANSACTION ENGINE & CALCULATIONS
-// ==========================================
-function checkAndProcessRecurringTransactions() {
-    const today = new Date();
-    const currentMonthYear = `${today.getMonth()}-${today.getFullYear()}`;
-    let stateMutated = false;
-
-    state.transactions.forEach(t => {
-        if (t.isRecurring && t.lastGeneratedMonthYear !== currentMonthYear) {
-            const lastGenDate = new Date(t.date);
-            if (today.getMonth() !== lastGenDate.getMonth() || today.getFullYear() !== lastGenDate.getFullYear()) {
-                
-                const recurrenceClone = {
-                    id: 'tx_' + Date.now() + Math.random().toString(36).substr(2, 4),
-                    title: `[Auto-Repeat] ${t.title}`,
-                    amount: t.amount,
-                    type: t.type,
-                    category: t.category,
-                    status: t.status, 
-                    date: today.toISOString().split('T')[0],
-                    isRecurring: true,
-                    lastGeneratedMonthYear: currentMonthYear
-                };
-                
-                t.lastGeneratedMonthYear = currentMonthYear;
-                state.transactions.push(recurrenceClone);
-                stateMutated = true;
-            }
-        }
-    });
-
-    if (stateMutated) saveStateToStorage();
-}
-
-function updateApplicationUI() {
-    document.body.setAttribute('data-theme', state.theme);
-    DOM.themeSelect.value = state.theme;
-
-    let totalSettledIncome = 0;
-    let totalPendingIncome = 0;
-    let totalSettledExpense = 0;
-    let totalPendingExpense = 0;
-
-    state.transactions.forEach(t => {
-        const amt = parseFloat(t.amount) || 0;
-        if (t.type === 'income') {
-            if (t.status === 'paid') totalSettledIncome += amt;
-            else totalPendingIncome += amt;
-        } else {
-            if (t.status === 'paid') totalSettledExpense += amt;
-            else totalPendingExpense += amt;
-        }
-    });
-
-    const absoluteWalletBalance = totalSettledIncome - totalSettledExpense;
-    
-    DOM.balance.textContent = `₹${absoluteWalletBalance.toLocaleString('en-IN')}`;
-    DOM.income.textContent = `₹${totalSettledIncome.toLocaleString('en-IN')}`;
-    DOM.pendingIncome.textContent = `₹${totalPendingIncome.toLocaleString('en-IN')}`;
-    DOM.expense.textContent = `₹${totalSettledExpense.toLocaleString('en-IN')}`;
-    DOM.pendingExpense.textContent = `₹${totalPendingExpense.toLocaleString('en-IN')}`;
-
-    let savingsRatePercentage = 0;
-    if (totalSettledIncome > 0) {
-        savingsRatePercentage = Math.round(((totalSettledIncome - totalSettledExpense) / totalSettledIncome) * 100);
-    }
-    DOM.savingRate.textContent = `${savingsRatePercentage < 0 ? 0 : savingsRatePercentage}%`;
-
-    DOM.healthBadge.className = 'badge';
-    if (absoluteWalletBalance < 0) {
-        DOM.healthBadge.textContent = "Deficit Danger";
-        DOM.healthBadge.classList.add('badge-danger');
-    } else if (savingsRatePercentage < 20) {
-        DOM.healthBadge.textContent = "Low Savings Rate";
-        DOM.healthBadge.classList.add('badge-warn');
+// Toggle Custom Auth Forms UI
+toggleAuthMode.addEventListener('click', () => {
+    isLoginMode = !isLoginMode;
+    if (isLoginMode) {
+        authTitle.textContent = "Welcome Back";
+        authSubtitle.textContent = "Sign in to manage and secure your transactions across all your devices instantly.";
+        customAuthBtn.textContent = "Sign In";
+        toggleAuthMode.textContent = "Don't have an account? Sign Up";
     } else {
-        DOM.healthBadge.textContent = "Healthy Cashflow";
-        DOM.healthBadge.classList.add('badge-good');
+        authTitle.textContent = "Create Account";
+        authSubtitle.textContent = "Sign up now to start tracking your finances across devices seamlessly.";
+        customAuthBtn.textContent = "Sign Up";
+        toggleAuthMode.textContent = "Already have an account? Sign In";
     }
+});
 
-    populateCategorySelectors();
-    renderCategorySettingsPanel(totalSettledExpense);
-    renderLedgerTransactions();
-    renderAnalyticsGraphs();
-}
+// Custom Email / Password Authenticator
+customAuthBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = authEmail.value.trim();
+    const password = authPassword.value;
 
-function populateCategorySelectors() {
-    const currentFilterVal = DOM.filterCategory.value;
-    
-    DOM.categorySelect.innerHTML = '';
-    DOM.filterCategory.innerHTML = '<option value="all">All Categories</option>';
-    
-    Object.keys(state.categories).forEach(cat => {
-        const opt1 = document.createElement('option');
-        opt1.value = cat; opt1.textContent = cat;
-        DOM.categorySelect.appendChild(opt1);
-        
-        const opt2 = document.createElement('option');
-        opt2.value = cat; opt2.textContent = cat;
-        DOM.filterCategory.appendChild(opt2);
-    });
-
-    if (state.categories[currentFilterVal] || currentFilterVal === 'all') {
-        DOM.filterCategory.value = currentFilterVal;
-    }
-}
-
-function renderCategorySettingsPanel(totalSettledExpense) {
-    DOM.categoryList.innerHTML = '';
-    
-    const spendingMap = {};
-    state.transactions.forEach(t => {
-        if (t.type === 'expense' && t.status === 'paid') {
-            spendingMap[t.category] = (spendingMap[t.category] || 0) + parseFloat(t.amount);
-        }
-    });
-
-    Object.keys(state.categories).forEach(catName => {
-        const budgetTarget = state.categories[catName] || 0;
-        const actualSpent = spendingMap[catName] || 0;
-        
-        const card = document.createElement('div');
-        card.className = 'categoryCard';
-        
-        let budgetContextHtml = `<small style="display:block; opacity:0.6; margin-top:2px;">No Budget Set</small>`;
-        if (budgetTarget > 0) {
-            const percent = Math.round((actualSpent / budgetTarget) * 100);
-            budgetContextHtml = `<small style="display:block; margin-top:2px; color:${percent > 100 ? '#d9534f' : 'inherit'}">Budget: ₹${actualSpent}/₹${budgetTarget} (${percent}%)</small>`;
-        }
-
-        card.innerHTML = `
-            <div style="flex:1;">
-                <strong>${catName}</strong>
-                ${budgetContextHtml}
-            </div>
-            <div style="display:flex; gap:8px;">
-                <button class="actionBtn editBudgetBtn" data-cat="${catName}" title="Set Target Budget" style="background:transparent; border:none; cursor:pointer;"><i class="fa-solid fa-sliders" style="color:#4285F4"></i></button>
-                <button class="actionBtn removeCatBtn" data-cat="${catName}" title="Delete Category" style="background:transparent; border:none; cursor:pointer;"><i class="fa-solid fa-trash-can" style="color:#d9534f"></i></button>
-            </div>
-        `;
-        DOM.categoryList.appendChild(card);
-    });
-
-    document.querySelectorAll('.editBudgetBtn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const cat = e.currentTarget.getAttribute('data-cat');
-            openModal({
-                icon: '<i class="fa-solid fa-money-bill-trend-up" style="color:#4285F4"></i>',
-                title: `Budget Setup: ${cat}`,
-                desc: `Adjust dynamic spending limits for this node:`,
-                type: 'setBudget',
-                onConfirm: () => {
-                    const budgetValue = parseFloat(DOM.modalInputBudget.value);
-                    if (!isNaN(budgetValue) && budgetValue >= 0) {
-                        state.categories[cat] = budgetValue;
-                        saveStateToStorage();
-                        updateApplicationUI();
-                        closeModal();
-                    }
-                }
-            });
-        });
-    });
-
-    document.querySelectorAll('.removeCatBtn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const cat = e.currentTarget.getAttribute('data-cat');
-            openModal({
-                icon: '<i class="fa-solid fa-triangle-exclamation" style="color:#d9534f"></i>',
-                title: 'Delete Category?',
-                desc: `Are you sure you want to drop standard configuration rules for "${cat}"?`,
-                type: 'standard',
-                onConfirm: () => {
-                    delete state.categories[cat];
-                    saveStateToStorage();
-                    updateApplicationUI();
-                    closeModal();
-                }
-            });
-        });
-    });
-}
-
-// ==========================================
-// 6. LEDGER RENDERING ENGINE & FILTER RIBBON
-// ==========================================
-function getFilteredTransactions() {
-    const searchTerm = DOM.searchInput.value.toLowerCase().trim();
-    const catFilter = DOM.filterCategory.value;
-    const startRange = DOM.startDateInput.value ? new Date(DOM.startDateInput.value) : null;
-    const endRange = DOM.endDateInput.value ? new Date(DOM.endDateInput.value) : null;
-
-    return state.transactions.filter(t => {
-        const txDate = new Date(t.date);
-        
-        const matchSearch = t.title.toLowerCase().includes(searchTerm) || t.category.toLowerCase().includes(searchTerm);
-        const matchCat = (catFilter === 'all') || (t.category === catFilter);
-        
-        let matchDate = true;
-        if (startRange) { txDate.setHours(0,0,0,0); startRange.setHours(0,0,0,0); matchDate = matchDate && (txDate >= startRange); }
-        if (endRange) { txDate.setHours(0,0,0,0); endRange.setHours(0,0,0,0); matchDate = matchDate && (txDate <= endRange); }
-
-        return matchSearch && matchCat && matchDate;
-    });
-}
-
-function renderLedgerTransactions() {
-    DOM.transactionList.innerHTML = '';
-    const itemsToView = getFilteredTransactions();
-
-    if (itemsToView.length === 0) {
-        DOM.transactionList.innerHTML = `<li style="padding:20px; text-align:center; opacity:0.5; list-style:none;">No records match your active query.</li>`;
+    if (!email || !password) {
+        alert("Please complete all requested sign-in credentials.");
         return;
     }
 
-    itemsToView.sort((a,b) => new Date(b.date) - new Date(a.date));
-
-    itemsToView.forEach(t => {
-        const li = document.createElement('li');
-        li.className = 'transaction';
-        li.style.display = 'flex';
-        li.style.justifyContent = 'between';
-        li.style.alignItems = 'center';
-        li.style.padding = '12px';
-        li.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-        
-        const isExpense = t.type === 'expense';
-        const symbol = isExpense ? '-' : '+';
-        const colorClass = isExpense ? 'expenseText' : 'incomeText';
-        const statusBadgeClass = t.status === 'paid' ? 'status-paid' : 'status-pending';
-        const statusText = t.status === 'paid' ? 'Settled' : 'Pending';
-        const repeatIcon = t.isRecurring ? '<i class="fa-solid fa-arrows-rotate" style="font-size:10px; margin-left:4px; opacity:0.7;" title="Automation Enabled"></i>' : '';
-
-        li.innerHTML = `
-            <div style="flex:1;">
-                <strong>${t.title}</strong> ${repeatIcon}
-                <p style="margin:2px 0 0 0; font-size:0.8rem; opacity:0.6;">${t.category} • ${t.date}</p>
-            </div>
-            <div style="text-align:right; margin-right:16px;">
-                <span class="amount ${colorClass}" style="font-weight:600; display:block;">${symbol}₹${parseFloat(t.amount).toLocaleString('en-IN')}</span>
-                <span class="status-badge ${statusBadgeClass}" data-id="${t.id}" style="cursor:pointer; font-size:0.75rem; padding:2px 6px; border-radius:4px;">${statusText}</span>
-            </div>
-            <div>
-                <button class="actionBtn deleteTxBtn" data-id="${t.id}" style="background:transparent; border:none; cursor:pointer;"><i class="fa-solid fa-circle-xmark" style="color:#d9534f; font-size:1.1rem;"></i></button>
-            </div>
-        `;
-        DOM.transactionList.appendChild(li);
-    });
-
-    document.querySelectorAll('.status-badge').forEach(badge => {
-        badge.addEventListener('click', (e) => {
-            const txId = e.currentTarget.getAttribute('data-id');
-            const targetTx = state.transactions.find(t => t.id === txId);
-            if (targetTx) {
-                targetTx.status = targetTx.status === 'paid' ? 'pending' : 'paid';
-                saveStateToStorage();
-                updateApplicationUI();
-            }
-        });
-    });
-
-    document.querySelectorAll('.deleteTxBtn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const txId = e.currentTarget.getAttribute('data-id');
-            state.transactions = state.transactions.filter(t => t.id !== txId);
-            saveStateToStorage();
-            updateApplicationUI();
-        });
-    });
-}
-
-// ==========================================
-// 7. CHART.JS GRAPHICAL ENGINE CONTROLLER
-// ==========================================
-function renderAnalyticsGraphs() {
-    const canvasElement = document.getElementById('analyticsChart');
-    if (!canvasElement) return;
-    
-    const ctx = canvasElement.getContext('2d');
-    
-    const analyticsMap = {};
-    state.transactions.forEach(t => {
-        if (t.type === 'expense' && t.status === 'paid') {
-            analyticsMap[t.category] = (analyticsMap[t.category] || 0) + parseFloat(t.amount);
+    try {
+        if (isLoginMode) {
+            await auth.signInWithEmailAndPassword(email, password);
+        } else {
+            await auth.createUserWithEmailAndPassword(email, password);
         }
-    });
-
-    const labels = Object.keys(analyticsMap);
-    const dataValues = Object.values(analyticsMap);
-
-    if (analyticsChart) {
-        analyticsChart.destroy();
+        authEmail.value = "";
+        authPassword.value = "";
+    } catch (error) {
+        alert(error.message);
     }
+});
 
-    analyticsChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: labels.length > 0 ? labels : ['No Expenses Logs Found'],
-            datasets: [{
-                data: dataValues.length > 0 ? dataValues : [1],
-                backgroundColor: labels.length > 0 ? [
-                    '#4285F4', '#DB4437', '#F4B400', '#0F9D58', '#AB47BC', '#00ACC1', '#FF7043'
-                ] : ['#444444'],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        color: state.theme === 'dark' ? '#e0e0e0' : '#333'
-                    }
-                }
-            }
+// Google Authentication
+googleBtn.addEventListener('click', async () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+        await auth.signInWithPopup(provider);
+    } catch (error) {
+        alert("Google Sign-In Failed: " + error.message);
+    }
+});
+
+// Logout User
+logoutBtn.addEventListener('click', () => {
+    auth.signOut();
+});
+
+// Centralized Firebase Observer Auth State Router
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        currentUser = user;
+        authScreen.style.display = 'none';
+        appScreen.style.display = 'block';
+        initializeUserWorkspace();
+    } else {
+        currentUser = null;
+        transactions = [];
+        authScreen.style.display = 'flex';
+        appScreen.style.display = 'none';
+        if(analyticsChart) analyticsChart.destroy();
+    }
+});
+
+// ==========================================
+// 4. DATA ENGINE & DATABASE WORKSPACE
+// ==========================================
+
+function initializeUserWorkspace() {
+    // Sync custom categories metadata node
+    db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
+        if (doc.exists && doc.data().categories) {
+            userCategories = doc.data().categories;
+        } else {
+            db.collection('users').doc(currentUser.uid).set({ categories: userCategories });
         }
+        renderCategorySelectors();
     });
+
+    // Real-time Ledger Stream Synchronizer
+    db.collection('users').doc(currentUser.uid).collection('transactions')
+        .orderBy('createdAt', 'desc')
+        .onSnapshot(snapshot => {
+            transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            processCalculationsAndRender();
+        }, error => {
+            console.error("Firestore synchronizer crash: ", error);
+        });
 }
 
 // ==========================================
-// 8. GLOBAL ACTION HANDLERS & REGISTRATION
+// 5. TRANSACTIONS & MANAGEMENT LOGIC
 // ==========================================
-DOM.addTransactionBtn.addEventListener('click', () => {
-    const title = DOM.titleInput.value.trim();
-    const amount = parseFloat(DOM.amountInput.value);
-    const type = DOM.typeSelect.value;
-    const category = DOM.categorySelect.value;
-    const status = DOM.statusSelect.value;
-    const isRecurring = DOM.isRecurringCheckbox.checked;
 
-    if (!title || isNaN(amount) || amount <= 0 || !category) {
-        alert("Please configure a valid title, valid amount, and valid category.");
+// Add New Transaction
+addBtn.addEventListener('click', async () => {
+    const title = titleInput.value.trim();
+    const amount = parseFloat(amountInput.value);
+    const type = typeSelect.value;
+    const category = categorySelect.value;
+    const status = statusSelect.value;
+    const isRecurring = isRecurringCheck.checked;
+
+    if (!title || isNaN(amount) || amount <= 0) {
+        alert("Provide valid description structural markers and value quantities.");
         return;
     }
 
-    const today = new Date();
-    const currentMonthYear = `${today.getMonth()}-${today.getFullYear()}`;
-
-    const newTx = {
-        id: 'tx_' + Date.now() + Math.random().toString(36).substr(2, 4),
+    const payload = {
         title,
         amount,
         type,
         category,
         status,
-        date: today.toISOString().split('T')[0],
         isRecurring,
-        lastGeneratedMonthYear: isRecurring ? currentMonthYear : null
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    state.transactions.push(newTx);
-    saveStateToStorage();
-    updateApplicationUI();
-
-    DOM.titleInput.value = '';
-    DOM.amountInput.value = '';
-    DOM.isRecurringCheckbox.checked = false;
-});
-
-DOM.addCategoryBtn.addEventListener('click', () => {
-    const rawCatName = DOM.newCategoryInput.value.trim();
-    if (!rawCatName) return;
-
-    if (state.categories[rawCatName]) {
-        alert("This category configuration rule already exists.");
-        return;
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('transactions').add(payload);
+        titleInput.value = '';
+        amountInput.value = '';
+        isRecurringCheck.checked = false;
+    } catch (error) {
+        alert("Operation failed targeting network datastore pipeline.");
     }
-
-    state.categories[rawCatName] = 0; 
-    DOM.newCategoryInput.value = '';
-    saveStateToStorage();
-    updateApplicationUI();
 });
 
-[DOM.searchInput, DOM.filterCategory].forEach(elem => {
-    elem.addEventListener('input', () => {
-        renderLedgerTransactions();
+// Delete Transaction
+async function deleteTransaction(id) {
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('transactions').doc(id).delete();
+    } catch (error) {
+        alert("Failed to erase log segment.");
+    }
+}
+
+// Toggle Transaction Status (Settled/Pending)
+async function toggleStatus(id, currentStatus) {
+    const nextStatus = currentStatus === 'paid' ? 'pending' : 'paid';
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('transactions').doc(id).update({
+            status: nextStatus
+        });
+    } catch (error) {
+        console.error("Failed to alter field attribute payload status indicator.");
+    }
+}
+
+// ==========================================
+// 6. CATEGORIES ENGINE MODULES
+// ==========================================
+
+function renderCategorySelectors() {
+    // Repopulate core form category drop-down array elements
+    categorySelect.innerHTML = userCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+    
+    // Repopulate structural filter modules
+    filterCategorySelect.innerHTML = `<option value="all">All Categories</option>` + 
+        userCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+    // Populate Right Column management sub-panel
+    categoryListEl.innerHTML = userCategories.map(cat => `
+        <div class="categoryCard">
+            <span>${cat}</span>
+            <button onclick="deleteCategory('${cat}')" style="background:transparent; border:none; color:var(--danger-accent); padding:2px 6px;">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+addCategoryBtn.addEventListener('click', async () => {
+    const newCat = newCategoryInput.value.trim();
+    if (!newCat || userCategories.includes(newCat)) return;
+
+    const updatedCategories = [...userCategories, newCat];
+    try {
+        await db.collection('users').doc(currentUser.uid).update({ categories: updatedCategories });
+        newCategoryInput.value = '';
+    } catch (error) {
+        alert("Failed to synchronize category collection metadata.");
+    }
+});
+
+async function deleteCategory(categoryName) {
+    const updatedCategories = userCategories.filter(cat => cat !== categoryName);
+    try {
+        await db.collection('users').doc(currentUser.uid).update({ categories: updatedCategories });
+    } catch (error) {
+        console.error("Failed modification routines structural categories lists mapping.");
+    }
+}
+
+// ==========================================
+// 7. MATH CALCULATIONS & UI RENDERING
+// ==========================================
+
+function processCalculationsAndRender() {
+    let totalBalance = 0;
+    let totalIncome = 0;
+    let totalExpense = 0;
+    let pendingIncome = 0;
+    let pendingExpense = 0;
+
+    transactions.forEach(t => {
+        if (t.type === 'income') {
+            if (t.status === 'paid') totalIncome += t.amount;
+            else pendingIncome += t.amount;
+        } else {
+            if (t.status === 'paid') totalExpense += t.amount;
+            else pendingExpense += t.amount;
+        }
     });
+
+    totalBalance = totalIncome - totalExpense;
+
+    // Output calculated string values directly to UI components
+    balanceEl.textContent = `₹${totalBalance.toLocaleString()}`;
+    incomeEl.textContent = `₹${totalIncome.toLocaleString()}`;
+    expenseEl.textContent = `₹${totalExpense.toLocaleString()}`;
+    pendingIncomeEl.textContent = `Pending: ₹${pendingIncome.toLocaleString()}`;
+    pendingExpenseEl.textContent = `Pending: ₹${pendingExpense.toLocaleString()}`;
+
+    // Handle Health Badge
+    if (totalBalance > 5000) {
+        healthBadgeEl.textContent = "Healthy";
+        healthBadgeEl.className = "badge badge-good";
+    } else if (totalBalance >= 0) {
+        healthBadgeEl.textContent = "Warning";
+        healthBadgeEl.className = "badge badge-warn";
+    } else {
+        healthBadgeEl.textContent = "Deficit";
+        healthBadgeEl.className = "badge badge-danger";
+    }
+
+    // Handle Net Savings Rate Percentage Formula
+    if (totalIncome > 0) {
+        const rate = ((totalIncome - totalExpense) / totalIncome) * 100;
+        savingEl.textContent = `${Math.max(0, Math.round(rate))}%`;
+    } else {
+        savingEl.textContent = "0%";
+    }
+
+    renderLedger();
+    renderAnalyticsChart();
+}
+
+// Render dynamic Ledger with functional item event filters applied
+function renderLedger() {
+    const searchVal = searchInput.value.toLowerCase();
+    const catFilter = filterCategorySelect.value;
+    const startVal = startDateInput.value ? new Date(startDateInput.value) : null;
+    const endVal = endDateInput.value ? new Date(endDateInput.value) : null;
+
+    // Filter structural engine processing pipeline
+    const filtered = transactions.filter(t => {
+        const matchesSearch = t.title.toLowerCase().includes(searchVal);
+        const matchesCat = (catFilter === 'all') || (t.category === catFilter);
+        
+        let matchesDate = true;
+        if (t.createdAt && t.createdAt.toDate) {
+            const txDate = t.createdAt.toDate();
+            if (startVal && txDate < startVal) matchesDate = false;
+            if (endVal && txDate > endVal) matchesDate = false;
+        }
+        
+        return matchesSearch && matchesCat && matchesDate;
+    });
+
+    transactionListEl.innerHTML = filtered.map(t => {
+        const sign = t.type === 'income' ? '+' : '-';
+        const colorClass = t.type === 'income' ? 'incomeText' : 'expenseText';
+        const statusClass = t.status === 'paid' ? 'status-paid' : 'status-pending';
+        const statusText = t.status === 'paid' ? 'Settled' : 'Pending';
+        const repeatIcon = t.isRecurring ? `<i class="fa-solid fa-arrows-rotate" title="Recurring Event" style="margin-left:5px; font-size:0.8rem; opacity:0.6;"></i>` : '';
+
+        return `
+            <li class="categoryCard" style="margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong style="font-size: 1rem;">${t.title}</strong> ${repeatIcon}
+                    <div style="font-size: 0.75rem; color:var(--text-muted); margin-top:2px;">
+                        <span class="status-badge ${statusClass}" style="cursor:pointer;" onclick="toggleStatus('${t.id}', '${t.status}')">${statusText}</span> · ${t.category}
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <span class="${colorClass}" style="font-weight:bold; font-size:1.05rem;">${sign}₹${t.amount}</span>
+                    <button onclick="deleteTransaction('${t.id}')" style="background:transparent; border:none; color:var(--danger-accent); cursor:pointer;">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </li>
+        `;
+    }).join('');
+}
+
+// Setup Ledger Input Filters Real-time System Listeners
+[searchInput, filterCategorySelect, startDateInput, endDateInput].forEach(el => {
+    el.addEventListener('input', renderLedger);
 });
 
-DOM.exportBtn.addEventListener('click', () => {
-    const collection = getFilteredTransactions();
-    if (collection.length === 0) {
-        alert("No transactional data records found to export.");
+// ==========================================
+// 8. GRAPHICAL ANALYTICS COMPONENT
+// ==========================================
+
+function renderAnalyticsChart() {
+    const ctx = document.getElementById('analyticsChart').getContext('2d');
+    
+    // Parse expenses exclusively by operational category metrics
+    const expenseDataMap = {};
+    userCategories.forEach(c => expenseDataMap[c] = 0);
+
+    transactions.forEach(t => {
+        if (t.type === 'expense' && t.status === 'paid' && expenseDataMap[t.category] !== undefined) {
+            expenseDataMap[t.category] += t.amount;
+        }
+    });
+
+    const labels = Object.keys(expenseDataMap).filter(c => expenseDataMap[c] > 0);
+    const data = labels.map(c => expenseDataMap[c]);
+
+    if (analyticsChart) {
+        analyticsChart.destroy();
+    }
+
+    if (data.length === 0) {
+        if(ctx.canvas) {
+            // Render an empty structural state loop bypass metric representation cleanly
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        }
         return;
     }
 
-    let csvContent = "data:text/csv;charset=utf-8,ID,Date,Title,Type,Category,Amount,Status,Recurring\n";
-    collection.forEach(t => {
-        csvContent += `"${t.id}","${t.date}","${t.title.replace(/"/g, '""')}","${t.type}","${t.category}",${t.amount},"${t.status}","${t.isRecurring}"\n`;
+    analyticsChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: [
+                    '#4285F4', '#EA4335', '#FBBC05', '#34A853', 
+                    '#8E44AD', '#34495E', '#16A085', '#D35400'
+                ],
+                borderWidth: 1,
+                borderColor: 'var(--bg-surface)'
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: document.documentElement.getAttribute('data-theme') === 'light' ? '#333' : '#fff' }
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+// ==========================================
+// 9. DATA CONVERSION EXPORT MODULES (CSV)
+// ==========================================
+
+exportBtn.addEventListener('click', () => {
+    if (transactions.length === 0) {
+        alert("No transaction entries available for file data extraction.");
+        return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,Description,Amount,Type,Category,Status,Recurring\n";
+    transactions.forEach(t => {
+        csvContent += `"${t.title.replace(/"/g, '""')}",${t.amount},${t.type},${t.category},${t.status},${t.isRecurring}\n`;
     });
 
     const encodedUri = encodeURI(csvContent);
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", encodedUri);
-    downloadAnchorNode.setAttribute("download", `Ledger_Report_${Date.now()}.csv`);
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Finance_Export_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 });
 
-DOM.purgeViewBtn.addEventListener('click', () => {
-    const targetedViewSubsets = getFilteredTransactions();
-    if (targetedViewSubsets.length === 0) return;
+// ==========================================
+// 10. INTERMITTENT INTERACTIVE MODAL INTERFACES
+// ==========================================
 
-    openModal({
-        icon: '<i class="fa-solid fa-dumpster-fire" style="color:#d9534f"></i>',
-        title: 'Purge Filtered Rows?',
-        desc: `Warning: This configuration routine will instantly delete all ${targetedViewSubsets.length} matching data records currently visible inside the live filter viewport.`,
-        type: 'standard',
-        onConfirm: () => {
-            const targetIds = new Set(targetedViewSubsets.map(t => t.id));
-            state.transactions = state.transactions.filter(t => !targetIds.has(t.id));
-            saveStateToStorage();
-            updateApplicationUI();
-            closeModal();
-        }
-    });
+function displayModal(title, description, iconClass, confirmAction) {
+    modalTitle.textContent = title;
+    modalDescription.textContent = description;
+    modalIconContainer.innerHTML = `<i class="${iconClass}"></i>`;
+    currentModalAction = confirmAction;
+    modalOverlay.style.display = 'flex';
+}
+
+modalCancelBtn.addEventListener('click', () => {
+    modalOverlay.style.display = 'none';
+    currentModalAction = null;
 });
 
-DOM.deleteAccountBtn.addEventListener('click', () => {
-    openModal({
-        icon: '<i class="fa-solid fa-skull-crossbones" style="color:#d9534f"></i>',
-        title: 'Complete System Destruction',
-        desc: 'This will completely drop all client database nodes bound to this account identity mapping.',
-        type: 'deleteAccount',
-        onConfirm: () => {
-            const validationPhrase = DOM.modalInputConfirm.value.trim();
-            if (validationPhrase === 'DELETE') {
-                db.collection("users").doc(state.user).delete()
-                    .then(() => {
-                        state.transactions = [];
-                        state.categories = { ...DEFAULT_CATEGORIES };
-                        closeModal();
-                        auth.signOut();
-                    })
-                    .catch((err) => alert("Failed to clear cloud record database nodes."));
-            } else {
-                alert("Incorrect validation confirmation value string.");
-            }
-        }
-    });
-});
-
-DOM.themeSelect.addEventListener('change', (e) => {
-    state.theme = e.target.value;
-    saveStateToStorage();
-    updateApplicationUI();
-});
-
-DOM.modalCancelBtn.addEventListener('click', closeModal);
-DOM.modalConfirmBtn.addEventListener('click', () => {
+modalConfirmBtn.addEventListener('click', () => {
     if (typeof currentModalAction === 'function') {
         currentModalAction();
     }
+    modalOverlay.style.display = 'none';
 });
 
-// ==========================================
-// 9. HIGH-COMPATIBILITY AUTH ENGINE PIPELINE (MOBILE ZERO-FAILURE PATCH)
-// ==========================================
+// Purge Categorized / Filtered Elements
+purgeCategoryBtn.addEventListener('click', () => {
+    const targetCat = filterCategorySelect.value;
+    const desc = targetCat === 'all' 
+        ? "This will delete every transaction history item logged in your cloud configuration."
+        : `This will completely wipe all ledger entries under the category: "${targetCat}".`;
 
-// Gracefully initialize persistence. If mobile storage is restricted, it falls back seamlessly.
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-    .catch((err) => console.log("Ambient storage persistence initialized custom fallback."));
-
-DOM.googleBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    
-    // Clear out stuck session state parameters
-    googleProvider.setCustomParameters({ prompt: 'select_account' });
-    
-    // Detect mobile device browsers directly
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
-
-    if (isMobile) {
-        console.log("Mobile context verified. Triggering secure redirect pipeline...");
-        auth.signInWithRedirect(googleProvider)
-            .catch((error) => {
-                console.error("Mobile redirect initiation failed:", error);
-                // Last resort emergency backup: try popup if redirect throws an immediate environment error
-                auth.signInWithPopup(googleProvider)
-                    .then((res) => { if(res.user) handleUserSessionRouting(res.user); })
-                    .catch((err) => alert(`Mobile Sign In Failed: ${err.message}`));
-            });
-    } else {
-        console.log("Desktop context verified. Triggering secure popup overlay...");
-        auth.signInWithPopup(googleProvider)
-            .then((result) => {
-                if (result && result.user) {
-                    handleUserSessionRouting(result.user);
+    displayModal(
+        "Purge Transaction Logs?",
+        desc,
+        "fa-solid fa-triangle-exclamation text-color:var(--danger-accent)",
+        async () => {
+            const batch = db.batch();
+            transactions.forEach(t => {
+                if (targetCat === 'all' || t.category === targetCat) {
+                    const ref = db.collection('users').doc(currentUser.uid).collection('transactions').doc(t.id);
+                    batch.delete(ref);
                 }
-            })
-            .catch((error) => {
-                console.error("Desktop authentication exception:", error);
-                // Fallback to redirect if desktop browser has ultra-strict popups active
-                return auth.signInWithRedirect(googleProvider);
             });
-    }
+            await batch.commit();
+        }
+    );
 });
 
-DOM.logoutBtn.addEventListener('click', () => {
-    auth.signOut()
-        .then(() => {
-            window.location.reload(); 
-        })
-        .catch((error) => alert(`Sign Out Failed: ${error.message}`));
+// Complete Profile Account & Data Deletion Router Action
+deleteAccountBtn.addEventListener('click', () => {
+    displayModal(
+        "Permanently Wipe All Data?",
+        "Warning: This action completely empties all cloud records. You will log out immediately and this process cannot be undone.",
+        "fa-solid fa-skull-crossbones",
+        async () => {
+            try {
+                // Delete user database records
+                const snapshot = await db.collection('users').doc(currentUser.uid).collection('transactions').get();
+                const batch = db.batch();
+                snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+                await db.collection('users').doc(currentUser.uid).delete();
+                
+                // Delete authentication account instance
+                await auth.currentUser.delete();
+            } catch (error) {
+                alert("Account destruction failure. Logging out as a safety precaution. Error: " + error.message);
+                auth.signOut();
+            }
+        }
+    );
 });
 
-// Standalone UI switchboard context router
-function handleUserSessionRouting(user) {
-    if (user && user.email) {
-        const userIdentityKey = user.email.trim().toLowerCase().replace(/[^a-z0-9@.]/g, '_');
-        
-        // Immediate visual view layout conversion
-        if (DOM.authScreen) DOM.authScreen.style.display = 'none';
-        if (DOM.app) DOM.app.style.display = 'block';
-        
-        // Triggers firestore fetch loop, which handles updateApplicationUI automatically internally
-        loadStateFromStorage(userIdentityKey);
-    }
-}
+// ==========================================
+// 11. LAYOUT THEME MANAGEMENT CONTROL SWITCH
+// ==========================================
 
-// Intercept returning tokens coming back from mobile redirection sequences
-auth.getRedirectResult()
-    .then((result) => {
-        if (result && result.user) {
-            console.log("Redirect result token processed successfully.");
-            handleUserSessionRouting(result.user);
-        }
-    })
-    .catch((error) => {
-        console.error("Error processing authentication redirect loop callback:", error);
-        // If mobile browser dropped the state context, force re-check ambient state observer
-        if (auth.currentUser) {
-            handleUserSessionRouting(auth.currentUser);
-        }
-    });
-
-// Global state observer loop handles real-time authentication state updates
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        handleUserSessionRouting(user);
-    } else {
-        state.user = null;
-        state.transactions = [];
-        state.categories = { ...DEFAULT_CATEGORIES };
-        
-        if (DOM.app) DOM.app.style.display = 'none';
-        if (DOM.authScreen) DOM.authScreen.style.display = 'flex';
-        
-        if (analyticsChart) {
-            analyticsChart.destroy();
-            analyticsChart = null;
-        }
-    }
+themeSelect.addEventListener('change', (e) => {
+    const selectedTheme = e.target.value;
+    document.documentElement.setAttribute('data-theme', selectedTheme);
+    // Force re-render chart tracking dynamic legend text updates
+    renderAnalyticsChart();
 });
-
-// Proactive immediate application layout token mounting check
-if (auth.currentUser) {
-    handleUserSessionRouting(auth.currentUser);
-}
