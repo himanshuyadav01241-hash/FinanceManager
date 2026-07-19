@@ -25,7 +25,9 @@ const authScreen = document.getElementById('authScreen');
 const appScreen = document.getElementById('app');
 const googleBtn = document.getElementById('googleBtn');
 const logoutBtn = document.getElementById('logoutBtn');
-const themeSelect = document.getElementById('theme');
+
+// Looks for any theme dropdowns across both screens
+const themeSelectors = document.querySelectorAll('.theme-select');
 
 const emailAuthForm = document.getElementById('emailAuthForm');
 const authEmail = document.getElementById('authEmail');
@@ -83,7 +85,6 @@ let isLoginMode = true;
 // 3. AUTHENTICATION SERVICES
 // ==========================================
 
-// Toggle between Login and Sign Up UI states safely if element exists
 if (toggleAuthMode) {
     toggleAuthMode.addEventListener('click', (e) => {
         e.preventDefault();
@@ -102,7 +103,6 @@ if (toggleAuthMode) {
     });
 }
 
-// Primary Custom Auth pipeline
 if (emailAuthForm) {
     emailAuthForm.addEventListener('submit', async (e) => {
         e.preventDefault(); 
@@ -129,7 +129,6 @@ if (emailAuthForm) {
     });
 }
 
-// Google Authentication
 if (googleBtn) {
     googleBtn.addEventListener('click', async () => {
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -141,14 +140,12 @@ if (googleBtn) {
     });
 }
 
-// Logout User
 if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
         auth.signOut();
     });
 }
 
-// Application State Auth Router
 auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = user;
@@ -439,8 +436,8 @@ function renderAnalyticsChart() {
             datasets: [{
                 data: data,
                 backgroundColor: [
-                    '#4285F4', '#0F9D58', '#F4B400', '#d9534f', 
-                    '#9b59b6', '#3498db', '#e67e22', '#1a73e8'
+                    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', 
+                    '#8b5cf6', '#06b6d4', '#f97316', '#2563eb'
                 ],
                 borderWidth: 1,
                 borderColor: computedStyles.getPropertyValue('--bg-surface').trim() || '#1e1e1e'
@@ -565,25 +562,22 @@ if (deleteAccountBtn) {
 // 11. LAYOUT THEME MANAGEMENT
 // ==========================================
 
-// Global Theme Initializer and Sync Mechanism
 function configureApplicationTheme(themeValue) {
     document.documentElement.setAttribute('data-theme', themeValue);
     
-    // Synchronize all instances of selectors mapped across different pages/screens
-    const targetSelectors = document.querySelectorAll('#theme, .theme-select-context');
-    targetSelectors.forEach(selectElement => {
+    // Syncs both selectors across screens if they exist
+    themeSelectors.forEach(selectElement => {
         if (selectElement.value !== themeValue) {
             selectElement.value = themeValue;
         }
     });
 
-    // Update graphical elements based on newly processed theme variable mappings
     renderAnalyticsChart();
 }
 
-// Initialize dynamic listeners across shared application components
+// Global delegated change listener for theme controls
 document.addEventListener('change', (e) => {
-    if (e.target && (e.target.id === 'theme' || e.target.classList.contains('theme-select-context'))) {
+    if (e.target && e.target.classList.contains('theme-select')) {
         configureApplicationTheme(e.target.value);
     }
 });
@@ -698,9 +692,9 @@ function toggleBlossomCanvas(show) {
 document.addEventListener('DOMContentLoaded', () => {
     if (!currentUser) toggleBlossomCanvas(true);
     
-    // Explicit initial parsing alignment matching HTML root baseline properties
-    const initialThemeSelection = document.getElementById('theme');
-    if (initialThemeSelection) {
-        configureApplicationTheme(initialThemeSelection.value);
+    // Ensure the initial layout sync matches whatever selector is present
+    const primaryThemeNode = document.querySelector('.theme-select');
+    if (primaryThemeNode) {
+        configureApplicationTheme(primaryThemeNode.value);
     }
 });
