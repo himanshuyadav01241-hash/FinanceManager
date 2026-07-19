@@ -110,38 +110,43 @@
             justify-content: center;
             min-height: 100vh;
             padding: 20px;
-            /* Gradient overlay mixed with your background asset image */
-            background: linear-gradient(135deg, rgba(255, 235, 238, 0.88) 0%, rgba(255, 255, 255, 0.75) 100%), 
+            background: linear-gradient(135deg, rgba(255, 235, 238, 0.6) 0%, rgba(255, 255, 255, 0.4) 100%), 
                         url('images/bg.png') no-repeat center center;
             background-size: cover;
         }
 
         .auth-card {
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 40px 30px;
-            border-radius: 16px;
-            box-shadow: 0 12px 32px rgba(156, 77, 102, 0.15);
-            border: 1px solid var(--border-color);
-            max-width: 400px;
+            background: #ffffff;
+            padding: 40px 35px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(74, 21, 37, 0.12), 0 5px 15px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            max-width: 420px;
             width: 100%;
             text-align: center;
         }
 
-        /* Force readable light themes variables context inside auth block */
-        [data-theme="sakura"] .auth-card {
-            background: rgba(255, 255, 255, 0.94);
-            color: #4a1525;
+        /* Enhanced explicit visibility overrides for the Auth Card text elements */
+        .auth-card h2 {
+            color: #2d0c16 !important;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 12px 0 8px 0;
+        }
+
+        .auth-card p {
+            color: #5c3a43 !important;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0 0 24px 0;
         }
 
         .auth-form {
-            margin-top: 24px;
             text-align: left;
         }
 
         .auth-form .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 18px;
             display: flex;
             flex-direction: column;
             gap: 6px;
@@ -149,78 +154,87 @@
 
         .auth-form label {
             font-size: 0.85rem;
-            color: var(--text-muted);
-            font-weight: 500;
+            color: #4a1525;
+            font-weight: 600;
         }
 
         .auth-form input {
             width: 100%;
-            padding: 12px;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            border-radius: 6px;
+            padding: 12px 14px;
+            background: #fcf8f9;
+            border: 1px solid rgba(156, 77, 102, 0.25);
+            color: #2d0c16;
+            border-radius: 8px;
             outline: none;
             font-size: 0.95rem;
-            transition: border-color 0.2s;
+            transition: all 0.2s ease;
         }
 
         .auth-form input:focus {
-            border-color: var(--primary-accent);
+            border-color: #ff8da1;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(255, 141, 161, 0.2);
         }
 
         .auth-btn-primary {
             width: 100%;
-            background: var(--primary-accent);
+            background: #ff6b84; /* Vibrant pink-red accent for higher login prominence */
             color: white;
             border: none;
-            padding: 12px;
-            font-weight: bold;
-            border-radius: 6px;
+            padding: 14px;
+            font-weight: 600;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 1rem;
-            transition: opacity 0.2s;
+            transition: background 0.2s;
             margin-top: 8px;
+            box-shadow: 0 4px 12px rgba(255, 107, 132, 0.25);
         }
 
-        .auth-btn-primary:hover { opacity: 0.9; }
+        .auth-btn-primary:hover { 
+            background: #ff526f;
+        }
 
         .auth-divider {
             display: flex;
             align-items: center;
             text-align: center;
-            margin: 20px 0;
-            color: var(--text-muted);
+            margin: 22px 0;
+            color: #a3858c;
             font-size: 0.85rem;
+            font-weight: 500;
         }
 
         .auth-divider::before, .auth-divider::after {
             content: '';
             flex: 1;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(156, 77, 102, 0.15);
         }
 
-        .auth-divider::before { margin-right: .5em; }
-        .auth-divider::after { margin-left: .5em; }
+        .auth-divider::before { margin-right: 1em; }
+        .auth-divider::after { margin-left: 1em; }
 
         .google-btn {
             background-color: #ffffff;
-            color: #757575;
-            border: 1px solid #ddd;
+            color: #444444;
+            border: 1px solid rgba(156, 77, 102, 0.2);
             padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
             width: 100%;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
 
-        .google-btn:hover { background-color: #f7f7f7; }
+        .google-btn:hover { 
+            background-color: #fcf8f9;
+            border-color: rgba(156, 77, 102, 0.35);
+        }
 
         /* ==========================================
            3. DASHBOARD WORKSPACE LAYOUT
@@ -312,16 +326,12 @@
             justify-content: space-between;
             align-items: center;
             background: var(--bg-input);
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin-bottom: 8px;
+            padding: 10px 15px; border-radius: 6px; margin-bottom: 8px;
         }
 
         .filter-ribbon {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 10px;
-            margin-bottom: 12px;
+            grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 12px;
         }
         .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
         .transaction-ledger { list-style: none; padding: 0; margin: 0; }
@@ -354,9 +364,9 @@
          ========================================== -->
     <div id="authScreen">
         <div class="auth-card">
-            <i class="fa-solid fa-wallet" style="font-size: 3.5rem; color: var(--primary-accent); margin-bottom: 15px;"></i>
-            <h2 id="authTitle" style="margin: 10px 0;">Welcome Back</h2>
-            <p id="authSubtitle" style="color: var(--text-muted); font-size: 0.95rem; margin: 0; line-height: 1.4;">
+            <i class="fa-solid fa-wallet" style="font-size: 3.2rem; color: #ff6b84; margin-bottom: 10px;"></i>
+            <h2 id="authTitle">Welcome Back</h2>
+            <p id="authSubtitle">
                 Sign in to manage and secure your transactions across all your devices instantly.
             </p>
 
