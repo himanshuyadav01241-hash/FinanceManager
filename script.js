@@ -79,9 +79,10 @@ let currentModalAction = null;
 let isLoginMode = true;
 
 // ==========================================
-// 3. AUTHENTICATION SERVICES
+// 3. AUTHENTICATION SERVICES (FIXED)
 // ==========================================
 
+// Toggle between Login and Sign Up UI states
 toggleAuthMode.addEventListener('click', () => {
     isLoginMode = !isLoginMode;
     if (isLoginMode) {
@@ -97,8 +98,10 @@ toggleAuthMode.addEventListener('click', () => {
     }
 });
 
-customAuthBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
+// Primary Custom Auth pipeline hooked directly to Form Submit to handle routing natively
+emailAuthForm.addEventListener('submit', async (e) => {
+    e.preventDefault(); // Stifles default form refreshes from wiping environment memory
+    
     const email = authEmail.value.trim();
     const password = authPassword.value;
 
@@ -120,6 +123,7 @@ customAuthBtn.addEventListener('click', async (e) => {
     }
 });
 
+// Google Authentication
 googleBtn.addEventListener('click', async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
@@ -129,10 +133,12 @@ googleBtn.addEventListener('click', async () => {
     }
 });
 
+// Logout User
 logoutBtn.addEventListener('click', () => {
     auth.signOut();
 });
 
+// Application State Auth Router
 auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = user;
@@ -395,7 +401,7 @@ function renderAnalyticsChart() {
         return;
     }
 
-    // Dynamic contrast balancing for the 4 explicit theme presets
+    // Dynamic contrast balancing for the 4 explicit themes
     const activeTheme = document.documentElement.getAttribute('data-theme') || 'dark';
     const labelColor = (activeTheme === 'light' || activeTheme === 'emerald') ? '#333333' : '#ffffff';
 
