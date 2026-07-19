@@ -1,14 +1,14 @@
 // ==========================================
 // 1. FIREBASE & STATE INITIALIZATION
 // ==========================================
-// TODO: Replace with your actual project credentials from the Firebase Console
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyCCnwz-4HDj0baMMfhJ0oHWXfuhrFTvIr0",
+    authDomain: "financeos-6eaf2.firebaseapp.com",
+    projectId: "financeos-6eaf2",
+    storageBucket: "financeos-6eaf2.firebasestorage.app",
+    messagingSenderId: "503013740949",
+    appId: "1:503013740949:web:a18ef8f8433711a672e69c",
+    measurementId: "G-F769EYMHLJ"
 };
 
 // Initialize Firebase Core & Auth instances
@@ -25,7 +25,7 @@ let state = {
         "Entertainment": 2000,
         "Salary": 0
     },
-    theme: "light"
+    theme: "dark"
 };
 
 const DEFAULT_CATEGORIES = { "Food": 5000, "Utilities": 3000, "Entertainment": 2000, "Salary": 0 };
@@ -107,11 +107,11 @@ function loadStateFromStorage(userId) {
         const parsed = JSON.parse(savedData);
         state.transactions = parsed.transactions || [];
         state.categories = parsed.categories || DEFAULT_CATEGORIES;
-        state.theme = parsed.theme || "light";
+        state.theme = parsed.theme || "dark";
     } else {
         state.transactions = [];
         state.categories = { ...DEFAULT_CATEGORIES };
-        state.theme = "light";
+        state.theme = "dark";
     }
     
     checkAndProcessRecurringTransactions();
@@ -139,7 +139,7 @@ function openModal({ icon, title, desc, type, onConfirm }) {
         DOM.modalInputConfirm.placeholder = 'Type "DELETE" to confirm';
     } else if (type === 'setBudget') {
         DOM.modalInputBudget.style.display = 'block';
-        DOM.modalInputBudget.placeholder = 'Monthly Budget Target Amount (₹)';
+        DOM.modalInputBudget.placeholder = 'Monthly Target (₹)';
     }
 
     currentModalAction = onConfirm;
@@ -186,7 +186,7 @@ function checkAndProcessRecurringTransactions() {
 }
 
 function updateApplicationUI() {
-    document.documentElement.setAttribute('data-theme', state.theme);
+    document.body.setAttribute('data-theme', state.theme);
     DOM.themeSelect.value = state.theme;
 
     let totalSettledIncome = 0;
@@ -275,20 +275,20 @@ function renderCategorySettingsPanel(totalSettledExpense) {
         const card = document.createElement('div');
         card.className = 'categoryCard';
         
-        let budgetContextHtml = `<small>No Budget Set</small>`;
+        let budgetContextHtml = `<small style="display:block; opacity:0.6; margin-top:2px;">No Budget Set</small>`;
         if (budgetTarget > 0) {
             const percent = Math.round((actualSpent / budgetTarget) * 100);
-            budgetContextHtml = `<small style="color:${percent > 100 ? 'var(--danger-color)' : 'inherit'}">Budget: ₹${actualSpent}/₹${budgetTarget} (${percent}%)</small>`;
+            budgetContextHtml = `<small style="display:block; margin-top:2px; color:${percent > 100 ? '#d9534f' : 'inherit'}">Budget: ₹${actualSpent}/₹${budgetTarget} (${percent}%)</small>`;
         }
 
         card.innerHTML = `
-            <div>
+            <div style="flex:1;">
                 <strong>${catName}</strong>
                 ${budgetContextHtml}
             </div>
-            <div>
-                <button class="actionBtn editBudgetBtn" data-cat="${catName}" title="Set Monthly Budget"><i class="fa-solid fa-sliders" style="color:var(--primary-color)"></i></button>
-                <button class="actionBtn removeCatBtn" data-cat="${catName}" title="Delete Category"><i class="fa-solid fa-trash-can" style="color:var(--danger-color)"></i></button>
+            <div style="display:flex; gap:8px;">
+                <button class="actionBtn editBudgetBtn" data-cat="${catName}" title="Set Target Budget" style="background:transparent; border:none; cursor:pointer;"><i class="fa-solid fa-sliders" style="color:#4285F4"></i></button>
+                <button class="actionBtn removeCatBtn" data-cat="${catName}" title="Delete Category" style="background:transparent; border:none; cursor:pointer;"><i class="fa-solid fa-trash-can" style="color:#d9534f"></i></button>
             </div>
         `;
         DOM.categoryList.appendChild(card);
@@ -298,9 +298,9 @@ function renderCategorySettingsPanel(totalSettledExpense) {
         btn.addEventListener('click', (e) => {
             const cat = e.currentTarget.getAttribute('data-cat');
             openModal({
-                icon: '<i class="fa-solid fa-money-bill-trend-up" style="color:var(--warning-color)"></i>',
+                icon: '<i class="fa-solid fa-money-bill-trend-up" style="color:#4285F4"></i>',
                 title: `Budget Setup: ${cat}`,
-                desc: `Adjust budget thresholds for this line item:`,
+                desc: `Adjust dynamic spending limits for this node:`,
                 type: 'setBudget',
                 onConfirm: () => {
                     const budgetValue = parseFloat(DOM.modalInputBudget.value);
@@ -319,9 +319,9 @@ function renderCategorySettingsPanel(totalSettledExpense) {
         btn.addEventListener('click', (e) => {
             const cat = e.currentTarget.getAttribute('data-cat');
             openModal({
-                icon: '<i class="fa-solid fa-triangle-exclamation" style="color:var(--danger-color)"></i>',
+                icon: '<i class="fa-solid fa-triangle-exclamation" style="color:#d9534f"></i>',
                 title: 'Delete Category?',
-                desc: `Are you sure you want to delete "${cat}"?`,
+                desc: `Are you sure you want to drop standard configuration rules for "${cat}"?`,
                 type: 'standard',
                 onConfirm: () => {
                     delete state.categories[cat];
@@ -362,7 +362,7 @@ function renderLedgerTransactions() {
     const itemsToView = getFilteredTransactions();
 
     if (itemsToView.length === 0) {
-        DOM.transactionList.innerHTML = `<li style="padding:20px; text-align:center; opacity:0.5;">No records match dynamic viewport bounds.</li>`;
+        DOM.transactionList.innerHTML = `<li style="padding:20px; text-align:center; opacity:0.5; list-style:none;">No records match your active query.</li>`;
         return;
     }
 
@@ -371,25 +371,30 @@ function renderLedgerTransactions() {
     itemsToView.forEach(t => {
         const li = document.createElement('li');
         li.className = 'transaction';
+        li.style.display = 'flex';
+        li.style.justifyContent = 'between';
+        li.style.alignItems = 'center';
+        li.style.padding = '12px';
+        li.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
         
         const isExpense = t.type === 'expense';
         const symbol = isExpense ? '-' : '+';
         const colorClass = isExpense ? 'expenseText' : 'incomeText';
         const statusBadgeClass = t.status === 'paid' ? 'status-paid' : 'status-pending';
-        const statusText = t.status === 'paid' ? 'Settled' : 'Unpaid / Pending';
-        const repeatIcon = t.isRecurring ? '<i class="fa-solid fa-arrows-rotate" style="font-size:10px; margin-left:4px; opacity:0.7;" title="Monthly Automation Active"></i>' : '';
+        const statusText = t.status === 'paid' ? 'Settled' : 'Pending';
+        const repeatIcon = t.isRecurring ? '<i class="fa-solid fa-arrows-rotate" style="font-size:10px; margin-left:4px; opacity:0.7;" title="Automation Enabled"></i>' : '';
 
         li.innerHTML = `
-            <div class="leftSide">
+            <div style="flex:1;">
                 <strong>${t.title}</strong> ${repeatIcon}
-                <p>${t.category} • ${t.date}</p>
+                <p style="margin:2px 0 0 0; font-size:0.8rem; opacity:0.6;">${t.category} • ${t.date}</p>
             </div>
-            <div class="rightSide">
-                <span class="amount ${colorClass}">${symbol}₹${parseFloat(t.amount).toLocaleString('en-IN')}</span>
-                <span class="status-badge ${statusBadgeClass}" data-id="${t.id}">${statusText}</span>
+            <div style="text-align:right; margin-right:16px;">
+                <span class="amount ${colorClass}" style="font-weight:600; display:block;">${symbol}₹${parseFloat(t.amount).toLocaleString('en-IN')}</span>
+                <span class="status-badge ${statusBadgeClass}" data-id="${t.id}" style="cursor:pointer; font-size:0.75rem; padding:2px 6px; border-radius:4px;">${statusText}</span>
             </div>
             <div>
-                <button class="actionBtn deleteTxBtn" data-id="${t.id}"><i class="fa-solid fa-circle-xmark" style="color:var(--danger-color)"></i></button>
+                <button class="actionBtn deleteTxBtn" data-id="${t.id}" style="background:transparent; border:none; cursor:pointer;"><i class="fa-solid fa-circle-xmark" style="color:#d9534f; font-size:1.1rem;"></i></button>
             </div>
         `;
         DOM.transactionList.appendChild(li);
@@ -421,7 +426,10 @@ function renderLedgerTransactions() {
 // 7. CHART.JS GRAPHICAL ENGINE CONTROLLER
 // ==========================================
 function renderAnalyticsGraphs() {
-    const ctx = document.getElementById('analyticsChart').getContext('2d');
+    const canvasElement = document.getElementById('analyticsChart');
+    if (!canvasElement) return;
+    
+    const ctx = canvasElement.getContext('2d');
     
     const analyticsMap = {};
     state.transactions.forEach(t => {
@@ -440,12 +448,12 @@ function renderAnalyticsGraphs() {
     analyticsChart = new Chart(ctx, {
         type: 'pie',
         data: {
-            labels: labels.length > 0 ? labels : ['No Expense Logs Found'],
+            labels: labels.length > 0 ? labels : ['No Expenses Logs Found'],
             datasets: [{
                 data: dataValues.length > 0 ? dataValues : [1],
                 backgroundColor: labels.length > 0 ? [
                     '#4285F4', '#DB4437', '#F4B400', '#0F9D58', '#AB47BC', '#00ACC1', '#FF7043'
-                ] : ['#e0e0e0'],
+                ] : ['#444444'],
                 borderWidth: 1
             }]
         },
@@ -476,7 +484,7 @@ DOM.addTransactionBtn.addEventListener('click', () => {
     const isRecurring = DOM.isRecurringCheckbox.checked;
 
     if (!title || isNaN(amount) || amount <= 0 || !category) {
-        alert("Please configure proper transactional titles and balance amounts.");
+        alert("Please configure a valid title, valid amount, and valid category.");
         return;
     }
 
@@ -509,7 +517,7 @@ DOM.addCategoryBtn.addEventListener('click', () => {
     if (!rawCatName) return;
 
     if (state.categories[rawCatName]) {
-        alert("Category already exists.");
+        alert("This category configuration rule already exists.");
         return;
     }
 
@@ -519,7 +527,7 @@ DOM.addCategoryBtn.addEventListener('click', () => {
     updateApplicationUI();
 });
 
-[DOM.searchInput, DOM.filterCategory, DOM.startDateInput, DOM.endDateInput].forEach(elem => {
+[DOM.searchInput, DOM.filterCategory].forEach(elem => {
     elem.addEventListener('input', () => {
         renderLedgerTransactions();
     });
@@ -528,7 +536,7 @@ DOM.addCategoryBtn.addEventListener('click', () => {
 DOM.exportBtn.addEventListener('click', () => {
     const collection = getFilteredTransactions();
     if (collection.length === 0) {
-        alert("No target matching records found to export.");
+        alert("No transactional data records found to export.");
         return;
     }
 
@@ -551,9 +559,9 @@ DOM.purgeViewBtn.addEventListener('click', () => {
     if (targetedViewSubsets.length === 0) return;
 
     openModal({
-        icon: '<i class="fa-solid fa-dumpster-fire" style="color:var(--danger-color)"></i>',
+        icon: '<i class="fa-solid fa-dumpster-fire" style="color:#d9534f"></i>',
         title: 'Purge Filtered Rows?',
-        desc: `Warning: This configuration routine will instantly expunge all ${targetedViewSubsets.length} matching data records currently visible inside the live filter viewport.`,
+        desc: `Warning: This configuration routine will instantly delete all ${targetedViewSubsets.length} matching data records currently visible inside the live filter viewport.`,
         type: 'standard',
         onConfirm: () => {
             const targetIds = new Set(targetedViewSubsets.map(t => t.id));
@@ -567,7 +575,7 @@ DOM.purgeViewBtn.addEventListener('click', () => {
 
 DOM.deleteAccountBtn.addEventListener('click', () => {
     openModal({
-        icon: '<i class="fa-solid fa-skull-crossbones" style="color:var(--danger-color)"></i>',
+        icon: '<i class="fa-solid fa-skull-crossbones" style="color:#d9534f"></i>',
         title: 'Complete System Destruction',
         desc: 'This will completely drop all client local states bound to this account identity mapping from this device configuration profile.',
         type: 'deleteAccount',
@@ -578,7 +586,7 @@ DOM.deleteAccountBtn.addEventListener('click', () => {
                 state.transactions = [];
                 state.categories = { ...DEFAULT_CATEGORIES };
                 closeModal();
-                auth.signOut(); // Triggers firebase lifecycle listener state shift automatically
+                auth.signOut();
             } else {
                 alert("Incorrect validation confirmation value string.");
             }
@@ -603,11 +611,9 @@ DOM.modalConfirmBtn.addEventListener('click', () => {
 // 9. PRODUCTION FIREBASE AUTH ENGINE PIPELINE
 // ==========================================
 DOM.googleBtn.addEventListener('click', () => {
-    // Fire Google OAuth Auth popup authentication flow channel
     auth.signInWithPopup(googleProvider)
         .then((result) => {
             console.log("Firebase Auth Success:", result.user.email);
-            // State mutation handles are automatically caught by the global onAuthStateChanged listener below
         })
         .catch((error) => {
             console.error("Firebase Auth Exception Error Context:", error);
@@ -620,10 +626,8 @@ DOM.logoutBtn.addEventListener('click', () => {
         .catch((error) => alert(`Sign Out Failed: ${error.message}`));
 });
 
-// Primary Firebase Authentication State Change Management Channel Hook
 auth.onAuthStateChanged((user) => {
     if (user && user.email) {
-        // Sanitize email string key characters layout for safety
         const userIdentityKey = user.email.trim().toLowerCase().replace(/[^a-z0-9@.]/g, '_');
         
         loadStateFromStorage(userIdentityKey);
@@ -631,7 +635,6 @@ auth.onAuthStateChanged((user) => {
         DOM.app.style.display = 'block';
         updateApplicationUI();
     } else {
-        // Handle unauthenticated workspace initialization contexts cleanly
         state.user = null;
         state.transactions = [];
         state.categories = { ...DEFAULT_CATEGORIES };
