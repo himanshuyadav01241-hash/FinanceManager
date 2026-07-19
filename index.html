@@ -1,163 +1,509 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FinanceOS - Premium Wealth Management</title>
-  <!-- Google Fonts & FontAwesome Assets -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Tracker</title>
+    <!-- FontAwesome for UI Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for graphical analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ==========================================
+           1. CORE DESIGN THEMES (4 THEMES)
+           ========================================== */
+        :root, [data-theme="dark"] {
+            --bg-main: #121212;
+            --bg-surface: #1e1e1e;
+            --bg-input: #2d2d2d;
+            --text-primary: #e0e0e0;
+            --text-muted: #aaaaaa;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary-accent: #4285F4;
+            --danger-accent: #d9534f;
+            --success-accent: #0F9D58;
+            --warning-accent: #F4B400;
+        }
+
+        [data-theme="light"] {
+            --bg-main: #f5f5f7;
+            --bg-surface: #ffffff;
+            --bg-input: #f0f0f2;
+            --text-primary: #333333;
+            --text-muted: #666666;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --primary-accent: #1a73e8;
+            --danger-accent: #d93025;
+            --success-accent: #188038;
+            --warning-accent: #e37400;
+        }
+
+        [data-theme="cyberpunk"] {
+            --bg-main: #000b19;
+            --bg-surface: #0a192f;
+            --bg-input: #172a45;
+            --text-primary: #64ffda;
+            --text-muted: #8892b0;
+            --border-color: #30f2c233;
+            --primary-accent: #f57dff;
+            --danger-accent: #ff5376;
+            --success-accent: #64ffda;
+            --warning-accent: #ffcb6b;
+        }
+
+        [data-theme="emerald"] {
+            --bg-main: #f0fdf4;
+            --bg-surface: #ffffff;
+            --bg-input: #e8f5e9;
+            --text-primary: #064e3b;
+            --text-muted: #047857;
+            --border-color: rgba(6, 78, 59, 0.1);
+            --primary-accent: #10b981;
+            --danger-accent: #ef4444;
+            --success-accent: #059669;
+            --warning-accent: #f59e0b;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* ==========================================
+           2. AUTHENTICATION SCREENS & DESIGN
+           ========================================== */
+        #authScreen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: var(--bg-surface);
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .auth-form {
+            margin-top: 24px;
+            text-align: left;
+        }
+
+        .auth-form .form-group {
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .auth-form label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 6px;
+            outline: none;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .auth-form input:focus {
+            border-color: var(--primary-accent);
+        }
+
+        .auth-btn-primary {
+            width: 100%;
+            background: var(--primary-accent);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: opacity 0.2s;
+            margin-top: 8px;
+        }
+
+        .auth-btn-primary:hover { opacity: 0.9; }
+
+        .auth-toggle-link {
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            font-size: 0.85rem;
+            color: var(--primary-accent);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .auth-divider::before, .auth-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .auth-divider::before { margin-right: .5em; }
+        .auth-divider::after { margin-left: .5em; }
+
+        .google-btn {
+            background-color: #ffffff;
+            color: #757575;
+            border: 1px solid #ddd;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        .google-btn:hover { background-color: #f7f7f7; }
+
+        /* ==========================================
+           3. DASHBOARD WORKSPACE LAYOUT
+           ========================================== */
+        #app { display: none; padding: 20px; max-width: 1300px; margin: 0 auto; }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .user-controls { display: flex; align-items: center; gap: 12px; }
+        
+        select, input, button {
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: 6px;
+            outline: none;
+            font-size: 0.95rem;
+        }
+        
+        button { cursor: pointer; font-weight: 500; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        .danger-btn { background: var(--danger-accent); color: white; border: none; }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: var(--bg-surface);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .badge {
+            position: absolute; top: 15px; right: 15px;
+            font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; font-weight: bold;
+        }
+        .badge-good { background: rgba(15, 157, 88, 0.2); color: var(--success-accent); }
+        .badge-warn { background: rgba(244, 180, 0, 0.2); color: var(--warning-accent); }
+        .badge-danger { background: rgba(217, 83, 79, 0.2); color: var(--danger-accent); }
+
+        .sub-value { font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; }
+        .incomeText { color: var(--success-accent); }
+        .expenseText { color: var(--danger-accent); }
+
+        .workspace-layout {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+
+        .col-left { grid-column: span 5; }
+        .col-right { grid-column: span 7; }
+
+        @media (max-width: 992px) {
+            .col-left, .col-right { grid-column: span 12; }
+        }
+
+        .panel {
+            background: var(--bg-surface);
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        .panel h3 { margin-top: 0; margin-bottom: 20px; font-size: 1.2rem; }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+        .form-group label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+        .form-row-mixed { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .checkbox-row { flex-direction: row; align-items: center; gap: 8px; margin-top: 8px; }
+
+        .categoryCard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-input);
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .filter-ribbon {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .transaction-ledger { list-style: none; padding: 0; margin: 0; }
+        
+        .status-badge { font-weight: bold; text-transform: uppercase; border-radius: 4px; padding: 2px 6px;}
+        .status-paid { background: rgba(15, 157, 88, 0.15); color: var(--success-accent); }
+        .status-pending { background: rgba(244, 180, 0, 0.15); color: var(--warning-accent); }
+
+        .modal-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center;
+            z-index: 1000; padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--bg-surface); padding: 30px; border-radius: 12px;
+            max-width: 450px; width: 100%; border: 1px solid var(--border-color);
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .modal-icon-holder { font-size: 3rem; margin-bottom: 15px; }
+        .modal-inputs-wrapper input { width: 100%; margin-top: 15px; text-align: center; }
+        .modal-buttons-wrapper { display: flex; gap: 12px; justify-content: center; margin-top: 25px; }
+    </style>
 </head>
-<body data-theme="sakura" data-weather="spring">
+<body>
 
-  <!-- ==========================================
-       DYNAMIC CANVAS ENGINE LAYER BINDING
-       ========================================== -->
-  <canvas id="bg-canvas"></canvas>
+    <!-- ==========================================
+         LOGIN PAGE WITH CUSTOM & SOCIAL AUTH
+         ========================================== -->
+    <div id="authScreen">
+        <div class="auth-card">
+            <i class="fa-solid fa-wallet" style="font-size: 3.5rem; color: var(--primary-accent); margin-bottom: 15px;"></i>
+            <h2 id="authTitle" style="margin: 10px 0;">Welcome Back</h2>
+            <p id="authSubtitle" style="color: var(--text-muted); font-size: 0.95rem; margin: 0; line-height: 1.4;">
+                Sign in to manage and secure your transactions across all your devices instantly.
+            </p>
 
-  <!-- ==========================================
-       PREMIUM AUTHENTICATION LANDING MODULE
-       ========================================== -->
-  <div class="authScreen" id="authScreen">
-    <div class="authCard">
-      <i class="fa-solid fa-wallet"></i>
-      <h1>FinanceOS</h1>
-      <p>Intelligent real-time portfolio management and optimization matrix.</p>
+            <form id="emailAuthForm" class="auth-form" onsubmit="return false;">
+                <div class="form-group">
+                    <label for="authEmail">Email Address</label>
+                    <input type="email" id="authEmail" placeholder="name@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="authPassword">Password</label>
+                    <input type="password" id="authPassword" placeholder="••••••••" required>
+                </div>
+                <button type="submit" id="customAuthBtn" class="auth-btn-primary">Sign In</button>
+            </form>
 
-      <!-- Google Social OAuth Action Anchor -->
-      <button class="google-btn" id="googleLoginBtn">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google Logo">
-        <span>Continue with Google</span>
-      </button>
+            <div class="auth-divider">or</div>
 
-      <!-- Secure Workspace Matrix Passkey Inputs -->
-      <input type="email" id="authEmail" placeholder="Access Identity (Email)" required autocomplete="username">
-      <button type="button" id="loginBtn">Initialize Access</button>
-    </div>
-  </div>
-
-  <!-- ==========================================
-       CORE WORKSPACE & INTERACTIVE DASHBOARD
-       ========================================== -->
-  <div class="container" id="mainDashboard" style="display: none;">
-    <header>
-      <div class="logo">
-        <i class="fa-solid fa-chart-line"></i>
-        <div>
-          <h1>FinanceOS</h1>
-          <span>Dynamic Capital Ledger</span>
+            <button class="google-btn" id="googleBtn">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google Logo" width="18">
+                Sign in with Google
+            </button>
         </div>
-      </div>
-      <div class="themeBox">
-        <select id="themeSelector" aria-label="Interface Styling Profiles">
-          <option value="sakura">Cherry Blossom (Sakura)</option>
-          <option value="light">Classic Light</option>
-          <option value="red">Crimson Matrix</option>
-          <option value="blue">Deep Ocean Blue</option>
-          <option value="purple">Quantum Purple</option>
-        </select>
-      </div>
-    </header>
-
-    <!-- KPI Dash Metrics Grid -->
-    <div class="cards">
-      <!-- Balance Card -->
-      <div class="card saving">
-        <h3>Total Allocation</h3>
-        <h2 id="totalBalance">$0.00</h2>
-      </div>
-      <!-- Income Card -->
-      <div class="card income">
-        <h3>Net Inflow</h3>
-        <h2 id="totalIncome">$0.00</h2>
-      </div>
-      <!-- Expense Card -->
-      <div class="card expense">
-        <h3>Net Outflow</h3>
-        <h2 id="totalExpense">$0.00</h2>
-      </div>
-      <!-- Standalone Pending Card Tracker Matrix -->
-      <div class="card pending-summary-card">
-        <h3>Outstanding Obligations</h3>
-        <div class="pending-split-metrics">
-          <span style="color: #f59e0b;"><i class="fa-solid fa-clock"></i> Unresolved: <b id="pendingCount">0</b></span>
-          <span style="color: #ffe3ec;"><i class="fa-solid fa-money-bill-wave"></i> Exposure: <b id="pendingAmount">$0.00</b></span>
-        </div>
-      </div>
     </div>
 
-    <!-- Core Interactive Grid Workspace -->
-    <div class="finance-workspace">
-      <!-- Left Side Command Matrix Panel Form -->
-      <div class="form">
-        <h2>Record Capital Transaction</h2>
-        <input type="text" id="descInput" placeholder="Transaction Descriptor (e.g. AWS Nodes Server Cloud)" required>
-        <input type="number" id="amountInput" placeholder="Asset Value Magnitude ($)" required min="0.01" step="0.01">
-        
-        <select id="typeSelect" aria-label="Transaction Core Type Classification">
-          <option value="income">Inflow Yield (Income)</option>
-          <option value="expense">Outflow Allocation (Expense)</option>
-        </select>
+    <!-- ==========================================
+         MAIN APPLICATION INTERFACE
+         ========================================== -->
+    <div id="app">
+        <header>
+            <div>
+                <h1 style="margin:0; font-size: 1.5rem;">Dashboard</h1>
+            </div>
+            <div class="user-controls">
+                <!-- Dropdown array matching style config -->
+                <select id="theme">
+                    <option value="dark">Dark Theme</option>
+                    <option value="light">Light Theme</option>
+                    <option value="cyberpunk">Cyberpunk Neon</option>
+                    <option value="emerald">Emerald Mint</option>
+                </select>
+                <button id="logoutBtn" style="background:transparent; border: 1px solid var(--border-color);"><i class="fa-solid fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </header>
 
-        <select id="categorySelect" aria-label="Asset Tag Category Group Binding">
-          <!-- Dynamically Provisioned via Script Controller Engines -->
-        </select>
-
-        <select id="statusSelect" aria-label="Payment Completion Vector Status">
-          <option value="paid">Settled / Finalized</option>
-          <option value="pending">Outstanding / Pending</option>
-        </select>
-
-        <button type="button" id="addTxBtn"><i class="fa-solid fa-square-plus"></i> Commit Transaction</button>
-        
-        <hr style="border: 0; border-top: 1px dashed var(--border); margin: 20px 0;">
-        
-        <h2>Custom Category Tag Profiles</h2>
-        <div class="categoryManager">
-          <input type="text" id="newCategoryInput" placeholder="Add custom tag...">
-          <button type="button" id="addCategoryBtn"><i class="fa-solid fa-plus"></i></button>
-        </div>
-        <div id="categoryList">
-          <!-- Custom Tags Appended Dynamically Here -->
-        </div>
-      </div>
-
-      <!-- Right Side Search Filter Log Ledger Output -->
-      <div class="ledger">
-        <h2>Transaction Activity Stream Matrix</h2>
-        
-        <div class="search-filters">
-          <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="searchInput" placeholder="Filter ledger records...">
-          </div>
-          <div class="filter-box">
-            <i class="fa-solid fa-filter"></i>
-            <select id="filterType" aria-label="Type Stream View Mode">
-              <option value="all">Display All Vectors</option>
-              <option value="income">Inflows Only</option>
-              <option value="expense">Outflows Only</option>
-              <option value="paid">Settled Only</option>
-              <option value="pending">Pending Only</option>
-            </select>
-          </div>
+        <div class="metrics-grid">
+            <div class="card">
+                <small style="color:var(--text-muted); font-weight:600; letter-spacing: 0.5px;">TOTAL BALANCE</small>
+                <h2 id="balance" style="margin: 6px 0 0 0; font-size: 1.7rem;">₹0</h2>
+                <span id="healthBadge" class="badge">Checking...</span>
+            </div>
+            <div class="card">
+                <small style="color:var(--text-muted); font-weight:600; letter-spacing: 0.5px;">INCOME</small>
+                <h2 id="income" class="incomeText" style="margin: 6px 0 0 0; font-size: 1.7rem;">₹0</h2>
+                <div id="pendingIncome" class="sub-value">Pending: ₹0</div>
+            </div>
+            <div class="card">
+                <small style="color:var(--text-muted); font-weight:600; letter-spacing: 0.5px;">EXPENSES</small>
+                <h2 id="expense" class="expenseText" style="margin: 6px 0 0 0; font-size: 1.7rem;">₹0</h2>
+                <div id="pendingExpense" class="sub-value">Pending: ₹0</div>
+            </div>
+            <div class="card">
+                <small style="color:var(--text-muted); font-weight:600; letter-spacing: 0.5px;">NET SAVINGS</small>
+                <h2 id="saving" style="margin: 6px 0 0 0; font-size: 1.7rem;">0%</h2>
+                <div class="sub-value">Savings margin rate</div>
+            </div>
         </div>
 
-        <ul id="transactionList">
-          <!-- Activity Rows Rendered via JS Engine -->
-        </ul>
-      </div>
+        <div class="workspace-layout">
+            <div class="col-left">
+                <div class="panel">
+                    <h3><i class="fa-solid fa-plus-circle" style="color:var(--primary-accent); margin-right:6px;"></i> Add Transaction</h3>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" id="title" placeholder="e.g., Office Rent, Salary, Grocery">
+                    </div>
+                    <div class="form-row-mixed">
+                        <div class="form-group">
+                            <label>Amount (₹)</label>
+                            <input type="number" id="amount" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="type">
+                                <option value="expense">Expense (-)</option>
+                                <option value="income">Income (+)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row-mixed">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="category"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="status">
+                                <option value="paid">Settled</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group checkbox-row">
+                        <input type="checkbox" id="isRecurring">
+                        <label for="isRecurring">Repeat monthly</label>
+                    </div>
+                    <button id="addBtn" style="width:100%; background: var(--primary-accent); border:none; color:white; padding:12px; font-weight:bold; margin-top:8px;">
+                        Save Transaction
+                    </button>
+                </div>
+
+                <div class="panel">
+                    <h3><i class="fa-solid fa-tags" style="color:var(--primary-accent); margin-right:6px;"></i> Categories</h3>
+                    <div style="display:flex; gap:8px; margin-bottom: 16px;">
+                        <input type="text" id="newCategory" placeholder="New category name..." style="flex:1;">
+                        <button id="addCategory" style="background:var(--bg-input);"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div id="categoryList"></div>
+                </div>
+            </div>
+
+            <div class="col-right">
+                <div class="panel">
+                    <h3><i class="fa-solid fa-list" style="color:var(--primary-accent); margin-right:6px;"></i> Transaction History</h3>
+                    <div class="filter-ribbon">
+                        <input type="text" id="search" placeholder="Search transactions...">
+                        <select id="filterCategory">
+                            <option value="all">All Categories</option>
+                        </select>
+                    </div>
+                    <div class="date-row">
+                        <input type="date" id="startDate" title="Start Date">
+                        <input type="date" id="endDate" title="End Date">
+                    </div>
+                    
+                    <ul id="transactionList" class="transaction-ledger"></ul>
+
+                    <div style="display:flex; gap:10px; margin-top:20px;">
+                        <button id="exportBtn" style="flex:1; background:transparent; border: 1px solid var(--border-color);"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                        <button id="purgeCategoryBtn" class="danger-btn" style="flex:1;"><i class="fa-solid fa-trash-can"></i> Delete Filtered</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3><i class="fa-solid fa-chart-pie" style="color:var(--primary-accent); margin-right:6px;"></i> Expense Distribution</h3>
+                    <div style="max-width: 320px; margin: 0 auto; padding:10px;">
+                        <canvas id="analyticsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="panel" style="border: 1px dashed var(--danger-accent); background: rgba(219,68,55, 0.02);">
+                    <h4 style="color:var(--danger-accent); margin-top:0; margin-bottom:6px;">Danger Zone</h4>
+                    <p style="font-size:0.85rem; margin:0 0 12px 0; opacity:0.8;">Permanently clear all transactional data linked to this profile.</p>
+                    <button id="deleteAccountBtn" class="danger-btn" style="font-size:0.8rem; padding:8px 14px;">Wipe All Data</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <footer>
-      <p>FinanceOS Core • Secured via Enterprise Cryptographic Environments • Engine v2.4.0</p>
-    </footer>
-  </div>
+    <!-- SYSTEM PROMPT MODALS -->
+    <div class="modal-overlay" id="customModalOverlay">
+        <div class="modal-content">
+            <div id="modalIconContainer" class="modal-icon-holder"></div>
+            <h3 id="modalTitle" style="margin-top:0; margin-bottom:10px;">Confirm Action</h3>
+            <p id="modalDescription" style="color:var(--text-muted); font-size:0.9rem; margin:0; line-height:1.4;"></p>
+            <div class="modal-buttons-wrapper">
+                <button id="modalCancelBtn" style="background:var(--bg-input);">Cancel</button>
+                <button id="modalConfirmBtn" class="danger-btn">Confirm</button>
+            </div>
+        </div>
+    </div>
 
-  <!-- Firebase & App Orchestration Controller Target Logic Scripts -->
-  <script type="module" src="script.js"></script>
+    <!-- FIREBASE MODULE DEPENDENCIES -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
