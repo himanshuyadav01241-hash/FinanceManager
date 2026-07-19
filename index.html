@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js for graphical analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS for Excel Parsing (.xlsx/.xls) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.core.min.js"></script>
     <style>
         /* ==========================================
            1. CORE DESIGN THEMES (2 THEMES)
@@ -66,7 +68,6 @@
             background-size: cover;
         }
 
-        /* Responsive Desktop Optimization */
         @media (min-width: 768px) {
             #authScreen {
                 background-position: center center;
@@ -354,6 +355,19 @@
         .modal-inputs-wrapper input { width: 100%; margin-top: 5px; text-align: center; letter-spacing: 2px; font-weight: bold; }
         .modal-buttons-wrapper { display: flex; gap: 12px; justify-content: center; margin-top: 25px; }
 
+        /* Integrated Custom Action Pipeline Controls */
+        .data-pipeline-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        @media (min-width: 480px) {
+            .data-pipeline-container {
+                grid-template-columns: 1fr 2fr;
+            }
+        }
+
         /* ==========================================
            4. TABLET & DESKTOP RESPONSIVE MODIFIERS
            ========================================== */
@@ -537,9 +551,21 @@
                     
                     <ul id="transactionList" class="transaction-ledger"></ul>
 
-                    <div style="display:flex; gap:10px; margin-top:20px;">
-                        <button id="exportBtn" style="flex:1; background:transparent; border: 1px solid var(--border-color);"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
-                        <button id="purgeCategoryBtn" class="danger-btn" style="flex:1;"><i class="fa-solid fa-trash-can"></i> Delete Filtered</button>
+                    <!-- Data Actions Processing Center Panel -->
+                    <div class="data-pipeline-container">
+                        <select id="dataActionSelector" aria-label="Select data operation channel">
+                            <option value="export-csv">Export Ledger (CSV)</option>
+                            <option value="import-file">Import Ledger (Excel/CSV)</option>
+                            <option value="purge-filtered" data-variant="danger">Delete Filtered Log</option>
+                        </select>
+                        
+                        <!-- Reactive UI Pipeline Trigger -->
+                        <button id="dataActionButton" style="width: 100%; background: transparent; border: 1px solid var(--border-color);">
+                            <i class="fa-solid fa-file-csv" style="margin-right: 6px;"></i>Export CSV
+                        </button>
+
+                        <!-- Invisible Native Input Channel for excel/csv mapping arrays -->
+                        <input type="file" id="importFileInputChannel" accept=".csv, .xlsx, .xls" style="display: none;">
                     </div>
                 </div>
 
