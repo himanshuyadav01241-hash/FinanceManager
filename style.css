@@ -60,6 +60,16 @@ body[data-theme="purple"] {
   --select-dropdown-bg: #24113a; 
   --select-dropdown-text: #ffffff; 
 }
+body[data-theme="sakura"] {
+  --bg: #1f0f13;
+  --card: rgba(45, 23, 29, 0.7);
+  --border: rgba(242, 181, 188, 0.25);
+  --text: #fcdad7;
+  --primary: #d67b88;
+  --input-bg: rgba(61, 32, 40, 0.45);
+  --select-dropdown-bg: #2b151a;
+  --select-dropdown-text: #fcdad7;
+}
 
 /* ==========================================
    DYNAMIC ENVIRONMENTAL WEATHER/SEASON THEMES
@@ -412,6 +422,8 @@ footer { margin-top: 40px; text-align: center; opacity: .5; padding: 10px; font-
               inset 0 1px 0 rgba(255, 255, 255, 0.08);
   text-align: center;
   animation: authCardFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) ease-out;
+  position: relative;
+  z-index: 2; /* Stands clean above the floating backdrop particles */
 }
 
 @keyframes authCardFadeIn {
