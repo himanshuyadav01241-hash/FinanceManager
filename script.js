@@ -633,16 +633,20 @@ DOM.modalConfirmBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// 9. IDENTITY CONTROLLER & AUTH MUTATION (SIMULATOR)
+// 9. IDENTITY CONTROLLER & AUTH MUTATION (USER PROFILE ENGINE)
 // ==========================================
 DOM.googleBtn.addEventListener('click', () => {
-    // Generate simulated account credential handles mapping indexes profiles tokens
-    const mockupUserIdsList = ['alpha_user@gmail.com', 'developer_sandbox@gmail.com', 'beta_tester@gmail.com'];
-    const randomUserPick = mockupUserIdsList[Math.floor(Math.random() * mockupUserIdsList.length)];
+    // Replaced randomized arrays with an explicit browser user profile prompt
+    const userEmailInput = prompt("Enter your account email to sign in:", "developer@gmail.com");
     
-    loadStateFromStorage(randomUserPick);
-    saveStateToStorage();
-    checkAuthSessionState();
+    if (userEmailInput && userEmailInput.trim() !== "") {
+        const cleanlyFormattedId = userEmailInput.trim().toLowerCase();
+        loadStateFromStorage(cleanlyFormattedId);
+        saveStateToStorage();
+        checkAuthSessionState();
+    } else {
+        alert("A valid email handle parameter configuration profile is required to initialize workspace instances.");
+    }
 });
 
 DOM.logoutBtn.addEventListener('click', () => {
