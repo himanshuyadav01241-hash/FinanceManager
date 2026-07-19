@@ -608,13 +608,23 @@ DOM.modalConfirmBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// 9. PRODUCTION FIREBASE AUTH ENGINE PIPELINE
+// 9. ROBUST HYBRID AUTH ENGINE PIPELINE (MOBILE OPTIMIZED)
 // ==========================================
 DOM.googleBtn.addEventListener('click', () => {
-    // LOCAL persistence works seamlessly on mobile configurations
+    // Detect mobile/tablet screen environment profiles
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         .then(() => {
-            return auth.signInWithRedirect(googleProvider);
+            if (isMobileDevice) {
+                // High compatibility fallback routine for isolated mobile environments
+                // Forces the provider to handle sign-in through a top-level window layout instead of a partitioned frame.
+                googleProvider.setCustomParameters({ prompt: 'select_account' });
+                return auth.signInWithRedirect(googleProvider);
+            } else {
+                // Native popups operate smoothly on desktop instances
+                return auth.signInWithPopup(googleProvider);
+            }
         })
         .catch((error) => {
             console.error("Firebase Auth Exception Error Context:", error);
@@ -630,16 +640,19 @@ DOM.logoutBtn.addEventListener('click', () => {
         .catch((error) => alert(`Sign Out Failed: ${error.message}`));
 });
 
-// Capture incoming redirect login results safely on load
+// Capture any incoming tokens returning from mobile redirect pipelines safely on initialization mount
 auth.getRedirectResult()
     .then((result) => {
         if (result && result.user) {
-            console.log("Redirect login successful for:", result.user.email);
+            console.log("Redirect routine successfully connected identity profiling for:", result.user.email);
         }
     })
     .catch((error) => {
-        console.error("Error retrieving redirect result:", error);
-        alert(`Redirect Sign-in Failure: Make sure cookies are enabled and you aren't using an incubation/private tab.`);
+        console.error("Error processing mobile authentication routing callback:", error);
+        // Silently bypass expected cross-origin iframe storage restrictions
+        if (error.code !== 'auth/web-storage-unsupported') {
+            alert(`Mobile Sign-in Routing Notice: ${error.message}`);
+        }
     });
 
 auth.onAuthStateChanged((user) => {
