@@ -608,31 +608,32 @@ DOM.modalConfirmBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// 9. HIGH-COMPATIBILITY AUTH ENGINE PIPELINE (UNIVERSAL FIX)
+// 9. HIGH-COMPATIBILITY AUTH ENGINE PIPELINE (MOBILE HARDENED)
 // ==========================================
+
+// Configure local persistence matrix immediately during script boot sequence.
+// Moving this out of the click event preserves native "user gesture" verification.
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .catch((error) => console.error("Persistence declaration exception:", error));
+
 DOM.googleBtn.addEventListener('click', () => {
-    // Set explicit localized persistence matrix
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-        .then(() => {
-            // Force select_account parameter to reset stuck session loops
-            googleProvider.setCustomParameters({ prompt: 'select_account' });
-            
-            // Popups are significantly more stable on modern mobile devices 
-            // than Redirects, which lose token state due to cookie partitioning.
-            return auth.signInWithPopup(googleProvider);
-        })
+    // Force clean account assessment configuration to dump locked loops
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
+    
+    // Direct popup initiation sequence maintains compliance with mobile browser gesture tokens
+    auth.signInWithPopup(googleProvider)
         .then((result) => {
             if (result && result.user) {
-                console.log("Popup login successful:", result.user.email);
+                console.log("Popup login resolved successfully:", result.user.email);
                 handleUserSessionRouting(result.user);
             }
         })
         .catch((error) => {
             console.error("Firebase Auth Exception Error Context:", error);
             
-            // Fallback to redirect ONLY if the mobile device completely blocks popups
-            if (error.code === 'auth/popup-blocked') {
-                console.log("Popup blocked. Engaging mobile redirect fallback strategy...");
+            // Invoke the redirect module exclusively if the browser blocks popups completely
+            if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+                console.log("Popup intercepted by engine layout. Redirecting window tree...");
                 return auth.signInWithRedirect(googleProvider);
             } else {
                 alert(`Authentication Error: ${error.message}`);
@@ -648,13 +649,13 @@ DOM.logoutBtn.addEventListener('click', () => {
         .catch((error) => alert(`Sign Out Failed: ${error.message}`));
 });
 
-// Standalone UI routing controller to prevent white-screen/same-page loops
+// Standalone UI switchboard context router
 function handleUserSessionRouting(user) {
     if (user && user.email) {
         const userIdentityKey = user.email.trim().toLowerCase().replace(/[^a-z0-9@.]/g, '_');
         loadStateFromStorage(userIdentityKey);
         
-        // Safety checks to mutate interface visibility state safely
+        // Immediate conditional canvas manipulation
         if (DOM.authScreen) DOM.authScreen.style.display = 'none';
         if (DOM.app) DOM.app.style.display = 'block';
         
@@ -662,7 +663,7 @@ function handleUserSessionRouting(user) {
     }
 }
 
-// Safely catch any lingering redirect operations fallback states
+// Safely trap incoming tokens returning from a deep fallback redirect chain
 auth.getRedirectResult()
     .then((result) => {
         if (result && result.user) {
@@ -673,7 +674,7 @@ auth.getRedirectResult()
         console.error("Error processing authentication redirect loop callback:", error);
     });
 
-// Global authentication lifecycle state observer loop
+// Global state observer loop handles ambient page mounts smoothly
 auth.onAuthStateChanged((user) => {
     if (user) {
         handleUserSessionRouting(user);
@@ -691,3 +692,8 @@ auth.onAuthStateChanged((user) => {
         }
     }
 });
+
+// Run a proactive micro-check to process early token state resolution
+if (auth.currentUser) {
+    handleUserSessionRouting(auth.currentUser);
+}
